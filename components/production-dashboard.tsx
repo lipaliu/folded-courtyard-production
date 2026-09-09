@@ -170,7 +170,7 @@ export function ProductionDashboard() {
         </TabsList>
       </Tabs>
 
-      <TaskEditor item={selectedItem} open={Boolean(selectedItem) && Boolean(me?.isAdmin)} saving={saving} onClose={() => setSelectedItem(null)} onDelete={async () => { if (!selectedItem) return; await deleteItem(selectedItem.id); setSelectedItem(null); }} onSave={async (changes) => {
+      <TaskEditor item={selectedItem} open={Boolean(selectedItem) && Boolean(me?.isAdmin)} saving={saving} onClose={() => setSelectedItem(null)} onDelete={async () => { if (!selectedItem || !window.confirm(`确定删除“${selectedItem.title}”吗？`)) return; await deleteItem(selectedItem.id); setSelectedItem(null); }} onSave={async (changes) => {
         if (!selectedItem) return;
         setSaving(true);
         await updateItem(selectedItem.id, changes);
