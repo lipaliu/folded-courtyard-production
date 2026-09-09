@@ -46,6 +46,19 @@ export async function GET() {
         ]);
       }
     }
+    const whiteFlowVersion = await env.DB.prepare("SELECT value FROM app_settings WHERE key = 'workflow_white_review_v1'").first<{ value: string }>();
+    if (!whiteFlowVersion) {
+      const updatedAt = new Date().toISOString();
+      const reviewRows = initialItems.filter((row) => row.id === '0911-yoyo-white' || row.id === '0911-producer-white');
+      await env.DB.batch([
+        env.DB.prepare("UPDATE production_items SET title = '依据第一集剧本生成首批场景白模视频', status = '未开始', completed_qty = 0, due_time = '21:00', depends_on_id = '', handoff_to = '红人（Yoyo）＋制片人（叶总）', handoff_deadline = '2026-09-11 18:00', note = '第一集剧本已具备，可直接按剧本制作；生成后提报Yoyo和叶总审批', updated_at = ? WHERE id = '0910-white'").bind(updatedAt),
+        env.DB.prepare("UPDATE production_items SET title = '完成并提报第一集全部场景白模视频', status = '未开始', completed_qty = 0, due_time = '15:00', depends_on_id = '0910-white', handoff_to = '红人（Yoyo）＋制片人（叶总）', handoff_deadline = '18:00', note = '依据剧本完成全部场景与调度白模，15:00同步审核材料', updated_at = ? WHERE id = '0911-white'").bind(updatedAt),
+        ...reviewRows.map((row) => env.DB.prepare(`INSERT OR REPLACE INTO production_items (id, work_date, episode, category, title, owner, reviewer, status, planned_qty, completed_qty, due_time, depends_on_id, handoff_to, handoff_deadline, note, sort_order, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+          .bind(row.id, row.workDate, row.episode, row.category, row.title, row.owner, row.reviewer, row.status, row.plannedQty, row.completedQty, row.dueTime, row.dependsOnId, row.handoffTo, row.handoffDeadline, row.note, row.sortOrder, updatedAt)),
+        env.DB.prepare("UPDATE production_items SET category = '审核汇总', title = '汇总Yoyo与叶总意见并锁定白模', status = '未开始', planned_qty = 1, completed_qty = 0, due_time = '20:00', depends_on_id = '0911-white', handoff_to = 'AIGC抽卡师', handoff_deadline = '2026-09-12 09:00', note = '必须收到Yoyo和叶总两边审批后，才能标记通过并释放正式镜头', sort_order = 11, updated_at = ? WHERE id = '0911-review'").bind(updatedAt),
+        env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_white_review_v1', 'done', ?)").bind(updatedAt),
+      ]);
+    }
     const result = await env.DB.prepare(`
       SELECT id, work_date AS workDate, episode, category, title, owner, reviewer, status,
              planned_qty AS plannedQty, completed_qty AS completedQty, due_time AS dueTime,
