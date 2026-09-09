@@ -39,7 +39,7 @@ const timeOptions = Array.from({ length: 96 }, (_, index) => {
 });
 
 type ScriptAnalysis = { id: string; episode: string; sceneNo: number; sceneTitle: string; scriptText: string; sceneSummary: string; location: string; createdAt: string; updatedAt: string };
-type ScriptAssetItem = { id: string; analysisId: string; category: string; name: string; detail: string; visualBrief: string; yoyoApproved: boolean; sortOrder: number; updatedAt: string };
+type ScriptAssetItem = { id: string; analysisId: string; category: string; name: string; detail: string; visualBrief: string; yoyoApproved: boolean; producerApproved: boolean; sortOrder: number; updatedAt: string };
 
 export function ProductionDashboard() {
   const [items, setItems] = useState<ProductionItem[]>(initialItems);
@@ -167,7 +167,7 @@ export function ProductionDashboard() {
             <TabsContent value="today" className="mt-0"><TodayView selectedDate={selectedDate} setSelectedDate={setSelectedDate} items={todayItems} progress={dayProgress} completed={completed} planned={planned} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedItem} onAdd={setCreatingRole} onToggle={(item, checked) => void updateItem(item.id, { status: checked ? '已通过' : '未开始', completedQty: checked ? item.plannedQty : 0 })} /></TabsContent>
             <TabsContent value="plan" className="mt-0"><PlanView items={items} batches={batches} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedBatch} /></TabsContent>
             <TabsContent value="scenes" className="mt-0"><ScenesView scenes={scenes} isAdmin={Boolean(me?.isAdmin)} onChange={updateScene} /></TabsContent>
-            <TabsContent value="breakdown" className="mt-0"><ScriptAnalysisView isAdmin={Boolean(me?.isAdmin)} /></TabsContent>
+            <TabsContent value="breakdown" className="mt-0"><ScriptAnalysisView isAdmin={Boolean(me?.isAdmin)} selectedDate={selectedDate} productionItems={items} onAssigned={async (workDate) => { setSelectedDate(workDate); await loadData(); }} /></TabsContent>
             <TabsContent value="review" className="mt-0"><ReviewView items={pendingReview} scenes={scenes} isAdmin={Boolean(me?.isAdmin)} updateItem={updateItem} updateScene={updateScene} /></TabsContent>
           </div>
         </div>
@@ -176,7 +176,7 @@ export function ProductionDashboard() {
           <NavTab value="today" label="今日" icon={<LayoutDashboard />} />
           <NavTab value="plan" label="大计划" icon={<Rows3 />} />
           <NavTab value="scenes" label="场次" icon={<Film />} />
-          <NavTab value="breakdown" label="拆剧本" icon={<Sparkles />} />
+          <NavTab value="breakdown" label="生产手册" icon={<Sparkles />} />
           <NavTab value="review" label={`微信确认${pendingReview.length ? ` ${pendingReview.length}` : ''}`} icon={<ListChecks />} />
         </TabsList>
       </Tabs>
@@ -222,7 +222,7 @@ function TodayView({ selectedDate, setSelectedDate, items, progress, completed, 
       '【已完成】', ...(finishedItems.length ? finishedItems.map((item) => `✓ ${item.owner}｜${item.title}`) : ['无']), '',
       '【未完成】', ...(unfinishedItems.length ? unfinishedItems.map((item) => `□ ${item.owner}｜${item.title}`) : ['无']), '',
       '【需要顺延】', ...(rolloverItems.length ? rolloverItems.map((item) => `→ ${item.owner}｜${item.title}`) : ['无']), '',
-      '【Yoyo异步待回】', ...(yoyoPendingItems.length ? yoyoPendingItems.map((item) => `□ ${item.title}`) : ['无']),
+      '【Yoyo微信待回复】', ...(yoyoPendingItems.length ? yoyoPendingItems.map((item) => `□ ${item.title}`) : ['无']),
     ];
     await navigator.clipboard.writeText(lines.join('\n'));
     setCopied(true);
@@ -235,7 +235,7 @@ function TodayView({ selectedDate, setSelectedDate, items, progress, completed, 
           <div className="min-w-0">
             <div className="flex items-center gap-2"><p className="eyebrow">每日 RUNDOWN</p><span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] text-muted-foreground">{dateText}</span></div>
             <h2 className="mt-2 text-2xl font-semibold tracking-tight md:text-3xl">{selectedDate <= '2026-09-11' ? '第一集开机筹备' : '滚动生产日'}</h2>
-            <p className="mt-2 max-w-xl text-[15px] leading-6 text-muted-foreground">剧本、场景图与白模同步推进；Yoyo在微信异步审核，未回复不阻断可继续的制作。</p>
+            <p className="mt-2 max-w-xl text-[15px] leading-6 text-muted-foreground">剧本、场景图与白模同步推进；Yoyo在微信回复，没回复也不耽误能继续做的工作。</p>
           </div>
             <div className="relative grid h-20 w-20 shrink-0 place-items-center rounded-full" title="今日进度 = 实际完成量 ÷ 计划量" style={{ background: `conic-gradient(#ff6240 0 ${progress}%, rgba(255,255,255,.08) ${progress}% 100%)` }}>
             <div className="grid h-[66px] w-[66px] place-items-center rounded-full bg-card"><div className="text-center"><b className="text-xl">{progress}%</b><span className="block text-[10px] text-muted-foreground">完成量/计划量</span></div></div>
@@ -259,7 +259,7 @@ function TodayView({ selectedDate, setSelectedDate, items, progress, completed, 
       <div className="space-y-3">{workflowLanes.map((lane, laneIndex) => {
         const laneDone = lane.filter((item) => item.status === '已通过').length;
         const isAsyncReview = lane.some((item) => item.owner === '红人（Yoyo）');
-        return <article key={lane.map((item) => item.id).join('-')} className="rounded-2xl border border-white/8 bg-card p-3.5 md:p-4"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><span className="grid h-7 w-7 place-items-center rounded-full bg-white/6 text-xs font-semibold">{laneIndex + 1}</span><div><h3 className="text-sm font-medium">{workflowLaneName(lane)}</h3><p className={`text-[11px] ${isAsyncReview ? 'text-violet-300' : 'text-muted-foreground'}`}>{isAsyncReview ? '异步审核 · 未回复不阻断其他制作线' : lane.length > 1 ? `串行 · 按顺序完成${lane.length}步` : '可与其他工作流并行'}</p></div></div><span className={`rounded-full border px-2.5 py-1 text-xs ${laneDone === lane.length ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300' : 'border-white/8 bg-white/4 text-muted-foreground'}`}>{laneDone}/{lane.length}</span></div><div className="mt-3 flex gap-2 overflow-x-auto pb-1">{lane.map((item, index) => {
+        return <article key={lane.map((item) => item.id).join('-')} className="rounded-2xl border border-white/8 bg-card p-3.5 md:p-4"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><span className="grid h-7 w-7 place-items-center rounded-full bg-white/6 text-xs font-semibold">{laneIndex + 1}</span><div><h3 className="text-sm font-medium">{workflowLaneName(lane)}</h3><p className={`text-[11px] ${isAsyncReview ? 'text-violet-300' : 'text-muted-foreground'}`}>{isAsyncReview ? '微信待回复 · 没回复不耽误其他制作' : lane.length > 1 ? `串行 · 按顺序完成${lane.length}步` : '可与其他工作流并行'}</p></div></div><span className={`rounded-full border px-2.5 py-1 text-xs ${laneDone === lane.length ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300' : 'border-white/8 bg-white/4 text-muted-foreground'}`}>{laneDone}/{lane.length}</span></div><div className="mt-3 flex gap-2 overflow-x-auto pb-1">{lane.map((item, index) => {
           const checked = item.status === '已通过';
           return <div key={item.id} className="flex shrink-0 items-center gap-2"><div className={`w-[250px] rounded-xl border p-3 ${checked ? 'border-emerald-400/25 bg-emerald-400/[.055]' : 'border-red-400/25 bg-red-400/[.045]'}`}><div className="flex items-start gap-3"><Checkbox checked={checked} disabled={!isAdmin} onCheckedChange={(nextChecked) => onToggle(item, Boolean(nextChecked))} aria-label={`${item.title}${checked ? '已完成' : '未完成'}`} className="mt-0.5 size-5 border-red-400/70 text-black data-checked:border-emerald-400 data-checked:bg-emerald-400" /><div className="min-w-0 flex-1"><p className="text-[11px] text-muted-foreground">{item.owner} · {item.dueTime}</p><p className={`mt-1 text-sm font-medium leading-5 ${checked ? 'text-zinc-500 line-through' : ''}`}>{item.title}</p></div>{isAdmin && <button onClick={() => onEdit(item)} aria-label={`编辑${item.title}`} className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-white/5 hover:text-white"><Pencil className="h-3.5 w-3.5" /></button>}</div>{item.handoffTo && <p className={`mt-2 border-t border-white/6 pt-2 text-[11px] ${checked ? 'text-emerald-300' : 'text-muted-foreground'}`}>交给：{item.handoffTo} · {item.handoffDeadline}</p>}</div>{index < lane.length - 1 && <div className="flex shrink-0 flex-col items-center text-zinc-600"><ChevronRight className="h-5 w-5" /><span className="mt-0.5 text-[9px]">然后</span></div>}</div>;
         })}</div></article>;
@@ -279,80 +279,116 @@ function TodayView({ selectedDate, setSelectedDate, items, progress, completed, 
     </section>
     <section className="mt-7 rounded-2xl border border-white/8 bg-card p-4 md:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="eyebrow">DAILY REPORT</p><h2 className="mt-1 text-xl font-semibold">每日生产汇总</h2><p className="mt-1 text-sm text-muted-foreground">根据当天打钩结果，自动整理完成、未完成和需要顺延的工作。</p></div><Button onClick={() => setShowSummary(true)} className="h-11 shrink-0"><ListChecks />一键生成今日汇总</Button></div>
-      {showSummary && <div className="mt-4 border-t border-white/8 pt-4"><div className="flex items-center justify-between gap-3"><p className="font-medium">{dateText} · 完成 {finishedItems.length}/{items.length} 项</p><Button variant="outline" size="sm" onClick={() => void copySummary()}><ClipboardCopy />{copied ? '已复制' : '复制发群'}</Button></div><div className="mt-4 grid gap-3 md:grid-cols-3"><SummaryGroup title="已完成" tone="green" items={finishedItems} empty="今天还没有勾选完成项" /><SummaryGroup title="未完成" tone="red" items={unfinishedItems} empty="今天任务已全部完成" /><SummaryGroup title="需要顺延" tone="amber" items={rolloverItems} empty="没有需要顺延的团队任务" /></div>{yoyoPendingItems.length > 0 && <div className="mt-3 rounded-xl border border-violet-400/20 bg-violet-400/[.05] p-3"><p className="text-sm font-medium text-violet-300">Yoyo异步待回 · {yoyoPendingItems.length}项</p><p className="mt-1 text-xs leading-5 text-muted-foreground">保持红色未勾即可，不计入团队顺延，也不影响剧本、美术和白模继续工作。</p></div>}</div>}
+      {showSummary && <div className="mt-4 border-t border-white/8 pt-4"><div className="flex items-center justify-between gap-3"><p className="font-medium">{dateText} · 完成 {finishedItems.length}/{items.length} 项</p><Button variant="outline" size="sm" onClick={() => void copySummary()}><ClipboardCopy />{copied ? '已复制' : '复制发群'}</Button></div><div className="mt-4 grid gap-3 md:grid-cols-3"><SummaryGroup title="已完成" tone="green" items={finishedItems} empty="今天还没有勾选完成项" /><SummaryGroup title="未完成" tone="red" items={unfinishedItems} empty="今天任务已全部完成" /><SummaryGroup title="需要顺延" tone="amber" items={rolloverItems} empty="没有需要顺延的团队任务" /></div>{yoyoPendingItems.length > 0 && <div className="mt-3 rounded-xl border border-violet-400/20 bg-violet-400/[.05] p-3"><p className="text-sm font-medium text-violet-300">Yoyo微信待回复 · {yoyoPendingItems.length}项</p><p className="mt-1 text-xs leading-5 text-muted-foreground">保持红色未勾即可，不计入团队顺延，也不影响剧本、美术和白模继续工作。</p></div>}</div>}
     </section>
     <section className="mt-4 rounded-2xl border border-[#ff6240]/20 bg-[#ff6240]/8 p-4 md:p-5"><div className="flex gap-3"><div className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#ff6240] text-black"><ChevronRight className="h-4 w-4" /></div><div><p className="font-medium">怎么推进</p><p className="mt-1 text-sm leading-6 text-muted-foreground">Yoyo没回复时，编剧、美术和白模继续做。第一集的最终意见确认后，再开始生成正式视频。视频素材全部生成后，先粗搭一版交给剪辑师，剪辑师用2—3天完成剪辑。</p></div></div></section>
   </>;
 }
 
-function ScriptAnalysisView({ isAdmin }: { isAdmin: boolean }) {
+function ScriptAnalysisView({ isAdmin, selectedDate, productionItems, onAssigned }: { isAdmin: boolean; selectedDate: string; productionItems: ProductionItem[]; onAssigned: (date: string) => Promise<void> }) {
   const [analyses, setAnalyses] = useState<ScriptAnalysis[]>([]);
   const [assetItems, setAssetItems] = useState<ScriptAssetItem[]>([]);
-  const [modelReady, setModelReady] = useState<boolean | null>(null);
-  const [episode, setEpisode] = useState('第1集');
-  const [sceneNo, setSceneNo] = useState(1);
-  const [sceneTitle, setSceneTitle] = useState('');
-  const [scriptText, setScriptText] = useState('');
-  const [analyzing, setAnalyzing] = useState(false);
+  const [workDate, setWorkDate] = useState(selectedDate);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [assigning, setAssigning] = useState(false);
+  const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
 
   async function loadAnalyses() {
     try {
       const response = await fetch('/api/script-analysis', { cache: 'no-store' });
-      const data = await response.json() as { analyses?: ScriptAnalysis[]; items?: Array<Omit<ScriptAssetItem, 'yoyoApproved'> & { yoyoApproved: boolean | number }>; modelReady?: boolean };
+      const data = await response.json() as { analyses?: ScriptAnalysis[]; items?: Array<Omit<ScriptAssetItem, 'yoyoApproved' | 'producerApproved'> & { yoyoApproved: boolean | number; producerApproved: boolean | number }> };
       setAnalyses(data.analyses || []);
-      setAssetItems((data.items || []).map((item) => ({ ...item, yoyoApproved: Boolean(item.yoyoApproved) })));
-      setModelReady(Boolean(data.modelReady));
+      setAssetItems((data.items || []).map((item) => ({ ...item, yoyoApproved: Boolean(item.yoyoApproved), producerApproved: Boolean(item.producerApproved) })));
     } catch {
       setError('暂时无法读取拆解记录，请刷新后重试');
     }
   }
 
   useEffect(() => { void loadAnalyses(); }, []);
+  useEffect(() => { setWorkDate(selectedDate); setNotice(''); }, [selectedDate]);
 
-  async function analyzeScript() {
-    if (!scriptText.trim()) return;
-    setAnalyzing(true);
+  async function assignWork() {
+    if (!selectedIds.length) return;
+    setAssigning(true);
     setError('');
+    setNotice('');
     try {
-      const response = await fetch('/api/script-analysis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ episode, sceneNo, sceneTitle, scriptText }) });
-      const data = await response.json() as { error?: string };
-      if (!response.ok) throw new Error(data.error || '分析失败');
-      await loadAnalyses();
-      setScriptText('');
-      setSceneTitle('');
+      const response = await fetch('/api/script-analysis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'assign', workDate, analysisIds: selectedIds }) });
+      const data = await response.json() as { error?: string; assignedScenes?: number; taskCount?: number };
+      if (!response.ok) throw new Error(data.error || '分配失败');
+      await onAssigned(workDate);
+      setNotice(`已把${data.assignedScenes || selectedIds.length}场分配到当天各工种，共${data.taskCount || 0}项岗位任务。重复分配不会新增副本。`);
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : '分析失败');
+      setError(nextError instanceof Error ? nextError.message : '分配失败');
     } finally {
-      setAnalyzing(false);
+      setAssigning(false);
     }
   }
 
-  async function toggleApproval(item: ScriptAssetItem, checked: boolean) {
-    setAssetItems((current) => current.map((candidate) => candidate.id === item.id ? { ...candidate, yoyoApproved: checked } : candidate));
-    const response = await fetch('/api/script-analysis', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: item.id, yoyoApproved: checked }) });
+  async function toggleApproval(item: ScriptAssetItem, target: 'yoyoApproved' | 'producerApproved', checked: boolean) {
+    setAssetItems((current) => current.map((candidate) => candidate.id === item.id ? { ...candidate, [target]: checked } : candidate));
+    const response = await fetch('/api/script-analysis', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: item.id, [target]: checked }) });
     if (!response.ok) {
-      setAssetItems((current) => current.map((candidate) => candidate.id === item.id ? { ...candidate, yoyoApproved: !checked } : candidate));
+      setAssetItems((current) => current.map((candidate) => candidate.id === item.id ? { ...candidate, [target]: !checked } : candidate));
       setError('审核结果保存失败，请重试');
     }
   }
 
   return <section>
-    <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">AI SCRIPT BREAKDOWN</p><h2 className="mt-1 text-2xl font-semibold">单场剧本拆解</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">粘贴一场戏，自动拆出场景、人物、服装、妆发、道具和需要生成的美术图。</p></div><span className={`w-fit rounded-full border px-3 py-1.5 text-xs ${modelReady ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300' : 'border-amber-400/20 bg-amber-400/10 text-amber-300'}`}>{modelReady ? '模型已接通' : '等待接入模型'}</span></div>
+    <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">DAILY PRODUCTION BOOK</p><h2 className="mt-1 text-2xl font-semibold">每日生产手册</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">当天放入要生产的剧本与场次。主美按剧本总结本场要生成的场景、人物、穿搭、妆发和道具，再逐项出图。</p></div><span className="w-fit rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1.5 text-xs text-cyan-300">当前由我先拆解 · 不接外部模型</span></div>
     <div className="control-card p-4 md:p-6">
-      <div className="grid gap-3 sm:grid-cols-[120px_100px_1fr]"><Field label="集数"><input value={episode} onChange={(event) => setEpisode(event.target.value)} className="edit-input" /></Field><Field label="场次"><input type="number" min="1" value={sceneNo} onChange={(event) => setSceneNo(Number(event.target.value))} className="edit-input" /></Field><Field label="场名（可不填）"><input value={sceneTitle} onChange={(event) => setSceneTitle(event.target.value)} className="edit-input" placeholder="例如：陆文川初入庭院" /></Field></div>
-      <Field label="单场剧本文字"><Textarea value={scriptText} onChange={(event) => setScriptText(event.target.value)} rows={10} className="mt-3" placeholder="把这一场的场景描述、动作和台词粘贴到这里……" /></Field>
-      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs leading-5 text-muted-foreground">模型只做初步拆解；Lipa检查后发微信给Yoyo逐项确认。</p><Button disabled={!isAdmin || !modelReady || !scriptText.trim() || analyzing} onClick={() => void analyzeScript()} className="h-11 shrink-0"><Sparkles className={analyzing ? 'animate-pulse' : ''} />{analyzing ? '正在拆解…' : '开始AI拆解'}</Button></div>
+      <div className="grid gap-4 md:grid-cols-[220px_1fr_auto] md:items-end"><Field label="放到哪一天"><input type="date" min="2026-09-10" max="2026-10-09" value={workDate} onChange={(event) => { setWorkDate(event.target.value); setNotice(''); }} className="edit-input" /></Field><div><p className="mb-1.5 text-sm text-muted-foreground">选择当天要生产的场次</p><div className="flex flex-wrap gap-2">{analyses.map((analysis) => { const selected = selectedIds.includes(analysis.id); const assigned = productionItems.some((item) => item.id === `daily-${workDate}-${analysis.id}-script`); return <button key={analysis.id} type="button" disabled={!isAdmin} onClick={() => setSelectedIds((current) => selected ? current.filter((id) => id !== analysis.id) : [...current, analysis.id])} className={`rounded-lg border px-3 py-2 text-xs transition ${selected ? 'border-[#ff6240] bg-[#ff6240]/15 text-white' : assigned ? 'border-emerald-400/20 bg-emerald-400/8 text-emerald-300' : 'border-white/10 bg-white/5 text-muted-foreground'}`}><span className="mr-1">{selected ? '✓' : assigned ? '已排' : '□'}</span>第{analysis.sceneNo}场</button>; })}</div></div><Button disabled={!isAdmin || !selectedIds.length || assigning} onClick={() => void assignWork()} className="h-11"><ListChecks className={assigning ? 'animate-pulse' : ''} />{assigning ? '正在分配…' : '分配到各工种'}</Button></div>
+      <div className="mt-4 rounded-xl border border-white/8 bg-white/[.025] p-3 text-xs leading-5 text-muted-foreground"><b className="text-zinc-200">岗位顺序：</b>编剧交本 → 主美逐场总结 → 主美出图 → Lipa发微信 → 叶总与Yoyo只审核主美图。主美图可用后，抽卡师同步开始白模。</div>
+      {notice && <p className="mt-3 rounded-xl border border-emerald-400/20 bg-emerald-400/[.06] px-3 py-2 text-sm text-emerald-300">{notice}</p>}
       {error && <p className="mt-3 rounded-xl border border-red-400/20 bg-red-400/[.06] px-3 py-2 text-sm text-red-300">{error}</p>}
     </div>
 
-    <div className="mt-7 flex items-end justify-between"><div><p className="eyebrow">YOYO CHECKLIST</p><h2 className="mt-1 text-xl font-semibold">逐项确认清单</h2></div><span className="text-sm text-muted-foreground">红色未过 · 绿色已过</span></div>
+    <div className="mt-7 flex items-end justify-between gap-3"><div><p className="eyebrow">SCRIPT · ART · APPROVAL</p><h2 className="mt-1 text-xl font-semibold">{shortDate(workDate)} · 生产手册</h2></div><span className="text-right text-xs text-muted-foreground">当天场次有橙色标记 · 叶总/Yoyo只审主美图</span></div>
     <div className="mt-3 space-y-4">{analyses.length ? analyses.map((analysis) => {
       const rows = assetItems.filter((item) => item.analysisId === analysis.id).sort((a, b) => a.sortOrder - b.sortOrder);
-      const approved = rows.filter((item) => item.yoyoApproved).length;
-      return <article key={analysis.id} className="control-card p-4 md:p-5"><div className="flex flex-col gap-2 border-b border-white/8 pb-4 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-xs text-[#ff8066]">{analysis.episode} · 第{analysis.sceneNo}场</p><h3 className="mt-1 text-lg font-medium">{analysis.sceneTitle}</h3><p className="mt-1 text-sm text-muted-foreground">{analysis.location}{analysis.sceneSummary ? ` · ${analysis.sceneSummary}` : ''}</p></div><span className={`w-fit rounded-full border px-3 py-1 text-xs ${approved === rows.length && rows.length ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300' : 'border-white/10 bg-white/5 text-muted-foreground'}`}>{approved}/{rows.length} 已通过</span></div><div className="mt-4 grid gap-3 md:grid-cols-2">{rows.map((item) => <div key={item.id} className={`rounded-xl border p-3 ${item.yoyoApproved ? 'border-emerald-400/25 bg-emerald-400/[.05]' : 'border-red-400/25 bg-red-400/[.045]'}`}><div className="flex items-start gap-3"><Checkbox checked={item.yoyoApproved} disabled={!isAdmin} onCheckedChange={(checked) => void toggleApproval(item, Boolean(checked))} aria-label={`${item.name}${item.yoyoApproved ? '已通过' : '未通过'}`} className="mt-0.5 size-5 border-red-400/70 text-black data-checked:border-emerald-400 data-checked:bg-emerald-400" /><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><span className="rounded-md bg-white/6 px-2 py-0.5 text-[10px] text-muted-foreground">{item.category}</span><p className={`text-sm font-medium ${item.yoyoApproved ? 'text-zinc-500 line-through' : ''}`}>{item.name}</p></div><p className="mt-2 text-xs leading-5 text-zinc-300">{item.detail}</p>{item.visualBrief && <p className="mt-2 border-t border-white/6 pt-2 text-[11px] leading-5 text-muted-foreground"><span className="text-zinc-400">美术出图：</span>{item.visualBrief}</p>}</div></div></div>)}</div></article>;
-    }) : <Empty text={modelReady === false ? '模型接通后，在上方粘贴单场剧本开始拆解' : '还没有剧本拆解记录'} />}</div>
+      const fullyApproved = rows.filter((item) => item.yoyoApproved && item.producerApproved).length;
+      const assignedToday = productionItems.some((item) => item.id === `daily-${workDate}-${analysis.id}-script`);
+      return <article key={analysis.id} className="control-card p-4 md:p-5">
+        <div className="flex flex-col gap-3 border-b border-white/8 pb-4 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex flex-wrap items-center gap-2"><p className="text-xs text-[#ff8066]">{analysis.episode} · 第{analysis.sceneNo}场</p><span className={`rounded-full border px-2 py-0.5 text-[10px] ${assignedToday ? 'border-[#ff6240]/30 bg-[#ff6240]/10 text-[#ff8a72]' : 'border-white/8 bg-white/4 text-zinc-500'}`}>{assignedToday ? `已排${shortDate(workDate)}` : '未排当天'}</span></div><h3 className="mt-1 text-lg font-medium">{analysis.sceneTitle}</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">{analysis.location} · {analysis.sceneSummary}</p></div><span className={`w-fit shrink-0 rounded-full border px-3 py-1 text-xs ${fullyApproved === rows.length && rows.length ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300' : 'border-white/10 bg-white/5 text-muted-foreground'}`}>{fullyApproved}/{rows.length} 双方确认</span></div>
+        <SceneScriptBlock analysis={analysis} editable={isAdmin} onSaved={(scriptText) => setAnalyses((current) => current.map((row) => row.id === analysis.id ? { ...row, scriptText } : row))} />
+        <div className="mt-4 grid gap-3 md:grid-cols-2">{rows.map((item) => <HandbookAssetCard key={item.id} item={item} editable={isAdmin} onToggle={(target, checked) => void toggleApproval(item, target, checked)} />)}</div>
+      </article>;
+    }) : <Empty text="还没有放入生产手册的剧本场次" />}</div>
   </section>;
+}
+
+function SceneScriptBlock({ analysis, editable, onSaved }: { analysis: ScriptAnalysis; editable: boolean; onSaved: (scriptText: string) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(analysis.scriptText);
+  const [saving, setSaving] = useState(false);
+  async function save() {
+    setSaving(true);
+    const response = await fetch('/api/script-analysis', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ analysisId: analysis.id, scriptText: draft }) });
+    if (response.ok) { onSaved(draft); setEditing(false); }
+    setSaving(false);
+  }
+  return <div className="mt-4 rounded-xl border border-white/8 bg-black/10 p-3">
+    <div className="flex items-center justify-between gap-3"><p className="text-sm font-medium text-zinc-200">本场剧本</p>{editable && <button type="button" onClick={() => { setDraft(analysis.scriptText); setEditing((value) => !value); }} className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-white"><Pencil className="mr-1 inline h-3 w-3" />{editing ? '取消编辑' : '粘贴／修改剧本'}</button>}</div>
+    {editing ? <><Textarea value={draft} onChange={(event) => setDraft(event.target.value)} rows={12} className="mt-3" placeholder="把当天要生产的这一场完整剧本粘贴进来" /><Button disabled={saving || !draft.trim()} onClick={() => void save()} className="mt-3 h-10"><Check />{saving ? '保存中…' : '保存到生产手册'}</Button></> : <details className="mt-2"><summary className="cursor-pointer text-xs text-cyan-300">展开查看剧本全文</summary><p className="mt-3 whitespace-pre-wrap text-xs leading-6 text-muted-foreground">{analysis.scriptText}</p></details>}
+  </div>;
+}
+
+function HandbookAssetCard({ item, editable, onToggle }: { item: ScriptAssetItem; editable: boolean; onToggle: (target: 'yoyoApproved' | 'producerApproved', checked: boolean) => void }) {
+  const done = item.yoyoApproved && item.producerApproved;
+  return <div className={`rounded-xl border p-3 ${done ? 'border-emerald-400/25 bg-emerald-400/[.05]' : 'border-red-400/25 bg-red-400/[.045]'}`}>
+    <div className="flex flex-wrap items-center gap-2"><span className="rounded-md bg-white/6 px-2 py-0.5 text-[10px] text-muted-foreground">{item.category}</span><p className={`text-sm font-medium ${done ? 'text-zinc-500 line-through' : ''}`}>{item.name}</p></div>
+    <p className="mt-2 text-xs leading-5 text-zinc-300">{item.detail}</p>
+    {item.visualBrief && <p className="mt-2 border-t border-white/6 pt-2 text-[11px] leading-5 text-muted-foreground"><span className="text-zinc-400">主美需要出：</span>{item.visualBrief}</p>}
+    <div className="mt-3 grid grid-cols-2 gap-2">
+      <ApprovalCheck label="Yoyo" checked={item.yoyoApproved} disabled={!editable} onChange={(checked) => onToggle('yoyoApproved', checked)} />
+      <ApprovalCheck label="叶总" checked={item.producerApproved} disabled={!editable} onChange={(checked) => onToggle('producerApproved', checked)} />
+    </div>
+  </div>;
+}
+
+function ApprovalCheck({ label, checked, disabled, onChange }: { label: string; checked: boolean; disabled: boolean; onChange: (checked: boolean) => void }) {
+  return <label className={`flex items-center gap-2 rounded-lg border px-2.5 py-2 text-xs ${checked ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300' : 'border-red-400/25 bg-red-400/[.04] text-red-300'}`}><Checkbox checked={checked} disabled={disabled} onCheckedChange={(next) => onChange(Boolean(next))} className="size-4 border-current data-checked:border-emerald-400 data-checked:bg-emerald-400 data-checked:text-black" /><span>{label}{checked ? '已确认' : '未确认'}</span></label>;
 }
 
 function PlanView({ items, batches, isAdmin, onEdit }: { items: ProductionItem[]; batches: PlanBatch[]; isAdmin: boolean; onEdit: (batch: PlanBatch) => void }) {
@@ -461,8 +497,8 @@ function BatchEditor({ batch, open, onClose, onSave }: { batch: PlanBatch | null
 function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block"><span className="mb-1.5 block text-sm text-muted-foreground">{label}</span>{children}</label>; }
 
 function TimeSelect({ value, onChange }: { value: string; onChange: (value: string) => void }) {
-  const standardValues = new Set([...timeOptions, '异步', '收到后']);
-  return <select value={value} onChange={(event) => onChange(event.target.value)} className="edit-input">{!standardValues.has(value) && <option value={value}>{value}</option>}<option value="异步">异步（不设时间）</option><option value="收到后">收到后</option>{timeOptions.map((time) => <option key={time} value={time}>{time}</option>)}</select>;
+  const standardValues = new Set([...timeOptions, '微信待回复', '收到后']);
+  return <select value={value} onChange={(event) => onChange(event.target.value)} className="edit-input">{!standardValues.has(value) && <option value={value}>{value === '异步' ? '微信待回复（不设时间）' : value}</option>}<option value="微信待回复">微信待回复（不设时间）</option><option value="收到后">收到后</option>{timeOptions.map((time) => <option key={time} value={time}>{time}</option>)}</select>;
 }
 
 function Metric({ label, value, suffix, accent = false }: { label: string; value: string; suffix: string; accent?: boolean }) { return <div><p className="text-xs text-muted-foreground">{label}</p><p className={`mt-1 text-xl font-semibold ${accent ? 'text-violet-300' : ''}`}>{value}<span className="ml-1 text-xs font-normal text-muted-foreground">{suffix}</span></p></div>; }
@@ -516,7 +552,7 @@ function workflowDepth(item: ProductionItem, byId: Map<string, ProductionItem>, 
 }
 
 function workflowLaneName(lane: ProductionItem[]) {
-  if (lane.some((item) => item.owner === '红人（Yoyo）')) return 'Yoyo微信异步审核';
+  if (lane.some((item) => item.owner === '红人（Yoyo）')) return '等待Yoyo微信回复';
   if (lane.some((item) => item.category.includes('剧本'))) return '剧本与过会';
   if (lane.some((item) => item.category === '场景图')) return '美术提报与审核';
   if (lane.some((item) => item.category === '白模')) return '场景白模制作';

@@ -75,6 +75,25 @@ export async function GET() {
         env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_yoyo_async_v1', 'done', ?)").bind(updatedAt),
       ]);
     }
+    const plainReviewLabelVersion = await env.DB.prepare("SELECT value FROM app_settings WHERE key = 'workflow_plain_review_label_v1'").first<{ value: string }>();
+    if (!plainReviewLabelVersion) {
+      const updatedAt = new Date().toISOString();
+      await env.DB.batch([
+        env.DB.prepare("UPDATE production_items SET due_time = '微信待回复', updated_at = ? WHERE due_time = '异步'").bind(updatedAt),
+        env.DB.prepare("UPDATE production_items SET note = REPLACE(note, '异步审核', '等待微信回复'), handoff_deadline = REPLACE(handoff_deadline, '异步审核', '等待微信回复'), updated_at = ? WHERE note LIKE '%异步审核%' OR handoff_deadline LIKE '%异步审核%'").bind(updatedAt),
+        env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_plain_review_label_v1', 'done', ?)").bind(updatedAt),
+      ]);
+    }
+    const visualReviewOnlyVersion = await env.DB.prepare("SELECT value FROM app_settings WHERE key = 'workflow_visual_review_only_v1'").first<{ value: string }>();
+    if (!visualReviewOnlyVersion) {
+      const updatedAt = new Date().toISOString();
+      await env.DB.batch([
+        env.DB.prepare("UPDATE production_items SET category = '美术图审核', title = '在微信反馈第一集主美视觉图', due_time = '微信待回复', depends_on_id = '0910-send-yoyo', note = 'Yoyo只看主美做的图，不审核剧本和白模；Lipa收到意见后逐项更新', updated_at = ? WHERE id = '0911-yoyo-white'").bind(updatedAt),
+        env.DB.prepare("UPDATE production_items SET category = '美术图审核', title = '审核第一集主美视觉图', depends_on_id = '0910-send-yoyo', note = '叶总只看主美做的图，不审核剧本和白模', updated_at = ? WHERE id = '0911-producer-white'").bind(updatedAt),
+        env.DB.prepare("UPDATE production_items SET title = '汇总Yoyo与叶总对主美图的意见', depends_on_id = '0910-send-yoyo', note = '按已收到的意见逐项更新；最终视觉锁定后释放正式镜头', updated_at = ? WHERE id = '0911-review'").bind(updatedAt),
+        env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_visual_review_only_v1', 'done', ?)").bind(updatedAt),
+      ]);
+    }
     const result = await env.DB.prepare(`
       SELECT id, work_date AS workDate, episode, category, title, owner, reviewer, status,
              planned_qty AS plannedQty, completed_qty AS completedQty, due_time AS dueTime,

@@ -19,6 +19,19 @@ export async function GET() {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(row.id, row.episode, row.sceneNo, row.title, row.location, row.owner, row.scriptStatus, row.characterStatus, row.locationStatus, row.wardrobeStatus, row.whiteModelStatus, row.shotStatus, row.roughCutStatus, row.finalStatus, row.updatedAt)));
     }
+    const sceneVersion = await env.DB.prepare("SELECT value FROM app_settings WHERE key = 'episode_one_v3_eight_scenes_v1'").first<{ value: string }>();
+    if (!sceneVersion) {
+      const updatedAt = new Date().toISOString();
+      await env.DB.batch([
+        env.DB.prepare("DELETE FROM scenes WHERE episode = '第1集'"),
+        ...initialScenes.map((row) => env.DB.prepare(`
+          INSERT INTO scenes
+          (id, episode, scene_no, title, location, owner, script_status, character_status, location_status, wardrobe_status, white_model_status, shot_status, rough_cut_status, final_status, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(row.id, row.episode, row.sceneNo, row.title, row.location, row.owner, row.scriptStatus, row.characterStatus, row.locationStatus, row.wardrobeStatus, row.whiteModelStatus, row.shotStatus, row.roughCutStatus, row.finalStatus, updatedAt)),
+        env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('episode_one_v3_eight_scenes_v1', 'done', ?)").bind(updatedAt),
+      ]);
+    }
     const result = await env.DB.prepare(`
       SELECT id, episode, scene_no AS sceneNo, title, location, owner,
              script_status AS scriptStatus, character_status AS characterStatus,

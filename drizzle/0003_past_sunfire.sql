@@ -1,0 +1,1 @@
+ALTER TABLE `script_analysis_items` ADD `producer_approved` integer DEFAULT false NOT NULL;

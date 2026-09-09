@@ -84,6 +84,7 @@ export const scriptAnalysisItems = sqliteTable('script_analysis_items', {
   detail: text('detail').notNull().default(''),
   visualBrief: text('visual_brief').notNull().default(''),
   yoyoApproved: integer('yoyo_approved', { mode: 'boolean' }).notNull().default(false),
+  producerApproved: integer('producer_approved', { mode: 'boolean' }).notNull().default(false),
   sortOrder: integer('sort_order').notNull().default(0),
   updatedAt: text('updated_at').notNull(),
 });
