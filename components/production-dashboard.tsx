@@ -134,7 +134,7 @@ export function ProductionDashboard() {
   }
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main className="min-h-screen bg-transparent text-foreground">
       <Tabs defaultValue="today" className="mx-auto min-h-screen w-full max-w-6xl pb-24 md:pb-9">
         <header className="sticky top-0 z-30 border-b border-white/8 bg-background/88 px-4 py-3 backdrop-blur-xl md:px-8">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">

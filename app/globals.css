@@ -34,7 +34,7 @@
 :root {
   --background: #0e0f12;
   --foreground: #f5f4f2;
-  --card: #191b20;
+  --card: rgba(20, 23, 28, .91);
   --card-foreground: #f5f4f2;
   --popover: #1d2025;
   --popover-foreground: #f5f4f2;
@@ -55,13 +55,27 @@
 
 * { box-sizing: border-box; border-color: var(--border); }
 html { background: var(--background); color-scheme: dark; }
-body { margin: 0; background: var(--background); color: var(--foreground); font-family: var(--font-geist-sans), "PingFang SC", "Microsoft YaHei", sans-serif; }
+body {
+  min-height: 100vh;
+  margin: 0;
+  background-color: var(--background);
+  background-image:
+    linear-gradient(180deg, rgba(7, 10, 14, .76) 0%, rgba(8, 10, 14, .88) 42%, rgba(8, 9, 12, .94) 100%),
+    url('/folded-courtyard-bg.jpg');
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed;
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), "PingFang SC", "Microsoft YaHei", sans-serif;
+}
 button { font: inherit; }
 
 .control-card {
   border: 1px solid rgba(255,255,255,.09);
   border-radius: 1.25rem;
-  background: linear-gradient(145deg, rgba(31,34,40,.96), rgba(22,24,29,.96));
+  background: linear-gradient(145deg, rgba(31,34,40,.93), rgba(18,20,25,.94));
+  backdrop-filter: blur(14px);
   box-shadow: inset 0 1px rgba(255,255,255,.025), 0 18px 55px rgba(0,0,0,.18);
 }
 .eyebrow { font-size: 11px; line-height: 1rem; font-weight: 700; letter-spacing: .13em; color: #858a94; }
@@ -80,5 +94,9 @@ button { font: inherit; }
 .edit-input option { background: #24272d; color: #f5f4f2; }
 
 @media (min-width: 768px) {
-  body { background-image: radial-gradient(circle at 80% -10%, rgba(255,98,64,.08), transparent 34%); }
+  body { background-position: center top; }
+}
+
+@media (max-width: 767px) {
+  body { background-attachment: scroll; background-size: auto 100vh; }
 }
