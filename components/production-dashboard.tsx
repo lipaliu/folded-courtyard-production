@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   CalendarDays, Check, CheckCircle2, ChevronRight, CircleDashed,
-  Clock3, Film, LayoutDashboard, ListChecks, Loader2, Pencil, RefreshCw, Rows3, X,
+  ClipboardCopy, Clock3, Film, LayoutDashboard, ListChecks, Loader2, Pencil, RefreshCw, Rows3, X,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -185,9 +185,30 @@ export function ProductionDashboard() {
 }
 
 function TodayView({ selectedDate, setSelectedDate, items, progress, completed, planned, isAdmin, onEdit, onAdd, onToggle }: { selectedDate: string; setSelectedDate: (value: string) => void; items: ProductionItem[]; progress: number; completed: number; planned: number; isAdmin: boolean; onEdit: (item: ProductionItem) => void; onAdd: (role: string) => void; onToggle: (item: ProductionItem, checked: boolean) => void }) {
+  const [showSummary, setShowSummary] = useState(false);
+  const [copied, setCopied] = useState(false);
   const dateText = new Intl.DateTimeFormat('zh-CN', { month: 'long', day: 'numeric', weekday: 'short', timeZone: 'UTC' }).format(new Date(`${selectedDate}T00:00:00Z`));
   const incomplete = items.filter((item) => item.status !== '已通过').length;
   const workflowLanes = buildWorkflowLanes(items);
+  const finishedItems = items.filter((item) => item.status === '已通过');
+  const unfinishedItems = items.filter((item) => item.status !== '已通过');
+  const rolloverItems = unfinishedItems.filter((item) => item.owner !== '红人（Yoyo）');
+  const yoyoPendingItems = unfinishedItems.filter((item) => item.owner === '红人（Yoyo）');
+  useEffect(() => { setShowSummary(false); setCopied(false); }, [selectedDate]);
+
+  async function copySummary() {
+    const lines = [
+      `《${dateText}每日生产汇总》`,
+      `完成：${finishedItems.length}/${items.length}项`, '',
+      '【已完成】', ...(finishedItems.length ? finishedItems.map((item) => `✓ ${item.owner}｜${item.title}`) : ['无']), '',
+      '【未完成】', ...(unfinishedItems.length ? unfinishedItems.map((item) => `□ ${item.owner}｜${item.title}`) : ['无']), '',
+      '【需要顺延】', ...(rolloverItems.length ? rolloverItems.map((item) => `→ ${item.owner}｜${item.title}`) : ['无']), '',
+      '【Yoyo异步待回】', ...(yoyoPendingItems.length ? yoyoPendingItems.map((item) => `□ ${item.title}`) : ['无']),
+    ];
+    await navigator.clipboard.writeText(lines.join('\n'));
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1600);
+  }
   return <>
     <section className="grid gap-4 md:grid-cols-[1.45fr_.75fr]">
       <div className="control-card overflow-hidden p-5 md:p-7">
@@ -236,7 +257,11 @@ function TodayView({ selectedDate, setSelectedDate, items, progress, completed, 
         })}
       </div>
     </section>
-    <section className="mt-7 rounded-2xl border border-[#ff6240]/20 bg-[#ff6240]/8 p-4 md:p-5"><div className="flex gap-3"><div className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#ff6240] text-black"><ChevronRight className="h-4 w-4" /></div><div><p className="font-medium">生产规则</p><p className="mt-1 text-sm leading-6 text-muted-foreground">剧本、场景图、白模按可执行条件持续推进；Yoyo异步反馈，未回复只显示红色未勾，不阻断这三条制作线。最终锁定和正式镜头放行再汇总审核意见；每集素材齐套后固定留1天初剪、1天修改成片。</p></div></div></section>
+    <section className="mt-7 rounded-2xl border border-white/8 bg-card p-4 md:p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="eyebrow">DAILY REPORT</p><h2 className="mt-1 text-xl font-semibold">每日生产汇总</h2><p className="mt-1 text-sm text-muted-foreground">根据当天打钩结果，自动整理完成、未完成和需要顺延的工作。</p></div><Button onClick={() => setShowSummary(true)} className="h-11 shrink-0"><ListChecks />一键生成今日汇总</Button></div>
+      {showSummary && <div className="mt-4 border-t border-white/8 pt-4"><div className="flex items-center justify-between gap-3"><p className="font-medium">{dateText} · 完成 {finishedItems.length}/{items.length} 项</p><Button variant="outline" size="sm" onClick={() => void copySummary()}><ClipboardCopy />{copied ? '已复制' : '复制发群'}</Button></div><div className="mt-4 grid gap-3 md:grid-cols-3"><SummaryGroup title="已完成" tone="green" items={finishedItems} empty="今天还没有勾选完成项" /><SummaryGroup title="未完成" tone="red" items={unfinishedItems} empty="今天任务已全部完成" /><SummaryGroup title="需要顺延" tone="amber" items={rolloverItems} empty="没有需要顺延的团队任务" /></div>{yoyoPendingItems.length > 0 && <div className="mt-3 rounded-xl border border-violet-400/20 bg-violet-400/[.05] p-3"><p className="text-sm font-medium text-violet-300">Yoyo异步待回 · {yoyoPendingItems.length}项</p><p className="mt-1 text-xs leading-5 text-muted-foreground">保持红色未勾即可，不计入团队顺延，也不影响剧本、美术和白模继续工作。</p></div>}</div>}
+    </section>
+    <section className="mt-4 rounded-2xl border border-[#ff6240]/20 bg-[#ff6240]/8 p-4 md:p-5"><div className="flex gap-3"><div className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#ff6240] text-black"><ChevronRight className="h-4 w-4" /></div><div><p className="font-medium">怎么推进</p><p className="mt-1 text-sm leading-6 text-muted-foreground">Yoyo没回复时，编剧、美术和白模继续做。第一集的最终意见确认后，再开始生成正式视频。视频素材全部生成后，先粗搭一版交给剪辑师，剪辑师用2—3天完成剪辑。</p></div></div></section>
   </>;
 }
 
@@ -346,6 +371,10 @@ function BatchEditor({ batch, open, onClose, onSave }: { batch: PlanBatch | null
 function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block"><span className="mb-1.5 block text-sm text-muted-foreground">{label}</span>{children}</label>; }
 
 function Metric({ label, value, suffix, accent = false }: { label: string; value: string; suffix: string; accent?: boolean }) { return <div><p className="text-xs text-muted-foreground">{label}</p><p className={`mt-1 text-xl font-semibold ${accent ? 'text-violet-300' : ''}`}>{value}<span className="ml-1 text-xs font-normal text-muted-foreground">{suffix}</span></p></div>; }
+function SummaryGroup({ title, tone, items, empty }: { title: string; tone: 'green' | 'red' | 'amber'; items: ProductionItem[]; empty: string }) {
+  const styles = tone === 'green' ? 'border-emerald-400/20 bg-emerald-400/[.045] text-emerald-300' : tone === 'red' ? 'border-red-400/20 bg-red-400/[.04] text-red-300' : 'border-amber-400/20 bg-amber-400/[.045] text-amber-300';
+  return <div className={`rounded-xl border p-3 ${styles}`}><div className="flex items-center justify-between"><p className="text-sm font-medium">{title}</p><span className="text-xs">{items.length}项</span></div><div className="mt-2 space-y-2">{items.length ? items.map((item) => <div key={item.id} className="border-t border-white/6 pt-2"><p className="text-xs leading-5 text-zinc-200">{item.title}</p><p className="mt-0.5 text-[11px] text-muted-foreground">{item.owner}</p></div>) : <p className="text-xs leading-5 text-muted-foreground">{empty}</p>}</div></div>;
+}
 function NavTab({ value, label, icon }: { value: string; label: string; icon: React.ReactNode }) { return <TabsTrigger value={value} className="group flex h-full flex-col gap-1 rounded-[16px] text-xs text-zinc-500 data-[state=active]:bg-white/8 data-[state=active]:text-white md:flex-row md:gap-2 md:rounded-lg [&_svg]:h-[18px] [&_svg]:w-[18px]"><span>{icon}</span><span>{label}</span></TabsTrigger>; }
 function Empty({ text, success = false }: { text: string; success?: boolean }) { return <div className="control-card grid min-h-52 place-items-center p-8 text-center"><div><div className={`mx-auto grid h-11 w-11 place-items-center rounded-full ${success ? 'bg-emerald-400/10 text-emerald-300' : 'bg-white/5 text-muted-foreground'}`}>{success ? <CheckCircle2 className="h-5 w-5" /> : <CircleDashed className="h-5 w-5" />}</div><p className="mt-3 text-sm text-muted-foreground">{text}</p></div></div>; }
 function shortDate(date: string) { const [, month, day] = date.split('-'); return `${Number(month)}.${day}`; }
