@@ -373,6 +373,8 @@ function ScriptAnalysisView({ isAdmin, selectedDate, productionItems, onAssigned
     setNotice(`已把“${draft.sceneTitle}”放入${shortDate(workDate)}生产手册，并建立主美的人物造型、服装、道具、场景图工作清单。`);
   }
 
+  const dailyAnalyses = analyses.filter((analysis) => productionItems.some((item) => item.workDate === workDate && item.id === `daily-${workDate}-${analysis.id}-script`));
+
   return <section>
     <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">DAILY PRODUCTION BOOK</p><h2 className="mt-1 text-2xl font-semibold">每日生产手册</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">当天放入要生产的剧本与场次。主美负责按剧本整理、生成并提报人物造型、服装、道具和场景图片。</p></div><span className="w-fit rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1.5 text-xs text-cyan-300">当前由我先拆解 · 不接外部模型</span></div>
     <div className="control-card p-4 md:p-6">
@@ -384,7 +386,7 @@ function ScriptAnalysisView({ isAdmin, selectedDate, productionItems, onAssigned
     </div>
 
     <div className="mt-7 flex items-end justify-between gap-3"><div><p className="eyebrow">SCRIPT · ART · APPROVAL</p><h2 className="mt-1 text-xl font-semibold">{shortDate(workDate)} · 生产手册</h2></div><span className="text-right text-xs text-muted-foreground">当天场次有橙色标记 · 叶总/Yoyo只审主美图</span></div>
-    <div className="mt-3 space-y-4">{analyses.length ? analyses.map((analysis) => {
+    <div className="mt-3 space-y-4">{dailyAnalyses.length ? dailyAnalyses.map((analysis) => {
       const rows = assetItems.filter((item) => item.analysisId === analysis.id).sort((a, b) => a.sortOrder - b.sortOrder);
       const fullyApproved = rows.filter((item) => item.yoyoApproved && item.producerApproved).length;
       const assignedToday = productionItems.some((item) => item.id === `daily-${workDate}-${analysis.id}-script`);
@@ -393,7 +395,7 @@ function ScriptAnalysisView({ isAdmin, selectedDate, productionItems, onAssigned
         <SceneScriptBlock analysis={analysis} editable={isAdmin} onSaved={(scriptText) => setAnalyses((current) => current.map((row) => row.id === analysis.id ? { ...row, scriptText } : row))} />
         <div className="mt-4 grid gap-3 md:grid-cols-2">{rows.map((item) => <HandbookAssetCard key={item.id} item={item} editable={isAdmin} onSave={(changes) => updateAsset(item, changes)} onToggle={(target, checked) => void toggleApproval(item, target, checked)} />)}</div>
       </article>;
-    }) : <Empty text="还没有放入生产手册的剧本场次" />}</div>
+    }) : <Empty text={`${shortDate(workDate)}还没有工作剧本；Lipa可在上方选择已有场次，或添加新剧本。`} />}</div>
   </section>;
 }
 
