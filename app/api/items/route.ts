@@ -24,6 +24,28 @@ export async function GET() {
         env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_items_v3', 'done', ?)").bind(new Date().toISOString()),
       ]);
     }
+    const resetVersion = await env.DB.prepare("SELECT value FROM app_settings WHERE key = 'progress_reset_0910_v1'").first<{ value: string }>();
+    if (!resetVersion) {
+      const updatedAt = new Date().toISOString();
+      await env.DB.batch([
+        env.DB.prepare("UPDATE production_items SET status = '未开始', completed_qty = 0, updated_at = ? WHERE work_date = '2026-09-10'").bind(updatedAt),
+        env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('progress_reset_0910_v1', 'done', ?)").bind(updatedAt),
+      ]);
+    }
+    const scriptFlowVersion = await env.DB.prepare("SELECT value FROM app_settings WHERE key = 'workflow_script_flow_v1'").first<{ value: string }>();
+    if (!scriptFlowVersion) {
+      const updatedAt = new Date().toISOString();
+      const meeting = initialItems.find((row) => row.id === '0910-script-meeting');
+      if (meeting) {
+        await env.DB.batch([
+          env.DB.prepare("UPDATE production_items SET episode = '第1—10集', category = '剧本', title = '提交全剧大纲＋分集初版', owner = '编剧', status = '未开始', planned_qty = 1, completed_qty = 0, due_time = '15:00', depends_on_id = '', handoff_to = '联合制片人／导演：Lipa', handoff_deadline = '15:30', note = '先锁定强逻辑内容和每集方向', sort_order = 1, updated_at = ? WHERE id = '0910-script'").bind(updatedAt),
+          env.DB.prepare(`INSERT OR REPLACE INTO production_items (id, work_date, episode, category, title, owner, reviewer, status, planned_qty, completed_qty, due_time, depends_on_id, handoff_to, handoff_deadline, note, sort_order, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+            .bind(meeting.id, meeting.workDate, meeting.episode, meeting.category, meeting.title, meeting.owner, meeting.reviewer, meeting.status, meeting.plannedQty, meeting.completedQty, meeting.dueTime, meeting.dependsOnId, meeting.handoffTo, meeting.handoffDeadline, meeting.note, meeting.sortOrder, updatedAt),
+          env.DB.prepare("UPDATE production_items SET title = '完成第一集台词细化版并交Lipa', status = '未开始', completed_qty = 0, due_time = '20:00', depends_on_id = '0910-script-meeting', handoff_to = '联合制片人／导演：Lipa', handoff_deadline = '20:15', note = '按9月10日过会意见细化人物状态、动作与全部台词', updated_at = ? WHERE id = '0911-lock'").bind(updatedAt),
+          env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_script_flow_v1', 'done', ?)").bind(updatedAt),
+        ]);
+      }
+    }
     const result = await env.DB.prepare(`
       SELECT id, work_date AS workDate, episode, category, title, owner, reviewer, status,
              planned_qty AS plannedQty, completed_qty AS completedQty, due_time AS dueTime,
