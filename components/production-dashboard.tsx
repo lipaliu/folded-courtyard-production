@@ -149,7 +149,7 @@ export function ProductionDashboard() {
             <div>
               <p className="text-[12px] font-medium tracking-[0.16em] text-muted-foreground">总制片推进台</p>
               <h1 className="mt-0.5 text-lg font-semibold tracking-tight">折叠庭院的她</h1>
-              <p className="mt-0.5 text-[10px] text-muted-foreground">{me ? `${me.role}：${me.name}` : '正在确认登录身份…'}</p>
+              <p className="mt-1 max-w-[245px] text-[10px] leading-4 text-muted-foreground sm:max-w-none">出品人：叶总　出演：Yoyo　联合制片人／导演：Lipa　编剧：丙丙　主美：小金</p>
             </div>
             <div className="flex items-center gap-2">
               <button onClick={() => void loadData()} aria-label="刷新全组进度" className="grid h-9 w-9 place-items-center rounded-full border border-white/8 bg-white/4 text-muted-foreground">
