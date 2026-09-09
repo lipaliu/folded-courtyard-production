@@ -102,11 +102,6 @@ export function ProductionDashboard() {
 
   const todayItems = useMemo(() => items.filter((item) => item.workDate === selectedDate), [items, selectedDate]);
   const pendingReview = useMemo(() => items.filter((item) => item.status === '待审核'), [items]);
-  const countedItems = todayItems.filter((item) => item.owner !== '红人（Yoyo）');
-  const completed = countedItems.reduce((sum, item) => sum + item.completedQty, 0);
-  const planned = countedItems.reduce((sum, item) => sum + item.plannedQty, 0);
-  const dayProgress = planned ? Math.min(100, Math.round((completed / planned) * 100)) : 0;
-
   async function updateItem(id: string, changes: Partial<ProductionItem>) {
     setItems((current) => current.map((item) => item.id === id ? { ...item, ...changes } : item));
     try {
@@ -172,7 +167,7 @@ export function ProductionDashboard() {
 
         <div className="px-4 py-5 md:px-8 md:py-8">
           <div className="mx-auto max-w-6xl">
-            <TabsContent value="today" className="mt-0"><TodayView selectedDate={selectedDate} setSelectedDate={setSelectedDate} items={todayItems} progress={dayProgress} completed={completed} planned={planned} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedItem} onAdd={setCreatingRole} onOpenHandbook={() => setActiveTab('breakdown')} onToggle={(item, checked) => void (item.category === '整集资产确认' ? updateEpisodeApproval(item, checked) : updateItem(item.id, { status: checked ? '已通过' : '未开始', completedQty: checked ? item.plannedQty : 0 }))} /></TabsContent>
+            <TabsContent value="today" className="mt-0"><TodayView selectedDate={selectedDate} setSelectedDate={setSelectedDate} items={todayItems} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedItem} onAdd={setCreatingRole} onOpenHandbook={() => setActiveTab('breakdown')} onToggle={(item, checked) => void (item.category === '整集资产确认' ? updateEpisodeApproval(item, checked) : updateItem(item.id, { status: checked ? '已通过' : '未开始', completedQty: checked ? item.plannedQty : 0 }))} /></TabsContent>
             <TabsContent value="plan" className="mt-0"><PlanView items={items} batches={batches} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedBatch} /></TabsContent>
             <TabsContent value="scenes" className="mt-0"><ScenesView scenes={scenes} isAdmin={Boolean(me?.isAdmin)} onChange={updateScene} /></TabsContent>
             <TabsContent value="breakdown" className="mt-0"><ScriptAnalysisView isAdmin={Boolean(me?.isAdmin)} selectedDate={selectedDate} productionItems={items} onAssigned={async (workDate) => { setSelectedDate(workDate); await loadData(); }} /></TabsContent>
@@ -202,17 +197,34 @@ export function ProductionDashboard() {
   );
 }
 
-function TodayView({ selectedDate, setSelectedDate, items, progress, completed, planned, isAdmin, onEdit, onAdd, onOpenHandbook, onToggle }: { selectedDate: string; setSelectedDate: (value: string) => void; items: ProductionItem[]; progress: number; completed: number; planned: number; isAdmin: boolean; onEdit: (item: ProductionItem) => void; onAdd: (role: string) => void; onOpenHandbook: () => void; onToggle: (item: ProductionItem, checked: boolean) => void }) {
+function TodayView({ selectedDate, setSelectedDate, items, isAdmin, onEdit, onAdd, onOpenHandbook, onToggle }: { selectedDate: string; setSelectedDate: (value: string) => void; items: ProductionItem[]; isAdmin: boolean; onEdit: (item: ProductionItem) => void; onAdd: (role: string) => void; onOpenHandbook: () => void; onToggle: (item: ProductionItem, checked: boolean) => void }) {
   const [showSummary, setShowSummary] = useState(false);
   const [copied, setCopied] = useState(false);
   const dateText = new Intl.DateTimeFormat('zh-CN', { month: 'long', day: 'numeric', weekday: 'short', timeZone: 'UTC' }).format(new Date(`${selectedDate}T00:00:00Z`));
-  const incomplete = items.filter((item) => item.status !== '已通过').length;
   const workflowLanes = buildWorkflowLanes(items);
   const finishedItems = items.filter((item) => item.status === '已通过');
   const unfinishedItems = items.filter((item) => item.status !== '已通过');
   const rolloverItems = unfinishedItems.filter((item) => item.owner !== '红人（Yoyo）');
   const yoyoPendingItems = unfinishedItems.filter((item) => item.owner === '红人（Yoyo）');
   const dailyScripts = items.filter((item) => item.category === '剧本' || item.id.endsWith('-script'));
+  const stageDefinitions = [
+    { label: '编剧', match: (item: ProductionItem) => item.owner === '编剧' },
+    { label: '主美', match: (item: ProductionItem) => item.owner === '主美' },
+    { label: 'Lipa', match: (item: ProductionItem) => item.owner.includes('Lipa') },
+    { label: '叶总', match: (item: ProductionItem) => item.owner.includes('叶总') },
+    { label: '抽卡', match: (item: ProductionItem) => item.owner === 'AIGC抽卡师' || item.owner === '抽卡师' },
+    { label: '剪辑', match: (item: ProductionItem) => item.owner === '剪辑' },
+  ];
+  const stageProgress = stageDefinitions.map((stage) => {
+    const stageItems = items.filter(stage.match);
+    return { ...stage, itemCount: stageItems.length, done: Boolean(stageItems.length && stageItems.every((item) => item.status === '已通过')) };
+  });
+  const scheduledStages = stageProgress.filter((stage) => stage.itemCount > 0);
+  const completedStages = scheduledStages.filter((stage) => stage.done).length;
+  const stageRatio = scheduledStages.length ? Math.round(completedStages / scheduledStages.length * 100) : 0;
+  const artItems = items.filter((item) => item.owner === '主美' || item.category === '美术清单');
+  const artCompleted = artItems.reduce((sum, item) => sum + item.completedQty, 0);
+  const artPlanned = artItems.reduce((sum, item) => sum + item.plannedQty, 0);
   const dayNumber = Math.max(1, Math.round((new Date(`${selectedDate}T00:00:00Z`).getTime() - new Date('2026-09-10T00:00:00Z').getTime()) / 86400000) + 1);
   const selectedMonthDay = `${Number(selectedDate.slice(5, 7))}月${Number(selectedDate.slice(8, 10))}日`;
   useEffect(() => { setShowSummary(false); setCopied(false); }, [selectedDate]);
@@ -246,15 +258,16 @@ function TodayView({ selectedDate, setSelectedDate, items, progress, completed, 
             <h2 className="mt-2 text-2xl font-semibold tracking-tight md:text-3xl">{selectedDate <= '2026-09-11' ? '第一集开机筹备' : '滚动生产日'}</h2>
             <p className="mt-2 max-w-xl text-[15px] leading-6 text-muted-foreground">剧本、场景图与白模同步推进；Yoyo在微信回复，没回复也不耽误能继续做的工作。</p>
           </div>
-            <div className="relative grid h-20 w-20 shrink-0 place-items-center rounded-full" title="今日进度 = 实际完成量 ÷ 计划量" style={{ background: `conic-gradient(#ff6240 0 ${progress}%, rgba(255,255,255,.08) ${progress}% 100%)` }}>
-            <div className="grid h-[66px] w-[66px] place-items-center rounded-full bg-card"><div className="text-center"><b className="text-xl">{progress}%</b><span className="block text-[10px] text-muted-foreground">完成量/计划量</span></div></div>
+            <div className="relative grid h-20 w-20 shrink-0 place-items-center rounded-full" title="只计算已排生产环节，不把不同工种的工作数量混在一起" style={{ background: `conic-gradient(#ff6240 0 ${stageRatio}%, rgba(255,255,255,.08) ${stageRatio}% 100%)` }}>
+            <div className="grid h-[66px] w-[66px] place-items-center rounded-full bg-card"><div className="text-center"><b className="text-xl">{completedStages}/{scheduledStages.length}</b><span className="block text-[10px] text-muted-foreground">环节完成</span></div></div>
           </div>
         </div>
         <div className="mt-6 grid grid-cols-3 gap-2 border-t border-white/8 pt-4">
-          <Metric label="完成" value={String(completed)} suffix={`/ ${planned}`} />
+          <Metric label="完成环节" value={String(completedStages)} suffix={`/ ${scheduledStages.length}`} />
+          <Metric label="主美清单" value={String(artCompleted)} suffix={`/ ${artPlanned}`} />
           <Metric label="Yoyo待回" value={String(items.filter((item) => item.owner === '红人（Yoyo）' && item.status !== '已通过').length)} suffix="项" accent />
-          <Metric label="未完成" value={String(incomplete)} suffix="项" />
         </div>
+        <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-6">{stageProgress.map((stage) => <div key={stage.label} className={`rounded-lg border px-2 py-2 text-center text-xs ${stage.done ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300' : stage.itemCount ? 'border-red-400/25 bg-red-400/[.045] text-red-300' : 'border-white/8 bg-white/[.025] text-zinc-600'}`}><span className="mr-1">{stage.done ? '✓' : stage.itemCount ? '□' : '—'}</span>{stage.label}<span className="mt-1 block text-[9px] opacity-70">{stage.done ? '已完成' : stage.itemCount ? '进行中' : '今日未排'}</span></div>)}</div>
       </div>
       <div className="control-card p-5 md:p-6">
         <div className="flex items-center justify-between"><p className="eyebrow">选择工作日</p><CalendarDays className="h-4 w-4 text-[#ff6240]" /></div>
