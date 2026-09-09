@@ -74,6 +74,10 @@ export async function POST(request: Request) {
         .bind(`${analysisId}-auto-${index + 1}`, analysisId, item.category, item.name, item.detail, item.visualBrief, index + 1, now)));
       statements.push(env.DB.prepare('INSERT INTO activity_log (item_type, item_id, action, operator, created_at) VALUES (?, ?, ?, ?, ?)').bind('script_analysis', analysisId, `导入${body.fileName || '剧本文件'}并自动拆解主美工作`, 'Lipa', now));
     }
+    for (const episode of [...new Set(scenes.slice(0, 40).map((scene) => scene.episode))]) {
+      statements.push(env.DB.prepare("UPDATE production_items SET status = '未开始', completed_qty = 0, updated_at = ? WHERE episode = ? AND category = '整集资产确认'").bind(now, episode));
+      statements.push(env.DB.prepare('DELETE FROM production_items WHERE id = ?').bind(`rollup-${body.workDate}-${episodeKey(episode)}-aigc`));
+    }
     await env.DB.batch(statements);
     return Response.json({ ok: true, analysisIds, sceneCount: analysisIds.length, itemCount: scenes.slice(0, 40).reduce((sum, scene) => sum + scene.items.length, 0) });
   }
@@ -135,29 +139,24 @@ export async function POST(request: Request) {
   const itemCountByAnalysis = new Map(itemRows.results.map((row) => [row.analysisId, Number(row.itemCount)]));
   const now = new Date().toISOString();
   const workDate = body.workDate!;
-  const tasks = analysisRows.results.flatMap((analysis, sceneIndex) => {
-    const prefix = `daily-${workDate}-${analysis.id}`;
-    const sceneLabel = `${analysis.episode}第${analysis.sceneNo}场`;
-    const count = itemCountByAnalysis.get(analysis.id) || 1;
-    return [
-      task(`${prefix}-script`, workDate, analysis.episode, '剧本', `锁定${sceneLabel}剧本、动作与台词`, '编剧', 1, '12:00', '', '联合制片人／导演：Lipa', '12:15', `当天选定场次：${analysis.sceneTitle}；剧本若有改动，先同步本场拆解。`, sceneIndex * 10 + 1, now),
-      task(`${prefix}-breakdown`, workDate, analysis.episode, '美术拆解', `按剧本总结${sceneLabel}需要生成的全部内容`, '主美', count, '14:00', `${prefix}-script`, '联合制片人／导演：Lipa', '14:15', `逐项核对场景、人物、服装、妆发、道具和美术图，共${count}项；叶总和Yoyo不审核剧本。`, sceneIndex * 10 + 2, now),
-      task(`${prefix}-art`, workDate, analysis.episode, '美术出图', `生成${sceneLabel}场景、人物、服化道与道具图`, '主美', count, '18:00', `${prefix}-breakdown`, '联合制片人／导演：Lipa', '18:15', `按主美确认后的拆解清单逐项出图，共${count}项；出一项可先提报一项。`, sceneIndex * 10 + 3, now),
-      task(`${prefix}-white`, workDate, analysis.episode, '白模', `依据主美图制作${sceneLabel}白模与调度预演`, 'AIGC抽卡师', 1, '21:00', `${prefix}-art`, '联合制片人／导演：Lipa', '21:15', '主美基础图可用后即启动；不等待叶总或Yoyo回复，未确认部分标为待核准。', sceneIndex * 10 + 4, now),
-      task(`${prefix}-send`, workDate, analysis.episode, '提报审核', `检查${sceneLabel}主美图并发微信给Yoyo、叶总`, '联合制片人／导演：Lipa', count, '18:30', `${prefix}-art`, '红人（Yoyo）＋制片人（叶总）', '发出即进入审核', '只发送主美生成的视觉图，不发送剧本；收到一项发一项。', sceneIndex * 10 + 5, now),
-      task(`${prefix}-yoyo`, workDate, analysis.episode, '美术图审核', `微信反馈${sceneLabel}主美视觉图`, '红人（Yoyo）', count, '微信待回复', `${prefix}-send`, '联合制片人／导演：Lipa', '收到回复后更新', 'Yoyo只审核主美图、不审核剧本；红色未勾代表尚未收到确认，不阻断剧本、美术和白模。', sceneIndex * 10 + 6, now),
-      task(`${prefix}-producer`, workDate, analysis.episode, '美术图审核', `审核${sceneLabel}主美视觉图`, '制片人（叶总）', count, '20:00', `${prefix}-send`, '联合制片人／导演：Lipa', '20:15', '叶总只审核主美图，不审核剧本。', sceneIndex * 10 + 7, now),
-    ];
-  });
+  const groups = new Map<string, { episode: string; count: number; sceneCount: number }>();
+  for (const analysis of analysisRows.results) {
+    const group = groups.get(analysis.episode) || { episode: analysis.episode, count: 0, sceneCount: 0 };
+    group.count += itemCountByAnalysis.get(analysis.id) || 1;
+    group.sceneCount += 1;
+    groups.set(analysis.episode, group);
+  }
+  const tasks = [...groups.values()].flatMap((group, groupIndex) => episodeRollupTasks(workDate, group.episode, group.count, group.sceneCount, groupIndex, now));
+  const obsoleteTaskDeletes = uniqueIds.flatMap((analysisId) => ['script', 'breakdown', 'art', 'white', 'send', 'yoyo', 'producer'].map((suffix) => env.DB.prepare('DELETE FROM production_items WHERE id = ?').bind(`daily-${workDate}-${analysisId}-${suffix}`)));
 
-  await env.DB.batch(tasks.map((row) => env.DB.prepare(`INSERT INTO production_items
+  await env.DB.batch([...obsoleteTaskDeletes, ...tasks.map((row) => env.DB.prepare(`INSERT INTO production_items
     (id, work_date, episode, category, title, owner, reviewer, status, planned_qty, completed_qty, due_time, depends_on_id, handoff_to, handoff_deadline, note, sort_order, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, '未开始', ?, 0, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET episode = excluded.episode, category = excluded.category, title = excluded.title,
       owner = excluded.owner, reviewer = excluded.reviewer, planned_qty = excluded.planned_qty, due_time = excluded.due_time,
       depends_on_id = excluded.depends_on_id, handoff_to = excluded.handoff_to, handoff_deadline = excluded.handoff_deadline,
       note = excluded.note, sort_order = excluded.sort_order, updated_at = excluded.updated_at`)
-    .bind(row.id, row.workDate, row.episode, row.category, row.title, row.owner, 'Yoyo', row.plannedQty, row.dueTime, row.dependsOnId, row.handoffTo, row.handoffDeadline, row.note, row.sortOrder, row.updatedAt)));
+    .bind(row.id, row.workDate, row.episode, row.category, row.title, row.owner, 'Yoyo', row.plannedQty, row.dueTime, row.dependsOnId, row.handoffTo, row.handoffDeadline, row.note, row.sortOrder, row.updatedAt))]);
 
   return Response.json({ ok: true, assignedScenes: analysisRows.results.length, taskCount: tasks.length });
 }
@@ -165,7 +164,32 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   const admin = await requireAdmin(request);
   if (!admin) return Response.json({ error: '只有Lipa可以修改审核项' }, { status: 403 });
-  const body = await request.json() as Partial<{ id: string; analysisId: string; scriptText: string; yoyoApproved: boolean; producerApproved: boolean; name: string; detail: string; visualBrief: string }>;
+  const body = await request.json() as Partial<{ id: string; analysisId: string; scriptText: string; episode: string; workDate: string; approvalTarget: 'yoyo' | 'producer'; approved: boolean; yoyoApproved: boolean; producerApproved: boolean; name: string; detail: string; visualBrief: string }>;
+  if (body.episode && body.workDate && body.approvalTarget && typeof body.approved === 'boolean') {
+    const column = body.approvalTarget === 'yoyo' ? 'yoyo_approved' : 'producer_approved';
+    const updatedAt = new Date().toISOString();
+    const prefix = `rollup-${body.workDate}-${episodeKey(body.episode)}`;
+    const reviewTaskId = `${prefix}-${body.approvalTarget}`;
+    await env.DB.batch([
+      env.DB.prepare(`UPDATE script_analysis_items SET ${column} = ?, updated_at = ? WHERE analysis_id IN (SELECT id FROM script_analyses WHERE episode = ?)`).bind(body.approved ? 1 : 0, updatedAt, body.episode),
+      env.DB.prepare("UPDATE production_items SET status = ?, completed_qty = ?, updated_at = ? WHERE id = ?").bind(body.approved ? '已通过' : '未开始', body.approved ? 1 : 0, updatedAt, reviewTaskId),
+      env.DB.prepare('INSERT INTO activity_log (item_type, item_id, action, operator, created_at) VALUES (?, ?, ?, ?, ?)').bind('episode_assets', body.episode, `${body.approvalTarget === 'yoyo' ? 'Yoyo' : '叶总'}微信确认结果：${body.approved ? '已确认' : '未确认'}`, 'Lipa', updatedAt),
+    ]);
+    const totals = await env.DB.prepare(`SELECT COUNT(*) AS total, SUM(yoyo_approved) AS yoyoCount, SUM(producer_approved) AS producerCount
+      FROM script_analysis_items WHERE analysis_id IN (SELECT id FROM script_analyses WHERE episode = ?)`).bind(body.episode).first<{ total: number; yoyoCount: number; producerCount: number }>();
+    const fullyApproved = Boolean(totals?.total && Number(totals.yoyoCount) === Number(totals.total) && Number(totals.producerCount) === Number(totals.total));
+    const aigcTaskId = `${prefix}-aigc`;
+    if (fullyApproved) {
+      await env.DB.prepare(`INSERT INTO production_items
+        (id, work_date, episode, category, title, owner, reviewer, status, planned_qty, completed_qty, due_time, depends_on_id, handoff_to, handoff_deadline, note, sort_order, updated_at)
+        VALUES (?, ?, ?, '抽卡生成', ?, 'AIGC抽卡师', '联合制片人／导演：Lipa', '未开始', 1, 0, '21:00', ?, '联合制片人／导演：Lipa', '完成后同步', ?, 90, ?)
+        ON CONFLICT(id) DO NOTHING`)
+        .bind(aigcTaskId, body.workDate, body.episode, `开始${body.episode}抽卡与正式镜头生成`, `${prefix}-producer`, '叶总和Yoyo均已在微信确认整集资产，正式放行抽卡与视频生成。', updatedAt).run();
+    } else {
+      await env.DB.prepare('DELETE FROM production_items WHERE id = ?').bind(aigcTaskId).run();
+    }
+    return Response.json({ ok: true, episode: body.episode, fullyApproved });
+  }
   if (body.analysisId && typeof body.scriptText === 'string') {
     const updatedAt = new Date().toISOString();
     await env.DB.batch([
@@ -194,6 +218,41 @@ export async function PATCH(request: Request) {
   return Response.json({ ok: true, item: { ...updated, id: body.id, updatedAt } });
 }
 
+export async function DELETE(request: Request) {
+  const admin = await requireAdmin(request);
+  if (!admin) return Response.json({ error: '只有Lipa可以删除主美工作项' }, { status: 403 });
+  const body = await request.json() as { id?: string };
+  if (!body.id) return Response.json({ error: '缺少工作项ID' }, { status: 400 });
+  const current = await env.DB.prepare(`SELECT i.analysis_id AS analysisId, i.name, a.episode
+    FROM script_analysis_items i JOIN script_analyses a ON a.id = i.analysis_id WHERE i.id = ?`).bind(body.id).first<{ analysisId: string; name: string; episode: string }>();
+  if (!current) return Response.json({ error: '工作项不存在' }, { status: 404 });
+  const updatedAt = new Date().toISOString();
+  await env.DB.batch([
+    env.DB.prepare('DELETE FROM script_analysis_items WHERE id = ?').bind(body.id),
+    env.DB.prepare(`UPDATE production_items SET planned_qty = (SELECT COUNT(*) FROM script_analysis_items i JOIN script_analyses a ON a.id = i.analysis_id WHERE a.episode = ?), updated_at = ?
+      WHERE episode = ? AND category = '美术清单'`).bind(current.episode, updatedAt, current.episode),
+    env.DB.prepare('INSERT INTO activity_log (item_type, item_id, action, operator, created_at) VALUES (?, ?, ?, ?, ?)').bind('script_analysis_item', body.id, `删除主美工作项：${current.name}`, 'Lipa', updatedAt),
+  ]);
+  return Response.json({ ok: true, id: body.id });
+}
+
 function task(id: string, workDate: string, episode: string, category: string, title: string, owner: string, plannedQty: number, dueTime: string, dependsOnId: string, handoffTo: string, handoffDeadline: string, note: string, sortOrder: number, updatedAt: string) {
   return { id, workDate, episode, category, title, owner, plannedQty, dueTime, dependsOnId, handoffTo, handoffDeadline, note, sortOrder, updatedAt };
+}
+
+function episodeRollupTasks(workDate: string, episode: string, count: number, sceneCount: number, index: number, updatedAt: string) {
+  const prefix = `rollup-${workDate}-${episodeKey(episode)}`;
+  const base = index * 10;
+  return [
+    task(`${prefix}-script`, workDate, episode, '剧本', `交付${episode}完整剧本`, '编剧', 1, '12:00', '', '联合制片人／导演：Lipa', '交付后继续下一集', `整集一次交付，不再按${sceneCount}个场次分别确认，也不参与美术资产审核。`, base + 1, updatedAt),
+    task(`${prefix}-art`, workDate, episode, '美术清单', `完成${episode}全部主美资产清单与出图`, '主美', count, '18:00', `${prefix}-script`, '联合制片人／导演：Lipa', '18:15', `点开生产手册查看${sceneCount}场、共${count}项人物造型/服装/道具/场景图清单；不逐项做审核勾选。`, base + 2, updatedAt),
+    task(`${prefix}-send`, workDate, episode, '资产提报', `整理${episode}完整资产包并发微信`, '联合制片人／导演：Lipa', 1, '18:30', `${prefix}-art`, '制片人（叶总）＋红人（Yoyo）', '发出后等待微信确认', '只负责整集资产包提报，不逐项确认。', base + 3, updatedAt),
+    task(`${prefix}-producer`, workDate, episode, '整集资产确认', `记录叶总是否已确认${episode}全部资产`, '制片人（叶总）', 1, '收到后', `${prefix}-send`, '联合制片人／导演：Lipa', '收到微信后录入', '叶总在微信确认；本平台仅由Lipa记录最终结果。', base + 4, updatedAt),
+    task(`${prefix}-yoyo`, workDate, episode, '整集资产确认', `记录Yoyo是否已确认${episode}全部资产`, '红人（Yoyo）', 1, '微信待回复', `${prefix}-send`, '联合制片人／导演：Lipa', '收到微信后录入', 'Yoyo在微信确认；本平台仅由Lipa记录最终结果。', base + 5, updatedAt),
+  ];
+}
+
+function episodeKey(episode: string) {
+  const number = episode.match(/\d+/)?.[0];
+  return number ? `ep${number}` : `ep-${[...episode].reduce((sum, character) => sum + character.charCodeAt(0), 0)}`;
 }

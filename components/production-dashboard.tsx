@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, CircleDashed,
-  ClipboardCopy, Clock3, Film, LayoutDashboard, ListChecks, Loader2, Pencil, RefreshCw, Rows3, Sparkles, Upload, X,
+  ClipboardCopy, Clock3, Film, LayoutDashboard, ListChecks, Loader2, Pencil, RefreshCw, Rows3, Sparkles, Trash2, Upload, X,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -114,6 +114,13 @@ export function ProductionDashboard() {
     } catch { /* optimistic update remains visible in local preview */ }
   }
 
+  async function updateEpisodeApproval(item: ProductionItem, checked: boolean) {
+    setItems((current) => current.map((candidate) => candidate.id === item.id ? { ...candidate, status: checked ? '已通过' : '未开始', completedQty: checked ? 1 : 0 } : candidate));
+    const approvalTarget = item.owner === '红人（Yoyo）' ? 'yoyo' : 'producer';
+    await fetch('/api/script-analysis', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ episode: item.episode, workDate: item.workDate, approvalTarget, approved: checked }) });
+    await loadData();
+  }
+
   async function createItem(draft: Partial<ProductionItem>) {
     const response = await fetch('/api/items', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(draft) });
     if (response.ok) {
@@ -165,7 +172,7 @@ export function ProductionDashboard() {
 
         <div className="px-4 py-5 md:px-8 md:py-8">
           <div className="mx-auto max-w-6xl">
-            <TabsContent value="today" className="mt-0"><TodayView selectedDate={selectedDate} setSelectedDate={setSelectedDate} items={todayItems} progress={dayProgress} completed={completed} planned={planned} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedItem} onAdd={setCreatingRole} onOpenHandbook={() => setActiveTab('breakdown')} onToggle={(item, checked) => void updateItem(item.id, { status: checked ? '已通过' : '未开始', completedQty: checked ? item.plannedQty : 0 })} /></TabsContent>
+            <TabsContent value="today" className="mt-0"><TodayView selectedDate={selectedDate} setSelectedDate={setSelectedDate} items={todayItems} progress={dayProgress} completed={completed} planned={planned} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedItem} onAdd={setCreatingRole} onOpenHandbook={() => setActiveTab('breakdown')} onToggle={(item, checked) => void (item.category === '整集资产确认' ? updateEpisodeApproval(item, checked) : updateItem(item.id, { status: checked ? '已通过' : '未开始', completedQty: checked ? item.plannedQty : 0 }))} /></TabsContent>
             <TabsContent value="plan" className="mt-0"><PlanView items={items} batches={batches} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedBatch} /></TabsContent>
             <TabsContent value="scenes" className="mt-0"><ScenesView scenes={scenes} isAdmin={Boolean(me?.isAdmin)} onChange={updateScene} /></TabsContent>
             <TabsContent value="breakdown" className="mt-0"><ScriptAnalysisView isAdmin={Boolean(me?.isAdmin)} selectedDate={selectedDate} productionItems={items} onAssigned={async (workDate) => { setSelectedDate(workDate); await loadData(); }} /></TabsContent>
@@ -288,7 +295,7 @@ function TodayView({ selectedDate, setSelectedDate, items, progress, completed, 
           const roleItems = items.filter((item) => item.owner === role || (role === 'AIGC抽卡师' && item.owner === '抽卡师'));
           return <section key={role} className="rounded-2xl border border-white/8 bg-card p-3 md:p-4">
             <div className="mb-3 flex items-center justify-between"><div className="flex items-center gap-2"><span className="grid h-8 w-8 place-items-center rounded-full bg-white/6 text-sm font-semibold">{role.includes('Lipa') ? 'L' : role.includes('Yoyo') ? 'Y' : role.includes('叶总') ? '叶' : role.slice(0, 1)}</span><div><h3 className="text-sm font-medium">{role === 'AIGC抽卡师' ? '抽卡师' : role}</h3><p className="text-[10px] text-muted-foreground">{roleItems.length ? `${roleItems.length} 项工作` : '今天尚未排活'}</p></div></div>{isAdmin && <button onClick={() => onAdd(role)} className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-white">＋ 添加</button>}</div>
-            <div className="space-y-2">{roleItems.length ? roleItems.map((item) => <RoleTask key={item.id} item={item} editable={isAdmin} onEdit={() => onEdit(item)} onToggle={(checked) => onToggle(item, checked)} />) : isAdmin ? <button onClick={() => onAdd(role)} className="w-full rounded-xl border border-dashed border-white/10 py-4 text-xs text-muted-foreground">为{role === 'AIGC抽卡师' ? '抽卡师' : role}安排今日工作</button> : <p className="rounded-xl border border-dashed border-white/8 py-4 text-center text-xs text-muted-foreground">今日无任务</p>}</div>
+            <div className="space-y-2">{roleItems.length ? roleItems.map((item) => <RoleTask key={item.id} item={item} editable={isAdmin} onEdit={() => onEdit(item)} onOpenList={role === '主美' && item.category === '美术清单' ? onOpenHandbook : undefined} onToggle={(checked) => onToggle(item, checked)} />) : <div className="rounded-xl border border-dashed border-white/8 px-3 py-4 text-center text-xs leading-5 text-muted-foreground">{role === 'AIGC抽卡师' ? '等待叶总和Yoyo在微信确认整集资产后，再放行抽卡与视频生成。' : isAdmin ? <button onClick={() => onAdd(role)}>为{role}安排今日工作</button> : '今日无任务'}</div>}</div>
           </section>;
         })}
       </div>
@@ -343,13 +350,25 @@ function ScriptAnalysisView({ isAdmin, selectedDate, productionItems, onAssigned
     }
   }
 
-  async function toggleApproval(item: ScriptAssetItem, target: 'yoyoApproved' | 'producerApproved', checked: boolean) {
-    setAssetItems((current) => current.map((candidate) => candidate.id === item.id ? { ...candidate, [target]: checked } : candidate));
-    const response = await fetch('/api/script-analysis', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: item.id, [target]: checked }) });
+  async function toggleEpisodeApproval(episode: string, target: 'yoyo' | 'producer', checked: boolean) {
+    const analysisIds = new Set(analyses.filter((analysis) => analysis.episode === episode).map((analysis) => analysis.id));
+    const field = target === 'yoyo' ? 'yoyoApproved' : 'producerApproved';
+    setAssetItems((current) => current.map((candidate) => analysisIds.has(candidate.analysisId) ? { ...candidate, [field]: checked } : candidate));
+    const response = await fetch('/api/script-analysis', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ episode, workDate, approvalTarget: target, approved: checked }) });
     if (!response.ok) {
-      setAssetItems((current) => current.map((candidate) => candidate.id === item.id ? { ...candidate, [target]: !checked } : candidate));
-      setError('审核结果保存失败，请重试');
+      setAssetItems((current) => current.map((candidate) => analysisIds.has(candidate.analysisId) ? { ...candidate, [field]: !checked } : candidate));
+      setError('整集确认结果保存失败，请重试');
+    } else {
+      await onAssigned(workDate);
     }
+  }
+
+  async function deleteAsset(item: ScriptAssetItem) {
+    if (!window.confirm(`确定从主美清单删除“${item.name}”吗？`)) return;
+    const response = await fetch('/api/script-analysis', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: item.id }) });
+    if (!response.ok) { setError('删除失败，请重试'); return; }
+    setAssetItems((current) => current.filter((candidate) => candidate.id !== item.id));
+    await onAssigned(workDate);
   }
 
   async function updateAsset(item: ScriptAssetItem, changes: Pick<ScriptAssetItem, 'name' | 'detail' | 'visualBrief'>) {
@@ -387,27 +406,34 @@ function ScriptAnalysisView({ isAdmin, selectedDate, productionItems, onAssigned
     setNotice(`已读取“${fileName}”：识别${imported.sceneCount || 0}场，自动拆出${imported.itemCount || 0}项主美工作。所有拆解项都可以继续修改。`);
   }
 
-  const dailyAnalyses = analyses.filter((analysis) => productionItems.some((item) => item.workDate === workDate && item.id === `daily-${workDate}-${analysis.id}-script`));
+  const dailyAnalyses = analyses.filter((analysis) => productionItems.some((item) => item.workDate === workDate && item.episode === analysis.episode && item.category === '美术清单'));
+  const dailyEpisodes = [...new Set(dailyAnalyses.map((analysis) => analysis.episode))];
 
   return <section>
     <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">DAILY PRODUCTION BOOK</p><h2 className="mt-1 text-2xl font-semibold">每日生产手册</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">当天放入要生产的剧本与场次。主美负责按剧本整理、生成并提报人物造型、服装、道具和场景图片。</p></div><span className="w-fit rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1.5 text-xs text-cyan-300">当前由我先拆解 · 不接外部模型</span></div>
     <div className="control-card p-4 md:p-6">
-      <div className="grid gap-4 md:grid-cols-[220px_1fr_auto] md:items-end"><Field label="放到哪一天"><input type="date" min="2026-09-10" max="2026-10-09" value={workDate} onChange={(event) => { setWorkDate(event.target.value); setNotice(''); }} className="edit-input" /></Field><div><p className="mb-1.5 text-sm text-muted-foreground">选择当天要生产的场次</p><div className="flex flex-wrap gap-2">{analyses.map((analysis) => { const selected = selectedIds.includes(analysis.id); const assigned = productionItems.some((item) => item.id === `daily-${workDate}-${analysis.id}-script`); return <button key={analysis.id} type="button" disabled={!isAdmin} onClick={() => setSelectedIds((current) => selected ? current.filter((id) => id !== analysis.id) : [...current, analysis.id])} className={`rounded-lg border px-3 py-2 text-xs transition ${selected ? 'border-[#ff6240] bg-[#ff6240]/15 text-white' : assigned ? 'border-emerald-400/20 bg-emerald-400/8 text-emerald-300' : 'border-white/10 bg-white/5 text-muted-foreground'}`}><span className="mr-1">{selected ? '✓' : assigned ? '已排' : '□'}</span>第{analysis.sceneNo}场</button>; })}</div></div><Button disabled={!isAdmin || !selectedIds.length || assigning} onClick={() => void assignWork()} className="h-11"><ListChecks className={assigning ? 'animate-pulse' : ''} />{assigning ? '正在分配…' : '分配到各工种'}</Button></div>
-      <div className="mt-4 rounded-xl border border-white/8 bg-white/[.025] p-3 text-xs leading-5 text-muted-foreground"><b className="text-zinc-200">岗位顺序：</b>编剧交本 → 主美逐场总结 → 主美出图 → Lipa发微信 → 叶总与Yoyo只审核主美图。主美图可用后，抽卡师同步开始白模。</div>
+      <div className="grid gap-4 md:grid-cols-[220px_1fr_auto] md:items-end"><Field label="放到哪一天"><input type="date" min="2026-09-10" max="2026-10-09" value={workDate} onChange={(event) => { setWorkDate(event.target.value); setNotice(''); }} className="edit-input" /></Field><div><p className="mb-1.5 text-sm text-muted-foreground">选择当天要生产的场次</p><div className="flex flex-wrap gap-2">{analyses.map((analysis) => { const selected = selectedIds.includes(analysis.id); const assigned = productionItems.some((item) => item.workDate === workDate && item.episode === analysis.episode && item.category === '美术清单'); return <button key={analysis.id} type="button" disabled={!isAdmin} onClick={() => setSelectedIds((current) => selected ? current.filter((id) => id !== analysis.id) : [...current, analysis.id])} className={`rounded-lg border px-3 py-2 text-xs transition ${selected ? 'border-[#ff6240] bg-[#ff6240]/15 text-white' : assigned ? 'border-emerald-400/20 bg-emerald-400/8 text-emerald-300' : 'border-white/10 bg-white/5 text-muted-foreground'}`}><span className="mr-1">{selected ? '✓' : assigned ? '已排' : '□'}</span>第{analysis.sceneNo}场</button>; })}</div></div><Button disabled={!isAdmin || !selectedIds.length || assigning} onClick={() => void assignWork()} className="h-11"><ListChecks className={assigning ? 'animate-pulse' : ''} />{assigning ? '正在分配…' : '分配到各工种'}</Button></div>
+      <div className="mt-4 rounded-xl border border-white/8 bg-white/[.025] p-3 text-xs leading-5 text-muted-foreground"><b className="text-zinc-200">岗位顺序：</b>编剧整集交本后继续下一集 → 主美打开整集资产清单并出图 → Lipa整理资产包发微信 → Lipa只记录叶总/Yoyo的整集确认结果 → 两边都确认后才给抽卡师放行。</div>
       {notice && <p className="mt-3 rounded-xl border border-emerald-400/20 bg-emerald-400/[.06] px-3 py-2 text-sm text-emerald-300">{notice}</p>}
       {error && <p className="mt-3 rounded-xl border border-red-400/20 bg-red-400/[.06] px-3 py-2 text-sm text-red-300">{error}</p>}
       {isAdmin && <div className="mt-4 border-t border-white/8 pt-4"><Button variant="outline" onClick={() => setShowAddScript((value) => !value)}><span className="text-base">＋</span>{showAddScript ? '收起新增剧本' : 'Lipa添加当天工作剧本'}</Button>{showAddScript && <AddDailyScriptForm workDate={workDate} onCancel={() => setShowAddScript(false)} onImport={importScriptFile} onSave={addDailyScript} />}</div>}
     </div>
 
     <div className="mt-7 flex items-end justify-between gap-3"><div><p className="eyebrow">SCRIPT · ART · APPROVAL</p><h2 className="mt-1 text-xl font-semibold">{shortDate(workDate)} · 生产手册</h2></div><span className="text-right text-xs text-muted-foreground">当天场次有橙色标记 · 叶总/Yoyo只审主美图</span></div>
+    {dailyEpisodes.map((episode) => {
+      const episodeAnalysisIds = new Set(analyses.filter((analysis) => analysis.episode === episode).map((analysis) => analysis.id));
+      const episodeItems = assetItems.filter((item) => episodeAnalysisIds.has(item.analysisId));
+      const yoyoApproved = Boolean(episodeItems.length && episodeItems.every((item) => item.yoyoApproved));
+      const producerApproved = Boolean(episodeItems.length && episodeItems.every((item) => item.producerApproved));
+      return <div key={episode} className="mt-3 rounded-2xl border border-white/10 bg-card p-4 md:p-5"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-medium">{episode}全部资产确认</p><p className="mt-1 text-xs text-muted-foreground">确认发生在微信；这里只由Lipa记录最终结果，不逐项确认。</p></div><div className="grid min-w-[320px] grid-cols-2 gap-2"><ApprovalCheck label="叶总" checked={producerApproved} disabled={!isAdmin} onChange={(checked) => void toggleEpisodeApproval(episode, 'producer', checked)} /><ApprovalCheck label="Yoyo" checked={yoyoApproved} disabled={!isAdmin} onChange={(checked) => void toggleEpisodeApproval(episode, 'yoyo', checked)} /></div></div>{producerApproved && yoyoApproved && <p className="mt-3 rounded-lg border border-emerald-400/20 bg-emerald-400/[.06] px-3 py-2 text-xs text-emerald-300">双方已确认，抽卡师任务已自动放行。</p>}</div>;
+    })}
     <div className="mt-3 space-y-4">{dailyAnalyses.length ? dailyAnalyses.map((analysis) => {
       const rows = assetItems.filter((item) => item.analysisId === analysis.id).sort((a, b) => a.sortOrder - b.sortOrder);
-      const fullyApproved = rows.filter((item) => item.yoyoApproved && item.producerApproved).length;
-      const assignedToday = productionItems.some((item) => item.id === `daily-${workDate}-${analysis.id}-script`);
+      const assignedToday = productionItems.some((item) => item.workDate === workDate && item.episode === analysis.episode && item.category === '美术清单');
       return <article key={analysis.id} className="control-card p-4 md:p-5">
-        <div className="flex flex-col gap-3 border-b border-white/8 pb-4 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex flex-wrap items-center gap-2"><p className="text-xs text-[#ff8066]">{analysis.episode} · 第{analysis.sceneNo}场</p><span className={`rounded-full border px-2 py-0.5 text-[10px] ${assignedToday ? 'border-[#ff6240]/30 bg-[#ff6240]/10 text-[#ff8a72]' : 'border-white/8 bg-white/4 text-zinc-500'}`}>{assignedToday ? `已排${shortDate(workDate)}` : '未排当天'}</span></div><h3 className="mt-1 text-lg font-medium">{analysis.sceneTitle}</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">{analysis.location} · {analysis.sceneSummary}</p></div><span className={`w-fit shrink-0 rounded-full border px-3 py-1 text-xs ${fullyApproved === rows.length && rows.length ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300' : 'border-white/10 bg-white/5 text-muted-foreground'}`}>{fullyApproved}/{rows.length} 双方确认</span></div>
+        <div className="flex flex-col gap-3 border-b border-white/8 pb-4 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex flex-wrap items-center gap-2"><p className="text-xs text-[#ff8066]">{analysis.episode} · 第{analysis.sceneNo}场</p><span className={`rounded-full border px-2 py-0.5 text-[10px] ${assignedToday ? 'border-[#ff6240]/30 bg-[#ff6240]/10 text-[#ff8a72]' : 'border-white/8 bg-white/4 text-zinc-500'}`}>{assignedToday ? `已排${shortDate(workDate)}` : '未排当天'}</span></div><h3 className="mt-1 text-lg font-medium">{analysis.sceneTitle}</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">{analysis.location} · {analysis.sceneSummary}</p></div><span className="w-fit shrink-0 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-muted-foreground">主美清单 {rows.length}项</span></div>
         <SceneScriptBlock analysis={analysis} editable={isAdmin} onSaved={(scriptText) => setAnalyses((current) => current.map((row) => row.id === analysis.id ? { ...row, scriptText } : row))} />
-        <div className="mt-4 grid gap-3 md:grid-cols-2">{rows.map((item) => <HandbookAssetCard key={item.id} item={item} editable={isAdmin} onSave={(changes) => updateAsset(item, changes)} onToggle={(target, checked) => void toggleApproval(item, target, checked)} />)}</div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">{rows.map((item) => <HandbookAssetCard key={item.id} item={item} editable={isAdmin} onDelete={() => void deleteAsset(item)} onSave={(changes) => updateAsset(item, changes)} />)}</div>
       </article>;
     }) : <Empty text={`${shortDate(workDate)}还没有工作剧本；Lipa可在上方选择已有场次，或添加新剧本。`} />}</div>
   </section>;
@@ -490,18 +516,13 @@ function SceneScriptBlock({ analysis, editable, onSaved }: { analysis: ScriptAna
   </div>;
 }
 
-function HandbookAssetCard({ item, editable, onSave, onToggle }: { item: ScriptAssetItem; editable: boolean; onSave: (changes: Pick<ScriptAssetItem, 'name' | 'detail' | 'visualBrief'>) => Promise<void>; onToggle: (target: 'yoyoApproved' | 'producerApproved', checked: boolean) => void }) {
+function HandbookAssetCard({ item, editable, onDelete, onSave }: { item: ScriptAssetItem; editable: boolean; onDelete: () => void; onSave: (changes: Pick<ScriptAssetItem, 'name' | 'detail' | 'visualBrief'>) => Promise<void> }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({ name: item.name, detail: item.detail, visualBrief: item.visualBrief });
   const [saving, setSaving] = useState(false);
-  const done = item.yoyoApproved && item.producerApproved;
-  return <div className={`rounded-xl border p-3 ${done ? 'border-emerald-400/25 bg-emerald-400/[.05]' : 'border-red-400/25 bg-red-400/[.045]'}`}>
-    <div className="flex items-start justify-between gap-2"><div className="flex flex-wrap items-center gap-2"><span className="rounded-md bg-white/6 px-2 py-0.5 text-[10px] text-muted-foreground">{item.category}</span><p className={`text-sm font-medium ${done ? 'text-zinc-500 line-through' : ''}`}>{item.name}</p></div>{editable && <button type="button" onClick={() => { setDraft({ name: item.name, detail: item.detail, visualBrief: item.visualBrief }); setEditing((value) => !value); }} className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-white/5 hover:text-white" aria-label="修改主美工作项"><Pencil className="h-3.5 w-3.5" /></button>}</div>
+  return <div className="rounded-xl border border-white/10 bg-white/[.025] p-3">
+    <div className="flex items-start justify-between gap-2"><div className="flex flex-wrap items-center gap-2"><span className="rounded-md bg-white/6 px-2 py-0.5 text-[10px] text-muted-foreground">{item.category}</span><p className="text-sm font-medium">{item.name}</p></div>{editable && <div className="flex shrink-0 items-center"><button type="button" onClick={() => { setDraft({ name: item.name, detail: item.detail, visualBrief: item.visualBrief }); setEditing((value) => !value); }} className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-white/5 hover:text-white" aria-label="修改主美工作项"><Pencil className="h-3.5 w-3.5" /></button><button type="button" onClick={onDelete} className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-red-400/10 hover:text-red-300" aria-label="删除主美工作项"><Trash2 className="h-3.5 w-3.5" /></button></div>}</div>
     {editing ? <div className="mt-3 space-y-2"><input value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} className="edit-input" placeholder="工作项名称" /><Textarea value={draft.detail} onChange={(event) => setDraft((current) => ({ ...current, detail: event.target.value }))} rows={3} placeholder="根据剧本判断出的具体内容" /><Textarea value={draft.visualBrief} onChange={(event) => setDraft((current) => ({ ...current, visualBrief: event.target.value }))} rows={3} placeholder="主美具体需要生成什么图" /><div className="flex justify-end gap-2"><Button size="sm" variant="outline" onClick={() => setEditing(false)}>取消</Button><Button size="sm" disabled={saving || !draft.name.trim()} onClick={async () => { setSaving(true); try { await onSave(draft); setEditing(false); } finally { setSaving(false); } }}><Check />{saving ? '保存中…' : '保存'}</Button></div></div> : <><p className="mt-2 text-xs leading-5 text-zinc-300">{item.detail}</p>{item.visualBrief && <p className="mt-2 border-t border-white/6 pt-2 text-[11px] leading-5 text-muted-foreground"><span className="text-zinc-400">主美需要出：</span>{item.visualBrief}</p>}</>}
-    <div className="mt-3 grid grid-cols-2 gap-2">
-      <ApprovalCheck label="Yoyo" checked={item.yoyoApproved} disabled={!editable} onChange={(checked) => onToggle('yoyoApproved', checked)} />
-      <ApprovalCheck label="叶总" checked={item.producerApproved} disabled={!editable} onChange={(checked) => onToggle('producerApproved', checked)} />
-    </div>
   </div>;
 }
 
@@ -579,9 +600,9 @@ function TaskCard({ item, onEdit }: { item: ProductionItem; onEdit: () => void }
   return <button onClick={onEdit} className="group flex w-full items-center gap-3 rounded-2xl border border-white/8 bg-card px-3.5 py-4 text-left transition hover:border-white/16 hover:bg-[#202329] md:px-5"><div className="w-12 shrink-0 text-center"><p className="font-mono text-sm text-muted-foreground">{item.dueTime}</p><span className={`mx-auto mt-2 block h-1.5 w-1.5 rounded-full ${categoryColor[item.category] || 'bg-zinc-400'}`} /></div><div className="min-w-0 flex-1 border-l border-white/8 pl-3.5 md:pl-5"><div className="flex items-center gap-2 text-xs text-muted-foreground"><span>{item.owner}</span><span>·</span><span>{item.episode}</span></div><h3 className="mt-1 truncate text-[15px] font-medium md:text-base">{item.title}</h3><div className="mt-2 flex items-center gap-2"><div className="h-1 w-24 overflow-hidden rounded-full bg-white/8"><div className="h-full rounded-full bg-[#ff6240]" style={{ width: `${ratio}%` }} /></div><span className="text-[11px] text-muted-foreground">{item.completedQty}/{item.plannedQty}</span></div></div><div className="flex items-center gap-2"><span className={`hidden rounded-full border px-2.5 py-1 text-xs sm:block ${statusStyle[item.status]}`}>{item.status}</span><Pencil className="h-4 w-4 text-muted-foreground transition group-hover:text-white" /></div></button>;
 }
 
-function RoleTask({ item, editable, onEdit, onToggle }: { item: ProductionItem; editable: boolean; onEdit: () => void; onToggle: (checked: boolean) => void }) {
+function RoleTask({ item, editable, onEdit, onOpenList, onToggle }: { item: ProductionItem; editable: boolean; onEdit: () => void; onOpenList?: () => void; onToggle: (checked: boolean) => void }) {
   const checked = item.status === '已通过';
-  return <div className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left ${checked ? 'border-emerald-400/25 bg-emerald-400/[.05]' : 'border-red-400/25 bg-red-400/[.04]'}`}><Checkbox checked={checked} disabled={!editable} onCheckedChange={(nextChecked) => onToggle(Boolean(nextChecked))} aria-label={`${item.title}${checked ? '已完成' : '未完成'}`} className="mt-0.5 size-5 border-red-400/70 text-black data-checked:border-emerald-400 data-checked:bg-emerald-400" /><div className="min-w-0 flex-1"><p className={`text-sm ${checked ? 'text-zinc-500 line-through' : ''}`}>{item.title}</p><p className="mt-1 text-[11px] text-muted-foreground">{item.episode} · {item.dueTime}</p></div>{editable && <button onClick={onEdit} aria-label={`编辑${item.title}`} className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-white/5 hover:text-white"><Pencil className="h-3.5 w-3.5" /></button>}</div>;
+  return <div className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left ${checked ? 'border-emerald-400/25 bg-emerald-400/[.05]' : 'border-red-400/25 bg-red-400/[.04]'}`}><Checkbox checked={checked} disabled={!editable} onCheckedChange={(nextChecked) => onToggle(Boolean(nextChecked))} aria-label={`${item.title}${checked ? '已完成' : '未完成'}`} className="mt-0.5 size-5 border-red-400/70 text-black data-checked:border-emerald-400 data-checked:bg-emerald-400" /><div className="min-w-0 flex-1"><p className={`text-sm ${checked ? 'text-zinc-500 line-through' : ''}`}>{item.title}</p><p className="mt-1 text-[11px] text-muted-foreground">{item.episode} · {item.dueTime}</p>{onOpenList && <button type="button" onClick={onOpenList} className="mt-2 rounded-lg border border-cyan-400/20 bg-cyan-400/[.06] px-2.5 py-1.5 text-xs text-cyan-300">查看全部资产清单 <ChevronRight className="ml-1 inline h-3 w-3" /></button>}</div>{editable && <button onClick={onEdit} aria-label={`编辑${item.title}`} className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-white/5 hover:text-white"><Pencil className="h-3.5 w-3.5" /></button>}</div>;
 }
 
 function TimelineRow({ dates, production, prep, note, highlight = false, editable, onEdit }: { dates: string; production: string; prep: string; note: string; highlight?: boolean; editable: boolean; onEdit: () => void }) {

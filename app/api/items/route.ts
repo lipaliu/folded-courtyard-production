@@ -94,6 +94,37 @@ export async function GET() {
         env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_visual_review_only_v1', 'done', ?)").bind(updatedAt),
       ]);
     }
+    const episodeRollupVersion = await env.DB.prepare("SELECT value FROM app_settings WHERE key = 'workflow_episode_rollup_v1'").first<{ value: string }>();
+    if (!episodeRollupVersion) {
+      const updatedAt = new Date().toISOString();
+      const rollupRows = await env.DB.prepare("SELECT DISTINCT work_date AS workDate, episode FROM production_items WHERE id LIKE 'daily-%'").all<{ workDate: string; episode: string }>();
+      const statements = [
+        env.DB.prepare(`DELETE FROM production_items WHERE
+          id LIKE 'daily-%-script' OR id LIKE 'daily-%-breakdown' OR id LIKE 'daily-%-art' OR id LIKE 'daily-%-white' OR
+          id LIKE 'daily-%-send' OR id LIKE 'daily-%-yoyo' OR id LIKE 'daily-%-producer'`),
+        env.DB.prepare("DELETE FROM production_items WHERE id IN ('0910-art','0910-send-yoyo','0910-yoyo','0910-lipa-record','0910-white','0911-white','0911-yoyo-white','0911-producer-white','0911-review')"),
+      ];
+      for (const [index, row] of rollupRows.results.entries()) {
+        const totals = await env.DB.prepare(`SELECT COUNT(*) AS total, SUM(i.yoyo_approved) AS yoyoCount, SUM(i.producer_approved) AS producerCount
+          FROM script_analysis_items i JOIN script_analyses a ON a.id = i.analysis_id WHERE a.episode = ?`).bind(row.episode).first<{ total: number; yoyoCount: number; producerCount: number }>();
+        const count = Number(totals?.total || 1);
+        const prefix = `rollup-${row.workDate}-${episodeRollupKey(row.episode)}`;
+        const base = index * 10;
+        const rows = [
+          rollupRow(`${prefix}-script`, row.workDate, row.episode, '剧本', `交付${row.episode}完整剧本`, '编剧', 1, '12:00', '', '联合制片人／导演：Lipa', '交付后继续下一集', '整集一次交付，不按单场与资产审核绑定。', base + 1, updatedAt),
+          rollupRow(`${prefix}-art`, row.workDate, row.episode, '美术清单', `完成${row.episode}全部主美资产清单与出图`, '主美', count, '18:00', `${prefix}-script`, '联合制片人／导演：Lipa', '18:15', `点开查看全部人物造型、服装、道具、场景图，共${count}项。`, base + 2, updatedAt),
+          rollupRow(`${prefix}-send`, row.workDate, row.episode, '资产提报', `整理${row.episode}完整资产包并发微信`, '联合制片人／导演：Lipa', 1, '18:30', `${prefix}-art`, '制片人（叶总）＋红人（Yoyo）', '发出后等待微信确认', '只负责整集资产包提报，不逐项确认。', base + 3, updatedAt),
+          rollupRow(`${prefix}-producer`, row.workDate, row.episode, '整集资产确认', `记录叶总是否已确认${row.episode}全部资产`, '制片人（叶总）', 1, '收到后', `${prefix}-send`, '联合制片人／导演：Lipa', '收到微信后录入', '叶总在微信确认；本平台仅由Lipa记录最终结果。', base + 4, updatedAt, Number(totals?.producerCount) === count),
+          rollupRow(`${prefix}-yoyo`, row.workDate, row.episode, '整集资产确认', `记录Yoyo是否已确认${row.episode}全部资产`, '红人（Yoyo）', 1, '微信待回复', `${prefix}-send`, '联合制片人／导演：Lipa', '收到微信后录入', 'Yoyo在微信确认；本平台仅由Lipa记录最终结果。', base + 5, updatedAt, Number(totals?.yoyoCount) === count),
+        ];
+        rows.forEach((item) => statements.push(env.DB.prepare(`INSERT OR REPLACE INTO production_items
+          (id, work_date, episode, category, title, owner, reviewer, status, planned_qty, completed_qty, due_time, depends_on_id, handoff_to, handoff_deadline, note, sort_order, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, 'Yoyo', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+          .bind(item.id, item.workDate, item.episode, item.category, item.title, item.owner, item.status, item.plannedQty, item.completedQty, item.dueTime, item.dependsOnId, item.handoffTo, item.handoffDeadline, item.note, item.sortOrder, item.updatedAt)));
+      }
+      statements.push(env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_episode_rollup_v1', 'done', ?)").bind(updatedAt));
+      await env.DB.batch(statements);
+    }
     const result = await env.DB.prepare(`
       SELECT id, work_date AS workDate, episode, category, title, owner, reviewer, status,
              planned_qty AS plannedQty, completed_qty AS completedQty, due_time AS dueTime,
@@ -105,6 +136,15 @@ export async function GET() {
   } catch (error) {
     return Response.json({ items: initialItems, localFallback: true, error: error instanceof Error ? error.message : '读取失败' });
   }
+}
+
+function rollupRow(id: string, workDate: string, episode: string, category: string, title: string, owner: string, plannedQty: number, dueTime: string, dependsOnId: string, handoffTo: string, handoffDeadline: string, note: string, sortOrder: number, updatedAt: string, completed = false) {
+  return { id, workDate, episode, category, title, owner, status: completed ? '已通过' : '未开始', plannedQty, completedQty: completed ? plannedQty : 0, dueTime, dependsOnId, handoffTo, handoffDeadline, note, sortOrder, updatedAt };
+}
+
+function episodeRollupKey(episode: string) {
+  const number = episode.match(/\d+/)?.[0];
+  return number ? `ep${number}` : `ep-${[...episode].reduce((sum, character) => sum + character.charCodeAt(0), 0)}`;
 }
 
 export async function PATCH(request: Request) {
