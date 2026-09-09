@@ -1,6 +1,7 @@
 import { env } from 'cloudflare:workers';
 import { requireAdmin } from '@/lib/auth';
 import { initialScriptBreakdowns } from '@/lib/script-breakdown-data';
+import { parseScriptDocument } from '@/lib/script-import';
 
 const seedVersion = 'script_breakdown_ep1_v3_v1';
 
@@ -44,7 +45,38 @@ export async function GET() {
 export async function POST(request: Request) {
   const admin = await requireAdmin(request);
   if (!admin) return Response.json({ error: '只有Lipa可以分配当天工作' }, { status: 403 });
-  const body = await request.json() as Partial<{ action: string; workDate: string; analysisIds: string[]; episode: string; sceneNo: number; sceneTitle: string; location: string; scriptText: string }>;
+  const body = await request.json() as Partial<{ action: string; workDate: string; analysisIds: string[]; episode: string; sceneNo: number; sceneTitle: string; location: string; scriptText: string; fileName: string; text: string }>;
+
+  if (body.action === 'importScript') {
+    if (!/^2026-\d{2}-\d{2}$/.test(body.workDate || '') || !body.text?.trim()) return Response.json({ error: '没有读取到剧本文字' }, { status: 400 });
+    await ensureFirstEpisodeBreakdown();
+    const scenes = parseScriptDocument(body.text.slice(0, 300000), body.fileName || '');
+    if (!scenes.length) return Response.json({ error: '没有识别到场次。请检查剧本是否有“1. 地点 时间 内/外”这样的场头。' }, { status: 400 });
+    const now = new Date().toISOString();
+    const analysisIds: string[] = [];
+    const statements = [];
+    for (const scene of scenes.slice(0, 40)) {
+      const existing = await env.DB.prepare('SELECT id FROM script_analyses WHERE episode = ? AND scene_no = ?').bind(scene.episode, scene.sceneNo).first<{ id: string }>();
+      const analysisId = existing?.id || `import-${crypto.randomUUID()}`;
+      analysisIds.push(analysisId);
+      if (existing) {
+        statements.push(env.DB.prepare('UPDATE script_analyses SET scene_title = ?, script_text = ?, scene_summary = ?, location = ?, updated_at = ? WHERE id = ?').bind(scene.sceneTitle, scene.scriptText, scene.sceneSummary, scene.location, now, analysisId));
+        statements.push(env.DB.prepare('DELETE FROM script_analysis_items WHERE analysis_id = ?').bind(analysisId));
+      } else {
+        statements.push(env.DB.prepare(`INSERT INTO script_analyses
+          (id, episode, scene_no, scene_title, script_text, scene_summary, location, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+          .bind(analysisId, scene.episode, scene.sceneNo, scene.sceneTitle, scene.scriptText, scene.sceneSummary, scene.location, now, now));
+      }
+      scene.items.forEach((item, index) => statements.push(env.DB.prepare(`INSERT INTO script_analysis_items
+        (id, analysis_id, category, name, detail, visual_brief, yoyo_approved, producer_approved, sort_order, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?, ?)`)
+        .bind(`${analysisId}-auto-${index + 1}`, analysisId, item.category, item.name, item.detail, item.visualBrief, index + 1, now)));
+      statements.push(env.DB.prepare('INSERT INTO activity_log (item_type, item_id, action, operator, created_at) VALUES (?, ?, ?, ?, ?)').bind('script_analysis', analysisId, `导入${body.fileName || '剧本文件'}并自动拆解主美工作`, 'Lipa', now));
+    }
+    await env.DB.batch(statements);
+    return Response.json({ ok: true, analysisIds, sceneCount: analysisIds.length, itemCount: scenes.slice(0, 40).reduce((sum, scene) => sum + scene.items.length, 0) });
+  }
 
   if (body.action === 'saveScene') {
     if (!/^2026-\d{2}-\d{2}$/.test(body.workDate || '') || !body.episode?.trim() || !Number.isInteger(Number(body.sceneNo)) || Number(body.sceneNo) < 1 || !body.sceneTitle?.trim() || !body.scriptText?.trim()) {
@@ -118,9 +150,13 @@ export async function POST(request: Request) {
     ];
   });
 
-  await env.DB.batch(tasks.map((row) => env.DB.prepare(`INSERT OR IGNORE INTO production_items
+  await env.DB.batch(tasks.map((row) => env.DB.prepare(`INSERT INTO production_items
     (id, work_date, episode, category, title, owner, reviewer, status, planned_qty, completed_qty, due_time, depends_on_id, handoff_to, handoff_deadline, note, sort_order, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, '未开始', ?, 0, ?, ?, ?, ?, ?, ?, ?)`)
+    VALUES (?, ?, ?, ?, ?, ?, ?, '未开始', ?, 0, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET episode = excluded.episode, category = excluded.category, title = excluded.title,
+      owner = excluded.owner, reviewer = excluded.reviewer, planned_qty = excluded.planned_qty, due_time = excluded.due_time,
+      depends_on_id = excluded.depends_on_id, handoff_to = excluded.handoff_to, handoff_deadline = excluded.handoff_deadline,
+      note = excluded.note, sort_order = excluded.sort_order, updated_at = excluded.updated_at`)
     .bind(row.id, row.workDate, row.episode, row.category, row.title, row.owner, 'Yoyo', row.plannedQty, row.dueTime, row.dependsOnId, row.handoffTo, row.handoffDeadline, row.note, row.sortOrder, row.updatedAt)));
 
   return Response.json({ ok: true, assignedScenes: analysisRows.results.length, taskCount: tasks.length });

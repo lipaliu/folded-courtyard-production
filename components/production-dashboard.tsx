@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, CircleDashed,
-  ClipboardCopy, Clock3, Film, LayoutDashboard, ListChecks, Loader2, Pencil, RefreshCw, Rows3, Sparkles, X,
+  ClipboardCopy, Clock3, Film, LayoutDashboard, ListChecks, Loader2, Pencil, RefreshCw, Rows3, Sparkles, Upload, X,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -373,6 +373,20 @@ function ScriptAnalysisView({ isAdmin, selectedDate, productionItems, onAssigned
     setNotice(`已把“${draft.sceneTitle}”放入${shortDate(workDate)}生产手册，并建立主美的人物造型、服装、道具、场景图工作清单。`);
   }
 
+  async function importScriptFile(fileName: string, text: string) {
+    setError('');
+    const importResponse = await fetch('/api/script-analysis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'importScript', workDate, fileName, text }) });
+    const imported = await importResponse.json() as { analysisIds?: string[]; sceneCount?: number; itemCount?: number; error?: string };
+    if (!importResponse.ok || !imported.analysisIds?.length) throw new Error(imported.error || '剧本自动拆解失败');
+    const assignResponse = await fetch('/api/script-analysis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'assign', workDate, analysisIds: imported.analysisIds }) });
+    const assigned = await assignResponse.json() as { error?: string };
+    if (!assignResponse.ok) throw new Error(assigned.error || '拆解完成，但岗位分配失败');
+    await loadAnalyses();
+    await onAssigned(workDate);
+    setShowAddScript(false);
+    setNotice(`已读取“${fileName}”：识别${imported.sceneCount || 0}场，自动拆出${imported.itemCount || 0}项主美工作。所有拆解项都可以继续修改。`);
+  }
+
   const dailyAnalyses = analyses.filter((analysis) => productionItems.some((item) => item.workDate === workDate && item.id === `daily-${workDate}-${analysis.id}-script`));
 
   return <section>
@@ -382,7 +396,7 @@ function ScriptAnalysisView({ isAdmin, selectedDate, productionItems, onAssigned
       <div className="mt-4 rounded-xl border border-white/8 bg-white/[.025] p-3 text-xs leading-5 text-muted-foreground"><b className="text-zinc-200">岗位顺序：</b>编剧交本 → 主美逐场总结 → 主美出图 → Lipa发微信 → 叶总与Yoyo只审核主美图。主美图可用后，抽卡师同步开始白模。</div>
       {notice && <p className="mt-3 rounded-xl border border-emerald-400/20 bg-emerald-400/[.06] px-3 py-2 text-sm text-emerald-300">{notice}</p>}
       {error && <p className="mt-3 rounded-xl border border-red-400/20 bg-red-400/[.06] px-3 py-2 text-sm text-red-300">{error}</p>}
-      {isAdmin && <div className="mt-4 border-t border-white/8 pt-4"><Button variant="outline" onClick={() => setShowAddScript((value) => !value)}><span className="text-base">＋</span>{showAddScript ? '收起新增剧本' : 'Lipa添加当天工作剧本'}</Button>{showAddScript && <AddDailyScriptForm workDate={workDate} onCancel={() => setShowAddScript(false)} onSave={addDailyScript} />}</div>}
+      {isAdmin && <div className="mt-4 border-t border-white/8 pt-4"><Button variant="outline" onClick={() => setShowAddScript((value) => !value)}><span className="text-base">＋</span>{showAddScript ? '收起新增剧本' : 'Lipa添加当天工作剧本'}</Button>{showAddScript && <AddDailyScriptForm workDate={workDate} onCancel={() => setShowAddScript(false)} onImport={importScriptFile} onSave={addDailyScript} />}</div>}
     </div>
 
     <div className="mt-7 flex items-end justify-between gap-3"><div><p className="eyebrow">SCRIPT · ART · APPROVAL</p><h2 className="mt-1 text-xl font-semibold">{shortDate(workDate)} · 生产手册</h2></div><span className="text-right text-xs text-muted-foreground">当天场次有橙色标记 · 叶总/Yoyo只审主美图</span></div>
@@ -399,7 +413,7 @@ function ScriptAnalysisView({ isAdmin, selectedDate, productionItems, onAssigned
   </section>;
 }
 
-function AddDailyScriptForm({ workDate, onCancel, onSave }: { workDate: string; onCancel: () => void; onSave: (draft: { episode: string; sceneNo: number; sceneTitle: string; location: string; scriptText: string }) => Promise<void> }) {
+function AddDailyScriptForm({ workDate, onCancel, onImport, onSave }: { workDate: string; onCancel: () => void; onImport: (fileName: string, text: string) => Promise<void>; onSave: (draft: { episode: string; sceneNo: number; sceneTitle: string; location: string; scriptText: string }) => Promise<void> }) {
   const [episode, setEpisode] = useState('第1集');
   const [sceneNo, setSceneNo] = useState(1);
   const [sceneTitle, setSceneTitle] = useState('');
@@ -407,6 +421,9 @@ function AddDailyScriptForm({ workDate, onCancel, onSave }: { workDate: string; 
   const [scriptText, setScriptText] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [dragging, setDragging] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [fileName, setFileName] = useState('');
   async function save() {
     setSaving(true);
     setError('');
@@ -414,13 +431,46 @@ function AddDailyScriptForm({ workDate, onCancel, onSave }: { workDate: string; 
     catch (nextError) { setError(nextError instanceof Error ? nextError.message : '保存失败'); }
     finally { setSaving(false); }
   }
+
+  async function readFile(file: File) {
+    const extension = file.name.toLowerCase().split('.').pop();
+    if (!['txt', 'docx'].includes(extension || '')) {
+      setError('请上传 TXT 或 DOCX 文件。旧版 DOC 请先在 Word 里另存为 DOCX。');
+      return;
+    }
+    setImporting(true);
+    setError('');
+    setFileName(file.name);
+    try {
+      let text = '';
+      if (extension === 'txt') text = await file.text();
+      else {
+        const mammoth = await import('mammoth');
+        const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+        text = result.value;
+      }
+      if (!text.trim()) throw new Error('文件里没有读取到文字');
+      await onImport(file.name, text);
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : '文件读取失败');
+    } finally {
+      setImporting(false);
+    }
+  }
   return <div className="mt-4 rounded-xl border border-[#ff6240]/20 bg-[#ff6240]/[.04] p-4">
+    <label onDragEnter={(event) => { event.preventDefault(); setDragging(true); }} onDragOver={(event) => { event.preventDefault(); setDragging(true); }} onDragLeave={(event) => { event.preventDefault(); setDragging(false); }} onDrop={(event) => { event.preventDefault(); setDragging(false); const file = event.dataTransfer.files[0]; if (file) void readFile(file); }} className={`flex min-h-40 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-5 py-6 text-center transition ${dragging ? 'border-[#ff6240] bg-[#ff6240]/10' : 'border-white/15 bg-black/10 hover:border-[#ff6240]/50'}`}>
+      <input type="file" accept=".txt,.docx,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="sr-only" disabled={importing} onChange={(event) => { const file = event.target.files?.[0]; if (file) void readFile(file); event.target.value = ''; }} />
+      <span className="grid h-12 w-12 place-items-center rounded-full bg-[#ff6240]/15 text-[#ff8066]">{importing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}</span>
+      <p className="mt-3 text-sm font-medium">{importing ? `正在读取并拆解 ${fileName}` : '把整份 TXT 或 Word 剧本拖到这里'}</p>
+      <p className="mt-1 text-xs leading-5 text-muted-foreground">也可以点这里选择文件。系统按场头拆场，自动生成主美的人物造型、服装、道具和场景图清单。</p>
+    </label>
+    <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-white/8" /><span>或者手工添加单场</span><span className="h-px flex-1 bg-white/8" /></div>
     <div className="grid gap-3 sm:grid-cols-[120px_100px_1fr]"><Field label="集数"><input value={episode} onChange={(event) => setEpisode(event.target.value)} className="edit-input" /></Field><Field label="场次"><input type="number" min="1" value={sceneNo} onChange={(event) => setSceneNo(Math.max(1, Number(event.target.value)))} className="edit-input" /></Field><Field label="场次名称"><input value={sceneTitle} onChange={(event) => setSceneTitle(event.target.value)} className="edit-input" placeholder="例如：陆文川醒来" /></Field></div>
     <div className="mt-3"><Field label="场景／地点"><input value={location} onChange={(event) => setLocation(event.target.value)} className="edit-input" placeholder="内/外景、地点、日/夜" /></Field></div>
     <div className="mt-3"><Field label={`${shortDate(workDate)}当天工作剧本`}><Textarea value={scriptText} onChange={(event) => setScriptText(event.target.value)} rows={10} placeholder="粘贴这一场的完整剧本。保存后建立主美四类出图任务，再由Lipa继续细化每一项。" /></Field></div>
     <p className="mt-3 text-xs leading-5 text-muted-foreground">保存后自动建立：人物造型、服装、道具、场景图。叶总和Yoyo只确认主美图，不审核剧本。</p>
     {error && <p className="mt-3 text-sm text-red-300">{error}</p>}
-    <div className="mt-4 flex justify-end gap-2"><Button variant="outline" onClick={onCancel}>取消</Button><Button disabled={saving || !sceneTitle.trim() || !scriptText.trim()} onClick={() => void save()}><Check />{saving ? '正在建立…' : '保存并分配工作'}</Button></div>
+    <div className="mt-4 flex justify-end gap-2"><Button variant="outline" disabled={importing} onClick={onCancel}>取消</Button><Button disabled={saving || importing || !sceneTitle.trim() || !scriptText.trim()} onClick={() => void save()}><Check />{saving ? '正在建立…' : '保存并分配工作'}</Button></div>
   </div>;
 }
 
