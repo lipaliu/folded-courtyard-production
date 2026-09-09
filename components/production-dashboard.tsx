@@ -42,6 +42,7 @@ type ScriptAnalysis = { id: string; episode: string; sceneNo: number; sceneTitle
 type ScriptAssetItem = { id: string; analysisId: string; category: string; name: string; detail: string; visualBrief: string; yoyoApproved: boolean; producerApproved: boolean; sortOrder: number; updatedAt: string };
 
 export function ProductionDashboard() {
+  const [activeTab, setActiveTab] = useState('today');
   const [items, setItems] = useState<ProductionItem[]>(initialItems);
   const [scenes, setScenes] = useState<Scene[]>(initialScenes);
   const [selectedDate, setSelectedDate] = useState('2026-09-10');
@@ -143,7 +144,7 @@ export function ProductionDashboard() {
 
   return (
     <main className="min-h-screen bg-transparent text-foreground">
-      <Tabs defaultValue="today" className="mx-auto min-h-screen w-full max-w-6xl pb-24 md:pb-9">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mx-auto min-h-screen w-full max-w-6xl pb-24 md:pb-9">
         <header className="sticky top-0 z-30 border-b border-white/8 bg-background/88 px-4 py-3 backdrop-blur-xl md:px-8">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
             <div>
@@ -164,7 +165,7 @@ export function ProductionDashboard() {
 
         <div className="px-4 py-5 md:px-8 md:py-8">
           <div className="mx-auto max-w-6xl">
-            <TabsContent value="today" className="mt-0"><TodayView selectedDate={selectedDate} setSelectedDate={setSelectedDate} items={todayItems} progress={dayProgress} completed={completed} planned={planned} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedItem} onAdd={setCreatingRole} onToggle={(item, checked) => void updateItem(item.id, { status: checked ? '已通过' : '未开始', completedQty: checked ? item.plannedQty : 0 })} /></TabsContent>
+            <TabsContent value="today" className="mt-0"><TodayView selectedDate={selectedDate} setSelectedDate={setSelectedDate} items={todayItems} progress={dayProgress} completed={completed} planned={planned} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedItem} onAdd={setCreatingRole} onOpenHandbook={() => setActiveTab('breakdown')} onToggle={(item, checked) => void updateItem(item.id, { status: checked ? '已通过' : '未开始', completedQty: checked ? item.plannedQty : 0 })} /></TabsContent>
             <TabsContent value="plan" className="mt-0"><PlanView items={items} batches={batches} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedBatch} /></TabsContent>
             <TabsContent value="scenes" className="mt-0"><ScenesView scenes={scenes} isAdmin={Boolean(me?.isAdmin)} onChange={updateScene} /></TabsContent>
             <TabsContent value="breakdown" className="mt-0"><ScriptAnalysisView isAdmin={Boolean(me?.isAdmin)} selectedDate={selectedDate} productionItems={items} onAssigned={async (workDate) => { setSelectedDate(workDate); await loadData(); }} /></TabsContent>
@@ -194,7 +195,7 @@ export function ProductionDashboard() {
   );
 }
 
-function TodayView({ selectedDate, setSelectedDate, items, progress, completed, planned, isAdmin, onEdit, onAdd, onToggle }: { selectedDate: string; setSelectedDate: (value: string) => void; items: ProductionItem[]; progress: number; completed: number; planned: number; isAdmin: boolean; onEdit: (item: ProductionItem) => void; onAdd: (role: string) => void; onToggle: (item: ProductionItem, checked: boolean) => void }) {
+function TodayView({ selectedDate, setSelectedDate, items, progress, completed, planned, isAdmin, onEdit, onAdd, onOpenHandbook, onToggle }: { selectedDate: string; setSelectedDate: (value: string) => void; items: ProductionItem[]; progress: number; completed: number; planned: number; isAdmin: boolean; onEdit: (item: ProductionItem) => void; onAdd: (role: string) => void; onOpenHandbook: () => void; onToggle: (item: ProductionItem, checked: boolean) => void }) {
   const [showSummary, setShowSummary] = useState(false);
   const [copied, setCopied] = useState(false);
   const dateText = new Intl.DateTimeFormat('zh-CN', { month: 'long', day: 'numeric', weekday: 'short', timeZone: 'UTC' }).format(new Date(`${selectedDate}T00:00:00Z`));
@@ -204,6 +205,7 @@ function TodayView({ selectedDate, setSelectedDate, items, progress, completed, 
   const unfinishedItems = items.filter((item) => item.status !== '已通过');
   const rolloverItems = unfinishedItems.filter((item) => item.owner !== '红人（Yoyo）');
   const yoyoPendingItems = unfinishedItems.filter((item) => item.owner === '红人（Yoyo）');
+  const dailyScripts = items.filter((item) => item.category === '剧本' || item.id.endsWith('-script'));
   const dayNumber = Math.max(1, Math.round((new Date(`${selectedDate}T00:00:00Z`).getTime() - new Date('2026-09-10T00:00:00Z').getTime()) / 86400000) + 1);
   const selectedMonthDay = `${Number(selectedDate.slice(5, 7))}月${Number(selectedDate.slice(8, 10))}日`;
   useEffect(() => { setShowSummary(false); setCopied(false); }, [selectedDate]);
@@ -254,6 +256,20 @@ function TodayView({ selectedDate, setSelectedDate, items, progress, completed, 
         <p className="mt-5 text-3xl font-semibold tracking-[-.04em]">{selectedMonthDay}</p><p className="mt-1 text-sm text-muted-foreground">正式筹备 Day {dayNumber} · 10月9日硬交付</p>
       </div>
     </section>
+    <section className="mt-5 overflow-hidden rounded-2xl border border-[#ff6240]/25 bg-card">
+      <button type="button" onClick={onOpenHandbook} className="flex w-full items-center gap-4 p-4 text-left transition hover:bg-white/[.025] md:p-5">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#ff6240]/15 text-[#ff8066]"><Film className="h-5 w-5" /></span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2"><p className="eyebrow">TODAY&apos;S SCRIPT</p><span className="rounded-full border border-white/8 bg-white/5 px-2 py-0.5 text-[10px] text-muted-foreground">{dailyScripts.length}场</span></div>
+          <h2 className="mt-1 text-lg font-semibold">今日工作剧本</h2>
+          <p className="mt-1 text-sm leading-5 text-muted-foreground">{dailyScripts.length ? dailyScripts.map((item) => item.title.replace(/^锁定/, '').replace(/剧本、动作与台词$/, '')).join(' · ') : '今天还没有放入剧本；进入生产手册添加当天场次。'}</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-1 text-xs text-[#ff8066]"><span>{isAdmin ? '查看／添加' : '查看剧本'}</span><ChevronRight className="h-4 w-4" /></div>
+      </button>
+      <div className="grid grid-cols-2 border-t border-white/8 text-xs text-muted-foreground md:grid-cols-4">
+        {['人物造型', '服装', '道具', '场景图'].map((label) => <div key={label} className="border-r border-white/8 px-3 py-2.5 last:border-r-0"><span className="mr-1 text-[#ff8066]">□</span>主美·{label}</div>)}
+      </div>
+    </section>
     {items.length > 0 && <section className="mt-7">
       <div className="mb-3 flex items-end justify-between gap-3"><div><p className="eyebrow">TODAY&apos;S WORKFLOWS</p><h2 className="mt-1 text-xl font-semibold">今日主要工作流</h2></div><span className="rounded-full border border-cyan-400/20 bg-cyan-400/8 px-3 py-1 text-xs text-cyan-300">{workflowLanes.length}条同步推进</span></div>
       <div className="space-y-3">{workflowLanes.map((lane, laneIndex) => {
@@ -293,6 +309,7 @@ function ScriptAnalysisView({ isAdmin, selectedDate, productionItems, onAssigned
   const [assigning, setAssigning] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
+  const [showAddScript, setShowAddScript] = useState(false);
 
   async function loadAnalyses() {
     try {
@@ -335,13 +352,35 @@ function ScriptAnalysisView({ isAdmin, selectedDate, productionItems, onAssigned
     }
   }
 
+  async function updateAsset(item: ScriptAssetItem, changes: Pick<ScriptAssetItem, 'name' | 'detail' | 'visualBrief'>) {
+    const response = await fetch('/api/script-analysis', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: item.id, ...changes }) });
+    const data = await response.json() as { item?: ScriptAssetItem; error?: string };
+    if (!response.ok || !data.item) throw new Error(data.error || '保存失败');
+    setAssetItems((current) => current.map((candidate) => candidate.id === item.id ? { ...candidate, ...data.item, yoyoApproved: Boolean(data.item?.yoyoApproved), producerApproved: Boolean(data.item?.producerApproved) } : candidate));
+  }
+
+  async function addDailyScript(draft: { episode: string; sceneNo: number; sceneTitle: string; location: string; scriptText: string }) {
+    setError('');
+    const saveResponse = await fetch('/api/script-analysis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'saveScene', workDate, ...draft }) });
+    const saved = await saveResponse.json() as { analysisId?: string; error?: string };
+    if (!saveResponse.ok || !saved.analysisId) throw new Error(saved.error || '剧本保存失败');
+    const assignResponse = await fetch('/api/script-analysis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'assign', workDate, analysisIds: [saved.analysisId] }) });
+    const assigned = await assignResponse.json() as { error?: string };
+    if (!assignResponse.ok) throw new Error(assigned.error || '剧本已保存，但分配岗位失败');
+    await loadAnalyses();
+    await onAssigned(workDate);
+    setShowAddScript(false);
+    setNotice(`已把“${draft.sceneTitle}”放入${shortDate(workDate)}生产手册，并建立主美的人物造型、服装、道具、场景图工作清单。`);
+  }
+
   return <section>
-    <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">DAILY PRODUCTION BOOK</p><h2 className="mt-1 text-2xl font-semibold">每日生产手册</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">当天放入要生产的剧本与场次。主美按剧本总结本场要生成的场景、人物、穿搭、妆发和道具，再逐项出图。</p></div><span className="w-fit rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1.5 text-xs text-cyan-300">当前由我先拆解 · 不接外部模型</span></div>
+    <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">DAILY PRODUCTION BOOK</p><h2 className="mt-1 text-2xl font-semibold">每日生产手册</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">当天放入要生产的剧本与场次。主美负责按剧本整理、生成并提报人物造型、服装、道具和场景图片。</p></div><span className="w-fit rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1.5 text-xs text-cyan-300">当前由我先拆解 · 不接外部模型</span></div>
     <div className="control-card p-4 md:p-6">
       <div className="grid gap-4 md:grid-cols-[220px_1fr_auto] md:items-end"><Field label="放到哪一天"><input type="date" min="2026-09-10" max="2026-10-09" value={workDate} onChange={(event) => { setWorkDate(event.target.value); setNotice(''); }} className="edit-input" /></Field><div><p className="mb-1.5 text-sm text-muted-foreground">选择当天要生产的场次</p><div className="flex flex-wrap gap-2">{analyses.map((analysis) => { const selected = selectedIds.includes(analysis.id); const assigned = productionItems.some((item) => item.id === `daily-${workDate}-${analysis.id}-script`); return <button key={analysis.id} type="button" disabled={!isAdmin} onClick={() => setSelectedIds((current) => selected ? current.filter((id) => id !== analysis.id) : [...current, analysis.id])} className={`rounded-lg border px-3 py-2 text-xs transition ${selected ? 'border-[#ff6240] bg-[#ff6240]/15 text-white' : assigned ? 'border-emerald-400/20 bg-emerald-400/8 text-emerald-300' : 'border-white/10 bg-white/5 text-muted-foreground'}`}><span className="mr-1">{selected ? '✓' : assigned ? '已排' : '□'}</span>第{analysis.sceneNo}场</button>; })}</div></div><Button disabled={!isAdmin || !selectedIds.length || assigning} onClick={() => void assignWork()} className="h-11"><ListChecks className={assigning ? 'animate-pulse' : ''} />{assigning ? '正在分配…' : '分配到各工种'}</Button></div>
       <div className="mt-4 rounded-xl border border-white/8 bg-white/[.025] p-3 text-xs leading-5 text-muted-foreground"><b className="text-zinc-200">岗位顺序：</b>编剧交本 → 主美逐场总结 → 主美出图 → Lipa发微信 → 叶总与Yoyo只审核主美图。主美图可用后，抽卡师同步开始白模。</div>
       {notice && <p className="mt-3 rounded-xl border border-emerald-400/20 bg-emerald-400/[.06] px-3 py-2 text-sm text-emerald-300">{notice}</p>}
       {error && <p className="mt-3 rounded-xl border border-red-400/20 bg-red-400/[.06] px-3 py-2 text-sm text-red-300">{error}</p>}
+      {isAdmin && <div className="mt-4 border-t border-white/8 pt-4"><Button variant="outline" onClick={() => setShowAddScript((value) => !value)}><span className="text-base">＋</span>{showAddScript ? '收起新增剧本' : 'Lipa添加当天工作剧本'}</Button>{showAddScript && <AddDailyScriptForm workDate={workDate} onCancel={() => setShowAddScript(false)} onSave={addDailyScript} />}</div>}
     </div>
 
     <div className="mt-7 flex items-end justify-between gap-3"><div><p className="eyebrow">SCRIPT · ART · APPROVAL</p><h2 className="mt-1 text-xl font-semibold">{shortDate(workDate)} · 生产手册</h2></div><span className="text-right text-xs text-muted-foreground">当天场次有橙色标记 · 叶总/Yoyo只审主美图</span></div>
@@ -352,10 +391,35 @@ function ScriptAnalysisView({ isAdmin, selectedDate, productionItems, onAssigned
       return <article key={analysis.id} className="control-card p-4 md:p-5">
         <div className="flex flex-col gap-3 border-b border-white/8 pb-4 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex flex-wrap items-center gap-2"><p className="text-xs text-[#ff8066]">{analysis.episode} · 第{analysis.sceneNo}场</p><span className={`rounded-full border px-2 py-0.5 text-[10px] ${assignedToday ? 'border-[#ff6240]/30 bg-[#ff6240]/10 text-[#ff8a72]' : 'border-white/8 bg-white/4 text-zinc-500'}`}>{assignedToday ? `已排${shortDate(workDate)}` : '未排当天'}</span></div><h3 className="mt-1 text-lg font-medium">{analysis.sceneTitle}</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">{analysis.location} · {analysis.sceneSummary}</p></div><span className={`w-fit shrink-0 rounded-full border px-3 py-1 text-xs ${fullyApproved === rows.length && rows.length ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300' : 'border-white/10 bg-white/5 text-muted-foreground'}`}>{fullyApproved}/{rows.length} 双方确认</span></div>
         <SceneScriptBlock analysis={analysis} editable={isAdmin} onSaved={(scriptText) => setAnalyses((current) => current.map((row) => row.id === analysis.id ? { ...row, scriptText } : row))} />
-        <div className="mt-4 grid gap-3 md:grid-cols-2">{rows.map((item) => <HandbookAssetCard key={item.id} item={item} editable={isAdmin} onToggle={(target, checked) => void toggleApproval(item, target, checked)} />)}</div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">{rows.map((item) => <HandbookAssetCard key={item.id} item={item} editable={isAdmin} onSave={(changes) => updateAsset(item, changes)} onToggle={(target, checked) => void toggleApproval(item, target, checked)} />)}</div>
       </article>;
     }) : <Empty text="还没有放入生产手册的剧本场次" />}</div>
   </section>;
+}
+
+function AddDailyScriptForm({ workDate, onCancel, onSave }: { workDate: string; onCancel: () => void; onSave: (draft: { episode: string; sceneNo: number; sceneTitle: string; location: string; scriptText: string }) => Promise<void> }) {
+  const [episode, setEpisode] = useState('第1集');
+  const [sceneNo, setSceneNo] = useState(1);
+  const [sceneTitle, setSceneTitle] = useState('');
+  const [location, setLocation] = useState('');
+  const [scriptText, setScriptText] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  async function save() {
+    setSaving(true);
+    setError('');
+    try { await onSave({ episode, sceneNo, sceneTitle, location, scriptText }); }
+    catch (nextError) { setError(nextError instanceof Error ? nextError.message : '保存失败'); }
+    finally { setSaving(false); }
+  }
+  return <div className="mt-4 rounded-xl border border-[#ff6240]/20 bg-[#ff6240]/[.04] p-4">
+    <div className="grid gap-3 sm:grid-cols-[120px_100px_1fr]"><Field label="集数"><input value={episode} onChange={(event) => setEpisode(event.target.value)} className="edit-input" /></Field><Field label="场次"><input type="number" min="1" value={sceneNo} onChange={(event) => setSceneNo(Math.max(1, Number(event.target.value)))} className="edit-input" /></Field><Field label="场次名称"><input value={sceneTitle} onChange={(event) => setSceneTitle(event.target.value)} className="edit-input" placeholder="例如：陆文川醒来" /></Field></div>
+    <div className="mt-3"><Field label="场景／地点"><input value={location} onChange={(event) => setLocation(event.target.value)} className="edit-input" placeholder="内/外景、地点、日/夜" /></Field></div>
+    <div className="mt-3"><Field label={`${shortDate(workDate)}当天工作剧本`}><Textarea value={scriptText} onChange={(event) => setScriptText(event.target.value)} rows={10} placeholder="粘贴这一场的完整剧本。保存后建立主美四类出图任务，再由Lipa继续细化每一项。" /></Field></div>
+    <p className="mt-3 text-xs leading-5 text-muted-foreground">保存后自动建立：人物造型、服装、道具、场景图。叶总和Yoyo只确认主美图，不审核剧本。</p>
+    {error && <p className="mt-3 text-sm text-red-300">{error}</p>}
+    <div className="mt-4 flex justify-end gap-2"><Button variant="outline" onClick={onCancel}>取消</Button><Button disabled={saving || !sceneTitle.trim() || !scriptText.trim()} onClick={() => void save()}><Check />{saving ? '正在建立…' : '保存并分配工作'}</Button></div>
+  </div>;
 }
 
 function SceneScriptBlock({ analysis, editable, onSaved }: { analysis: ScriptAnalysis; editable: boolean; onSaved: (scriptText: string) => void }) {
@@ -374,12 +438,14 @@ function SceneScriptBlock({ analysis, editable, onSaved }: { analysis: ScriptAna
   </div>;
 }
 
-function HandbookAssetCard({ item, editable, onToggle }: { item: ScriptAssetItem; editable: boolean; onToggle: (target: 'yoyoApproved' | 'producerApproved', checked: boolean) => void }) {
+function HandbookAssetCard({ item, editable, onSave, onToggle }: { item: ScriptAssetItem; editable: boolean; onSave: (changes: Pick<ScriptAssetItem, 'name' | 'detail' | 'visualBrief'>) => Promise<void>; onToggle: (target: 'yoyoApproved' | 'producerApproved', checked: boolean) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState({ name: item.name, detail: item.detail, visualBrief: item.visualBrief });
+  const [saving, setSaving] = useState(false);
   const done = item.yoyoApproved && item.producerApproved;
   return <div className={`rounded-xl border p-3 ${done ? 'border-emerald-400/25 bg-emerald-400/[.05]' : 'border-red-400/25 bg-red-400/[.045]'}`}>
-    <div className="flex flex-wrap items-center gap-2"><span className="rounded-md bg-white/6 px-2 py-0.5 text-[10px] text-muted-foreground">{item.category}</span><p className={`text-sm font-medium ${done ? 'text-zinc-500 line-through' : ''}`}>{item.name}</p></div>
-    <p className="mt-2 text-xs leading-5 text-zinc-300">{item.detail}</p>
-    {item.visualBrief && <p className="mt-2 border-t border-white/6 pt-2 text-[11px] leading-5 text-muted-foreground"><span className="text-zinc-400">主美需要出：</span>{item.visualBrief}</p>}
+    <div className="flex items-start justify-between gap-2"><div className="flex flex-wrap items-center gap-2"><span className="rounded-md bg-white/6 px-2 py-0.5 text-[10px] text-muted-foreground">{item.category}</span><p className={`text-sm font-medium ${done ? 'text-zinc-500 line-through' : ''}`}>{item.name}</p></div>{editable && <button type="button" onClick={() => { setDraft({ name: item.name, detail: item.detail, visualBrief: item.visualBrief }); setEditing((value) => !value); }} className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-white/5 hover:text-white" aria-label="修改主美工作项"><Pencil className="h-3.5 w-3.5" /></button>}</div>
+    {editing ? <div className="mt-3 space-y-2"><input value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} className="edit-input" placeholder="工作项名称" /><Textarea value={draft.detail} onChange={(event) => setDraft((current) => ({ ...current, detail: event.target.value }))} rows={3} placeholder="根据剧本判断出的具体内容" /><Textarea value={draft.visualBrief} onChange={(event) => setDraft((current) => ({ ...current, visualBrief: event.target.value }))} rows={3} placeholder="主美具体需要生成什么图" /><div className="flex justify-end gap-2"><Button size="sm" variant="outline" onClick={() => setEditing(false)}>取消</Button><Button size="sm" disabled={saving || !draft.name.trim()} onClick={async () => { setSaving(true); try { await onSave(draft); setEditing(false); } finally { setSaving(false); } }}><Check />{saving ? '保存中…' : '保存'}</Button></div></div> : <><p className="mt-2 text-xs leading-5 text-zinc-300">{item.detail}</p>{item.visualBrief && <p className="mt-2 border-t border-white/6 pt-2 text-[11px] leading-5 text-muted-foreground"><span className="text-zinc-400">主美需要出：</span>{item.visualBrief}</p>}</>}
     <div className="mt-3 grid grid-cols-2 gap-2">
       <ApprovalCheck label="Yoyo" checked={item.yoyoApproved} disabled={!editable} onChange={(checked) => onToggle('yoyoApproved', checked)} />
       <ApprovalCheck label="叶总" checked={item.producerApproved} disabled={!editable} onChange={(checked) => onToggle('producerApproved', checked)} />

@@ -44,7 +44,49 @@ export async function GET() {
 export async function POST(request: Request) {
   const admin = await requireAdmin(request);
   if (!admin) return Response.json({ error: '只有Lipa可以分配当天工作' }, { status: 403 });
-  const body = await request.json() as Partial<{ action: string; workDate: string; analysisIds: string[] }>;
+  const body = await request.json() as Partial<{ action: string; workDate: string; analysisIds: string[]; episode: string; sceneNo: number; sceneTitle: string; location: string; scriptText: string }>;
+
+  if (body.action === 'saveScene') {
+    if (!/^2026-\d{2}-\d{2}$/.test(body.workDate || '') || !body.episode?.trim() || !Number.isInteger(Number(body.sceneNo)) || Number(body.sceneNo) < 1 || !body.sceneTitle?.trim() || !body.scriptText?.trim()) {
+      return Response.json({ error: '请填写日期、集数、场次、场名和完整剧本' }, { status: 400 });
+    }
+    await ensureFirstEpisodeBreakdown();
+    const episode = body.episode.trim().slice(0, 40);
+    const sceneNo = Number(body.sceneNo);
+    const sceneTitle = body.sceneTitle.trim().slice(0, 120);
+    const location = (body.location || '').trim().slice(0, 160);
+    const scriptText = body.scriptText.trim().slice(0, 50000);
+    const existing = await env.DB.prepare('SELECT id FROM script_analyses WHERE episode = ? AND scene_no = ?').bind(episode, sceneNo).first<{ id: string }>();
+    const analysisId = existing?.id || `manual-${crypto.randomUUID()}`;
+    const now = new Date().toISOString();
+    if (existing) {
+      await env.DB.batch([
+        env.DB.prepare('UPDATE script_analyses SET scene_title = ?, script_text = ?, location = ?, updated_at = ? WHERE id = ?').bind(sceneTitle, scriptText, location, now, analysisId),
+        env.DB.prepare('INSERT INTO activity_log (item_type, item_id, action, operator, created_at) VALUES (?, ?, ?, ?, ?)').bind('script_analysis', analysisId, `更新${body.workDate}当天工作剧本`, 'Lipa', now),
+      ]);
+      return Response.json({ ok: true, analysisId, created: false });
+    }
+
+    const starterItems = [
+      { category: '人物', name: '人物造型', detail: '根据本场剧本确定出场人物、身份状态、妆发与造型连续性。', visualBrief: '人物定妆图、发型与妆面、表情状态及必要的正侧面参考。' },
+      { category: '服装', name: '本场服装', detail: '根据时间、地点、人物状态和前后场连续性确定本场穿搭。', visualBrief: '完整穿搭图，标清内外层、鞋袜、配饰、颜色和材质。' },
+      { category: '道具', name: '本场道具', detail: '从人物动作、剧情信息和互动关系中提取必须出现或使用的道具。', visualBrief: '关键道具设定图、尺寸与材质参考；需要手持或互动的要补使用状态。' },
+      { category: '场景', name: '本场场景图', detail: '根据剧本中的内外景、日夜、空间关系和动作调度确定场景。', visualBrief: '场景全景、关键机位方向、出入口和主要陈设；足够支持后续白模调度。' },
+    ];
+    await env.DB.batch([
+      env.DB.prepare(`INSERT INTO script_analyses
+        (id, episode, scene_no, scene_title, script_text, scene_summary, location, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        .bind(analysisId, episode, sceneNo, sceneTitle, scriptText, '今日工作剧本；待Lipa按剧本继续细化主美出图清单。', location, now, now),
+      ...starterItems.map((item, index) => env.DB.prepare(`INSERT INTO script_analysis_items
+        (id, analysis_id, category, name, detail, visual_brief, yoyo_approved, producer_approved, sort_order, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?, ?)`)
+        .bind(`${analysisId}-${index + 1}`, analysisId, item.category, item.name, item.detail, item.visualBrief, index + 1, now)),
+      env.DB.prepare('INSERT INTO activity_log (item_type, item_id, action, operator, created_at) VALUES (?, ?, ?, ?, ?)').bind('script_analysis', analysisId, `新增${body.workDate}当天工作剧本并建立主美四类工作`, 'Lipa', now),
+    ]);
+    return Response.json({ ok: true, analysisId, created: true });
+  }
+
   if (body.action !== 'assign' || !/^2026-\d{2}-\d{2}$/.test(body.workDate || '') || !Array.isArray(body.analysisIds) || !body.analysisIds.length) {
     return Response.json({ error: '请选择工作日期和至少一个场次' }, { status: 400 });
   }
