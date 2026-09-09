@@ -11,6 +11,16 @@ export async function GET() {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(row.id, row.startDate, row.endDate, row.production, row.prep, row.note, row.sortOrder, row.updatedAt)));
     }
+    const workflowVersion = await env.DB.prepare("SELECT value FROM app_settings WHERE key = 'workflow_plan_v3'").first<{ value: string }>();
+    if (!workflowVersion) {
+      await env.DB.batch([
+        ...initialBatches.map((row) => env.DB.prepare(`
+          INSERT OR REPLACE INTO plan_batches (id, start_date, end_date, production, prep, note, sort_order, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(row.id, row.startDate, row.endDate, row.production, row.prep, row.note, row.sortOrder, row.updatedAt)),
+        env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_plan_v3', 'done', ?)").bind(new Date().toISOString()),
+      ]);
+    }
     const result = await env.DB.prepare(`
       SELECT id, start_date AS startDate, end_date AS endDate, production, prep, note,
              sort_order AS sortOrder, updated_at AS updatedAt
