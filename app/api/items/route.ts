@@ -59,6 +59,22 @@ export async function GET() {
         env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_white_review_v1', 'done', ?)").bind(updatedAt),
       ]);
     }
+    const asyncReviewVersion = await env.DB.prepare("SELECT value FROM app_settings WHERE key = 'workflow_yoyo_async_v1'").first<{ value: string }>();
+    if (!asyncReviewVersion) {
+      const updatedAt = new Date().toISOString();
+      await env.DB.batch([
+        env.DB.prepare("UPDATE production_items SET due_time = '异步', handoff_deadline = '收到回复后更新', note = 'Yoyo不登录系统、不设硬deadline；未回复不阻断剧本、场景图和白模', updated_at = ? WHERE id = '0910-yoyo'").bind(updatedAt),
+        env.DB.prepare("UPDATE production_items SET title = '收到后录入Yoyo反馈并更新已通过场景', due_time = '收到后', depends_on_id = '', handoff_deadline = '录入后即时同步', note = '收到一项录入一项；不影响剧本、场景图和白模继续推进', updated_at = ? WHERE id = '0910-lipa-record'").bind(updatedAt),
+        env.DB.prepare("UPDATE production_items SET note = '收到主美提报后立即发送；发出后进入异步审核', handoff_deadline = '发出即进入异步审核', updated_at = ? WHERE id = '0910-send-yoyo'").bind(updatedAt),
+        env.DB.prepare("UPDATE production_items SET note = '第一集剧本已具备，可直接按剧本制作；无需等待Yoyo回复，生成后同步提报Yoyo和叶总', handoff_deadline = '生成后即提报', updated_at = ? WHERE id = '0910-white'").bind(updatedAt),
+        env.DB.prepare("UPDATE production_items SET note = '依据剧本完成全部场景与调度白模；无需等待Yoyo回复，完成后同步审核材料', handoff_deadline = '完成后即提报', updated_at = ? WHERE id = '0911-white'").bind(updatedAt),
+        env.DB.prepare("UPDATE production_items SET due_time = '异步', handoff_deadline = '收到回复后更新', note = 'Yoyo不登录系统、不设硬deadline；Lipa收到微信意见后更新结果', updated_at = ? WHERE id = '0911-yoyo-white'").bind(updatedAt),
+        env.DB.prepare("UPDATE production_items SET due_time = '异步', handoff_deadline = '收到回复后更新', note = 'Yoyo不登录系统、不设硬deadline；未回复不阻断剧本、场景图和白模，只影响最终锁定', updated_at = ? WHERE owner = '红人（Yoyo）' AND id LIKE '2026-%-review'").bind(updatedAt),
+        env.DB.prepare("UPDATE production_items SET title = '更新已收到的微信意见并调整次日Rundown', depends_on_id = '', note = '不等待Yoyo回复；Lipa按已收到的信息更新进度与次日安排', updated_at = ? WHERE owner = '联合制片人／导演：Lipa' AND id LIKE '2026-%-lipa'").bind(updatedAt),
+        env.DB.prepare("UPDATE production_items SET note = '每天提报2场；发给Yoyo后继续下一场，不等待回复', handoff_deadline = '完成后即提报', updated_at = ? WHERE owner = '主美' AND id LIKE '2026-%-prep'").bind(updatedAt),
+        env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_yoyo_async_v1', 'done', ?)").bind(updatedAt),
+      ]);
+    }
     const result = await env.DB.prepare(`
       SELECT id, work_date AS workDate, episode, category, title, owner, reviewer, status,
              planned_qty AS plannedQty, completed_qty AS completedQty, due_time AS dueTime,
