@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { initialBatches, initialItems, initialScenes, PlanBatch, ProductionItem, Scene, STATUSES, Status } from '@/lib/plan-data';
@@ -254,14 +255,15 @@ function PlanView({ items, batches, isAdmin, onEdit }: { items: ProductionItem[]
 
 function ScenesView({ scenes, isAdmin, onChange }: { scenes: Scene[]; isAdmin: boolean; onChange: (id: string, field: keyof Scene, status: Status) => void }) {
   return <section>
-    <div className="mb-5"><p className="eyebrow">SCENE PIPELINE</p><h2 className="mt-1 text-2xl font-semibold">第1集 · 逐场生产</h2><p className="mt-2 text-sm text-muted-foreground">点击任一环节可推进状态：未开始 → 进行中 → 待审核 → 已通过。</p></div>
+    <div className="mb-5"><p className="eyebrow">SCENE PIPELINE</p><h2 className="mt-1 text-2xl font-semibold">第1集 · 逐场生产</h2><p className="mt-2 text-sm text-muted-foreground">每个环节完成后直接勾选；再次点击可以取消完成。</p></div>
     <div className="space-y-3">{scenes.map((scene) => {
       const passed = stageLabels.filter((stage) => scene[stage.key] === '已通过').length;
       return <article key={scene.id} className="control-card p-4 md:p-5">
         <div className="flex items-start justify-between gap-4"><div><p className="text-xs text-[#ff8168]">第1集 · 第{scene.sceneNo}场</p><h3 className="mt-1 text-base font-medium md:text-lg">{scene.title}</h3><p className="mt-1 text-xs text-muted-foreground">{scene.location}</p></div><span className="rounded-full bg-white/5 px-2.5 py-1 text-xs text-muted-foreground">{passed}/8</span></div>
         <div className="mt-4 grid grid-cols-4 gap-2 md:grid-cols-8">{stageLabels.map((stage) => {
           const value = scene[stage.key] as Status;
-          return <button key={String(stage.key)} disabled={!isAdmin} onClick={() => onChange(scene.id, stage.key, nextStatus(value))} aria-label={`${stage.label}当前${value}${isAdmin ? '，点击推进' : ''}`} className={`min-h-14 rounded-xl border px-1 py-2 text-center transition enabled:active:scale-[.98] disabled:cursor-default ${statusStyle[value]}`}><span className="block text-[11px]">{stage.label}</span><span className="mt-1 block text-[10px] opacity-80">{value}</span></button>;
+          const checked = value === '已通过';
+          return <label key={String(stage.key)} className={`flex min-h-[76px] cursor-pointer flex-col items-center justify-center rounded-xl border px-1 py-2 text-center transition has-[:disabled]:cursor-default ${statusStyle[value]}`}><Checkbox checked={checked} disabled={!isAdmin} onCheckedChange={(nextChecked) => onChange(scene.id, stage.key, nextChecked ? '已通过' : '未开始')} aria-label={`${stage.label}${checked ? '已完成' : '未完成'}`} className="mb-2 size-5 border-white/30 data-checked:border-emerald-400 data-checked:bg-emerald-400 data-checked:text-black" /><span className="block text-[12px]">{stage.label}</span><span className="mt-0.5 block text-[10px] opacity-75">{checked ? '已完成' : value}</span></label>;
         })}</div>
       </article>;
     })}</div>
@@ -342,7 +344,6 @@ function Metric({ label, value, suffix, accent = false }: { label: string; value
 function NavTab({ value, label, icon }: { value: string; label: string; icon: React.ReactNode }) { return <TabsTrigger value={value} className="group flex h-full flex-col gap-1 rounded-[16px] text-xs text-zinc-500 data-[state=active]:bg-white/8 data-[state=active]:text-white md:flex-row md:gap-2 md:rounded-lg [&_svg]:h-[18px] [&_svg]:w-[18px]"><span>{icon}</span><span>{label}</span></TabsTrigger>; }
 function Empty({ text, success = false }: { text: string; success?: boolean }) { return <div className="control-card grid min-h-52 place-items-center p-8 text-center"><div><div className={`mx-auto grid h-11 w-11 place-items-center rounded-full ${success ? 'bg-emerald-400/10 text-emerald-300' : 'bg-white/5 text-muted-foreground'}`}>{success ? <CheckCircle2 className="h-5 w-5" /> : <CircleDashed className="h-5 w-5" />}</div><p className="mt-3 text-sm text-muted-foreground">{text}</p></div></div>; }
 function shortDate(date: string) { const [, month, day] = date.split('-'); return `${Number(month)}.${day}`; }
-function nextStatus(status: Status): Status { const order: Status[] = ['未开始','进行中','待审核','已通过']; if (status === '打回') return '进行中'; return order[Math.min(order.indexOf(status) + 1, order.length - 1)]; }
 function dependencyState(item: ProductionItem, allItems: ProductionItem[]) {
   if (!item.dependsOnId) return { blocked: false, upstream: undefined as ProductionItem | undefined };
   const upstream = allItems.find((candidate) => candidate.id === item.dependsOnId);
