@@ -221,7 +221,26 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   const admin = await requireAdmin(request);
   if (!admin) return Response.json({ error: '只有Lipa可以删除主美工作项' }, { status: 403 });
-  const body = await request.json() as { id?: string };
+  const body = await request.json() as { id?: string; ids?: string[] };
+  if (Array.isArray(body.ids) && body.ids.length) {
+    const ids = [...new Set(body.ids)].slice(0, 100);
+    const placeholders = ids.map(() => '?').join(',');
+    const matched = await env.DB.prepare(`SELECT i.id, a.episode FROM script_analysis_items i JOIN script_analyses a ON a.id = i.analysis_id
+      WHERE i.id IN (${placeholders}) AND i.category = '道具'`).bind(...ids).all<{ id: string; episode: string }>();
+    if (!matched.results.length) return Response.json({ error: '没有找到可删除的道具' }, { status: 404 });
+    const matchedIds = matched.results.map((row) => row.id);
+    const matchedPlaceholders = matchedIds.map(() => '?').join(',');
+    const affectedEpisodes = [...new Set(matched.results.map((row) => row.episode))];
+    const updatedAt = new Date().toISOString();
+    const statements = [
+      env.DB.prepare(`DELETE FROM script_analysis_items WHERE id IN (${matchedPlaceholders}) AND category = '道具'`).bind(...matchedIds),
+      ...affectedEpisodes.map((episode) => env.DB.prepare(`UPDATE production_items SET planned_qty = (SELECT COUNT(*) FROM script_analysis_items i JOIN script_analyses a ON a.id = i.analysis_id WHERE a.episode = ?), updated_at = ?
+        WHERE episode = ? AND category = '美术清单'`).bind(episode, updatedAt, episode)),
+      env.DB.prepare('INSERT INTO activity_log (item_type, item_id, action, operator, created_at) VALUES (?, ?, ?, ?, ?)').bind('script_analysis_item', matchedIds.join(',').slice(0, 500), `批量删除${matchedIds.length}项道具`, 'Lipa', updatedAt),
+    ];
+    await env.DB.batch(statements);
+    return Response.json({ ok: true, ids: matchedIds, deletedCount: matchedIds.length });
+  }
   if (!body.id) return Response.json({ error: '缺少工作项ID' }, { status: 400 });
   const current = await env.DB.prepare(`SELECT i.analysis_id AS analysisId, i.name, a.episode
     FROM script_analysis_items i JOIN script_analyses a ON a.id = i.analysis_id WHERE i.id = ?`).bind(body.id).first<{ analysisId: string; name: string; episode: string }>();

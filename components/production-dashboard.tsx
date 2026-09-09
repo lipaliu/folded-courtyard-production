@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, CircleDashed,
-  ClipboardCopy, Clock3, Film, LayoutDashboard, ListChecks, Loader2, Pencil, RefreshCw, Rows3, Sparkles, Trash2, Upload, X,
+  ClipboardCopy, Clock3, Download, Film, LayoutDashboard, ListChecks, Loader2, Pencil, RefreshCw, Rows3, Sparkles, Trash2, Upload, X,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -152,7 +152,7 @@ export function ProductionDashboard() {
   return (
     <main className="min-h-screen bg-transparent text-foreground">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mx-auto min-h-screen w-full max-w-6xl pb-24 md:pb-9">
-        <header className="sticky top-0 z-30 border-b border-white/8 bg-background/88 px-4 py-3 backdrop-blur-xl md:px-8">
+        <header className="no-print sticky top-0 z-30 border-b border-white/8 bg-background/88 px-4 py-3 backdrop-blur-xl md:px-8">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
             <div>
               <p className="text-[12px] font-medium tracking-[0.16em] text-muted-foreground">总制片推进台</p>
@@ -180,7 +180,7 @@ export function ProductionDashboard() {
           </div>
         </div>
 
-        <TabsList className="fixed inset-x-3 bottom-3 z-40 mx-auto grid h-[68px] max-w-xl grid-cols-5 rounded-[22px] border border-white/10 bg-[#17191d]/96 p-1.5 shadow-2xl backdrop-blur-xl md:static md:mt-2 md:h-12 md:max-w-2xl md:rounded-xl">
+        <TabsList className="no-print fixed inset-x-3 bottom-3 z-40 mx-auto grid h-[68px] max-w-xl grid-cols-5 rounded-[22px] border border-white/10 bg-[#17191d]/96 p-1.5 shadow-2xl backdrop-blur-xl md:static md:mt-2 md:h-12 md:max-w-2xl md:rounded-xl">
           <NavTab value="today" label="今日" icon={<LayoutDashboard />} />
           <NavTab value="plan" label="大计划" icon={<Rows3 />} />
           <NavTab value="scenes" label="场次" icon={<Film />} />
@@ -317,6 +317,7 @@ function ScriptAnalysisView({ isAdmin, selectedDate, productionItems, onAssigned
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
   const [showAddScript, setShowAddScript] = useState(false);
+  const [selectedPropIds, setSelectedPropIds] = useState<string[]>([]);
 
   async function loadAnalyses() {
     try {
@@ -330,7 +331,7 @@ function ScriptAnalysisView({ isAdmin, selectedDate, productionItems, onAssigned
   }
 
   useEffect(() => { void loadAnalyses(); }, []);
-  useEffect(() => { setWorkDate(selectedDate); setNotice(''); }, [selectedDate]);
+  useEffect(() => { setWorkDate(selectedDate); setNotice(''); setSelectedPropIds([]); }, [selectedDate]);
 
   async function assignWork() {
     if (!selectedIds.length) return;
@@ -371,6 +372,18 @@ function ScriptAnalysisView({ isAdmin, selectedDate, productionItems, onAssigned
     await onAssigned(workDate);
   }
 
+  async function deleteSelectedProps() {
+    if (!selectedPropIds.length || !window.confirm(`确定删除选中的${selectedPropIds.length}项道具吗？`)) return;
+    const response = await fetch('/api/script-analysis', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: selectedPropIds }) });
+    const data = await response.json() as { ids?: string[]; deletedCount?: number; error?: string };
+    if (!response.ok) { setError(data.error || '批量删除失败，请重试'); return; }
+    const deletedIds = new Set(data.ids || selectedPropIds);
+    setAssetItems((current) => current.filter((candidate) => !deletedIds.has(candidate.id)));
+    setNotice(`已从主美清单删除${data.deletedCount || deletedIds.size}项道具。`);
+    setSelectedPropIds([]);
+    await onAssigned(workDate);
+  }
+
   async function updateAsset(item: ScriptAssetItem, changes: Pick<ScriptAssetItem, 'name' | 'detail' | 'visualBrief'>) {
     const response = await fetch('/api/script-analysis', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: item.id, ...changes }) });
     const data = await response.json() as { item?: ScriptAssetItem; error?: string };
@@ -408,10 +421,13 @@ function ScriptAnalysisView({ isAdmin, selectedDate, productionItems, onAssigned
 
   const dailyAnalyses = analyses.filter((analysis) => productionItems.some((item) => item.workDate === workDate && item.episode === analysis.episode && item.category === '美术清单'));
   const dailyEpisodes = [...new Set(dailyAnalyses.map((analysis) => analysis.episode))];
+  const dailyAnalysisIds = new Set(dailyAnalyses.map((analysis) => analysis.id));
+  const dailyPropIds = assetItems.filter((item) => dailyAnalysisIds.has(item.analysisId) && item.category === '道具').map((item) => item.id);
+  const allDailyPropsSelected = Boolean(dailyPropIds.length && dailyPropIds.every((id) => selectedPropIds.includes(id)));
 
   return <section>
-    <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">DAILY PRODUCTION BOOK</p><h2 className="mt-1 text-2xl font-semibold">每日生产手册</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">当天放入要生产的剧本与场次。主美负责按剧本整理、生成并提报人物造型、服装、道具和场景图片。</p></div><span className="w-fit rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1.5 text-xs text-cyan-300">当前由我先拆解 · 不接外部模型</span></div>
-    <div className="control-card p-4 md:p-6">
+    <div className="no-print mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">DAILY PRODUCTION BOOK</p><h2 className="mt-1 text-2xl font-semibold">每日生产手册</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">当天放入要生产的剧本与场次。主美负责按剧本整理、生成并提报人物造型、服装、道具和场景图片。</p></div><span className="w-fit rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1.5 text-xs text-cyan-300">当前由我先拆解 · 不接外部模型</span></div>
+    <div className="no-print control-card p-4 md:p-6">
       <div className="grid gap-4 md:grid-cols-[220px_1fr_auto] md:items-end"><Field label="放到哪一天"><input type="date" min="2026-09-10" max="2026-10-09" value={workDate} onChange={(event) => { setWorkDate(event.target.value); setNotice(''); }} className="edit-input" /></Field><div><p className="mb-1.5 text-sm text-muted-foreground">选择当天要生产的场次</p><div className="flex flex-wrap gap-2">{analyses.map((analysis) => { const selected = selectedIds.includes(analysis.id); const assigned = productionItems.some((item) => item.workDate === workDate && item.episode === analysis.episode && item.category === '美术清单'); return <button key={analysis.id} type="button" disabled={!isAdmin} onClick={() => setSelectedIds((current) => selected ? current.filter((id) => id !== analysis.id) : [...current, analysis.id])} className={`rounded-lg border px-3 py-2 text-xs transition ${selected ? 'border-[#ff6240] bg-[#ff6240]/15 text-white' : assigned ? 'border-emerald-400/20 bg-emerald-400/8 text-emerald-300' : 'border-white/10 bg-white/5 text-muted-foreground'}`}><span className="mr-1">{selected ? '✓' : assigned ? '已排' : '□'}</span>第{analysis.sceneNo}场</button>; })}</div></div><Button disabled={!isAdmin || !selectedIds.length || assigning} onClick={() => void assignWork()} className="h-11"><ListChecks className={assigning ? 'animate-pulse' : ''} />{assigning ? '正在分配…' : '分配到各工种'}</Button></div>
       <div className="mt-4 rounded-xl border border-white/8 bg-white/[.025] p-3 text-xs leading-5 text-muted-foreground"><b className="text-zinc-200">岗位顺序：</b>编剧整集交本后继续下一集 → 主美打开整集资产清单并出图 → Lipa整理资产包发微信 → Lipa只记录叶总/Yoyo的整集确认结果 → 两边都确认后才给抽卡师放行。</div>
       {notice && <p className="mt-3 rounded-xl border border-emerald-400/20 bg-emerald-400/[.06] px-3 py-2 text-sm text-emerald-300">{notice}</p>}
@@ -419,21 +435,23 @@ function ScriptAnalysisView({ isAdmin, selectedDate, productionItems, onAssigned
       {isAdmin && <div className="mt-4 border-t border-white/8 pt-4"><Button variant="outline" onClick={() => setShowAddScript((value) => !value)}><span className="text-base">＋</span>{showAddScript ? '收起新增剧本' : 'Lipa添加当天工作剧本'}</Button>{showAddScript && <AddDailyScriptForm workDate={workDate} onCancel={() => setShowAddScript(false)} onImport={importScriptFile} onSave={addDailyScript} />}</div>}
     </div>
 
-    <div className="mt-7 flex items-end justify-between gap-3"><div><p className="eyebrow">SCRIPT · ART · APPROVAL</p><h2 className="mt-1 text-xl font-semibold">{shortDate(workDate)} · 生产手册</h2></div><span className="text-right text-xs text-muted-foreground">当天场次有橙色标记 · 叶总/Yoyo只审主美图</span></div>
+    <div className="no-print mt-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">SCRIPT · ART · APPROVAL</p><h2 className="mt-1 text-xl font-semibold">{shortDate(workDate)} · 生产手册</h2><p className="mt-1 text-xs text-muted-foreground">当天场次有橙色标记 · 叶总/Yoyo只审主美图</p></div><Button variant="outline" disabled={!dailyAnalyses.length} onClick={() => window.print()}><Download />导出主美执行PDF</Button></div>
+    <div className="print-only handbook-print-title"><p>《折叠庭院的她》</p><h1>主美执行生产手册</h1><p>{shortDate(workDate)} · {dailyEpisodes.join('、') || '当天工作'}</p><p>人物造型 · 服装 · 道具 · 场景图</p></div>
     {dailyEpisodes.map((episode) => {
       const episodeAnalysisIds = new Set(analyses.filter((analysis) => analysis.episode === episode).map((analysis) => analysis.id));
       const episodeItems = assetItems.filter((item) => episodeAnalysisIds.has(item.analysisId));
       const yoyoApproved = Boolean(episodeItems.length && episodeItems.every((item) => item.yoyoApproved));
       const producerApproved = Boolean(episodeItems.length && episodeItems.every((item) => item.producerApproved));
-      return <div key={episode} className="mt-3 rounded-2xl border border-white/10 bg-card p-4 md:p-5"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-medium">{episode}全部资产确认</p><p className="mt-1 text-xs text-muted-foreground">确认发生在微信；这里只由Lipa记录最终结果，不逐项确认。</p></div><div className="grid min-w-[320px] grid-cols-2 gap-2"><ApprovalCheck label="叶总" checked={producerApproved} disabled={!isAdmin} onChange={(checked) => void toggleEpisodeApproval(episode, 'producer', checked)} /><ApprovalCheck label="Yoyo" checked={yoyoApproved} disabled={!isAdmin} onChange={(checked) => void toggleEpisodeApproval(episode, 'yoyo', checked)} /></div></div>{producerApproved && yoyoApproved && <p className="mt-3 rounded-lg border border-emerald-400/20 bg-emerald-400/[.06] px-3 py-2 text-xs text-emerald-300">双方已确认，抽卡师任务已自动放行。</p>}</div>;
+      return <div key={episode} className="no-print mt-3 rounded-2xl border border-white/10 bg-card p-4 md:p-5"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-medium">{episode}全部资产确认</p><p className="mt-1 text-xs text-muted-foreground">确认发生在微信；这里只由Lipa记录最终结果，不逐项确认。</p></div><div className="grid min-w-[320px] grid-cols-2 gap-2"><ApprovalCheck label="叶总" checked={producerApproved} disabled={!isAdmin} onChange={(checked) => void toggleEpisodeApproval(episode, 'producer', checked)} /><ApprovalCheck label="Yoyo" checked={yoyoApproved} disabled={!isAdmin} onChange={(checked) => void toggleEpisodeApproval(episode, 'yoyo', checked)} /></div></div>{producerApproved && yoyoApproved && <p className="mt-3 rounded-lg border border-emerald-400/20 bg-emerald-400/[.06] px-3 py-2 text-xs text-emerald-300">双方已确认，抽卡师任务已自动放行。</p>}</div>;
     })}
-    <div className="mt-3 space-y-4">{dailyAnalyses.length ? dailyAnalyses.map((analysis) => {
+    {isAdmin && dailyPropIds.length > 0 && <div className="no-print mt-3 flex flex-col gap-3 rounded-xl border border-white/10 bg-card p-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-medium">道具多选</p><p className="mt-1 text-xs text-muted-foreground">勾选不需要细化的道具后一次删除；人物、服装和场景不进入多选。</p></div><div className="flex flex-wrap items-center gap-2"><span className="text-xs text-muted-foreground">已选 {selectedPropIds.length} 项</span><Button size="sm" variant="outline" onClick={() => setSelectedPropIds(allDailyPropsSelected ? [] : dailyPropIds)}>{allDailyPropsSelected ? '取消全选' : '全选当天道具'}</Button><Button size="sm" variant="destructive" disabled={!selectedPropIds.length} onClick={() => void deleteSelectedProps()}><Trash2 />删除选中（{selectedPropIds.length}）</Button></div></div>}
+    <div className="production-handbook-print mt-3 space-y-4">{dailyAnalyses.length ? dailyAnalyses.map((analysis) => {
       const rows = assetItems.filter((item) => item.analysisId === analysis.id).sort((a, b) => a.sortOrder - b.sortOrder);
       const assignedToday = productionItems.some((item) => item.workDate === workDate && item.episode === analysis.episode && item.category === '美术清单');
-      return <article key={analysis.id} className="control-card p-4 md:p-5">
+      return <article key={analysis.id} className="print-scene control-card p-4 md:p-5">
         <div className="flex flex-col gap-3 border-b border-white/8 pb-4 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex flex-wrap items-center gap-2"><p className="text-xs text-[#ff8066]">{analysis.episode} · 第{analysis.sceneNo}场</p><span className={`rounded-full border px-2 py-0.5 text-[10px] ${assignedToday ? 'border-[#ff6240]/30 bg-[#ff6240]/10 text-[#ff8a72]' : 'border-white/8 bg-white/4 text-zinc-500'}`}>{assignedToday ? `已排${shortDate(workDate)}` : '未排当天'}</span></div><h3 className="mt-1 text-lg font-medium">{analysis.sceneTitle}</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">{analysis.location} · {analysis.sceneSummary}</p></div><span className="w-fit shrink-0 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-muted-foreground">主美清单 {rows.length}项</span></div>
         <SceneScriptBlock analysis={analysis} editable={isAdmin} onSaved={(scriptText) => setAnalyses((current) => current.map((row) => row.id === analysis.id ? { ...row, scriptText } : row))} />
-        <div className="mt-4 grid gap-3 md:grid-cols-2">{rows.map((item) => <HandbookAssetCard key={item.id} item={item} editable={isAdmin} onDelete={() => void deleteAsset(item)} onSave={(changes) => updateAsset(item, changes)} />)}</div>
+        <div className="asset-grid mt-4 grid gap-3 md:grid-cols-2">{rows.map((item) => <HandbookAssetCard key={item.id} item={item} editable={isAdmin} selectable={item.category === '道具'} selected={selectedPropIds.includes(item.id)} onSelect={(checked) => setSelectedPropIds((current) => checked ? [...new Set([...current, item.id])] : current.filter((id) => id !== item.id))} onDelete={() => void deleteAsset(item)} onSave={(changes) => updateAsset(item, changes)} />)}</div>
       </article>;
     }) : <Empty text={`${shortDate(workDate)}还没有工作剧本；Lipa可在上方选择已有场次，或添加新剧本。`} />}</div>
   </section>;
@@ -510,18 +528,18 @@ function SceneScriptBlock({ analysis, editable, onSaved }: { analysis: ScriptAna
     if (response.ok) { onSaved(draft); setEditing(false); }
     setSaving(false);
   }
-  return <div className="mt-4 rounded-xl border border-white/8 bg-black/10 p-3">
-    <div className="flex items-center justify-between gap-3"><p className="text-sm font-medium text-zinc-200">本场剧本</p>{editable && <button type="button" onClick={() => { setDraft(analysis.scriptText); setEditing((value) => !value); }} className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-white"><Pencil className="mr-1 inline h-3 w-3" />{editing ? '取消编辑' : '粘贴／修改剧本'}</button>}</div>
-    {editing ? <><Textarea value={draft} onChange={(event) => setDraft(event.target.value)} rows={12} className="mt-3" placeholder="把当天要生产的这一场完整剧本粘贴进来" /><Button disabled={saving || !draft.trim()} onClick={() => void save()} className="mt-3 h-10"><Check />{saving ? '保存中…' : '保存到生产手册'}</Button></> : <details className="mt-2"><summary className="cursor-pointer text-xs text-cyan-300">展开查看剧本全文</summary><p className="mt-3 whitespace-pre-wrap text-xs leading-6 text-muted-foreground">{analysis.scriptText}</p></details>}
+  return <div className="scene-script mt-4 rounded-xl border border-white/8 bg-black/10 p-3">
+    <div className="flex items-center justify-between gap-3"><p className="text-sm font-medium text-zinc-200">本场剧本</p>{editable && <button type="button" onClick={() => { setDraft(analysis.scriptText); setEditing((value) => !value); }} className="no-print rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-white"><Pencil className="mr-1 inline h-3 w-3" />{editing ? '取消编辑' : '粘贴／修改剧本'}</button>}</div>
+    {editing ? <><Textarea value={draft} onChange={(event) => setDraft(event.target.value)} rows={12} className="mt-3" placeholder="把当天要生产的这一场完整剧本粘贴进来" /><Button disabled={saving || !draft.trim()} onClick={() => void save()} className="no-print mt-3 h-10"><Check />{saving ? '保存中…' : '保存到生产手册'}</Button></> : <details className="script-details mt-2"><summary className="cursor-pointer text-xs text-cyan-300">展开查看剧本全文</summary><p className="mt-3 whitespace-pre-wrap text-xs leading-6 text-muted-foreground">{analysis.scriptText}</p></details>}
   </div>;
 }
 
-function HandbookAssetCard({ item, editable, onDelete, onSave }: { item: ScriptAssetItem; editable: boolean; onDelete: () => void; onSave: (changes: Pick<ScriptAssetItem, 'name' | 'detail' | 'visualBrief'>) => Promise<void> }) {
+function HandbookAssetCard({ item, editable, selectable, selected, onSelect, onDelete, onSave }: { item: ScriptAssetItem; editable: boolean; selectable: boolean; selected: boolean; onSelect: (checked: boolean) => void; onDelete: () => void; onSave: (changes: Pick<ScriptAssetItem, 'name' | 'detail' | 'visualBrief'>) => Promise<void> }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({ name: item.name, detail: item.detail, visualBrief: item.visualBrief });
   const [saving, setSaving] = useState(false);
-  return <div className="rounded-xl border border-white/10 bg-white/[.025] p-3">
-    <div className="flex items-start justify-between gap-2"><div className="flex flex-wrap items-center gap-2"><span className="rounded-md bg-white/6 px-2 py-0.5 text-[10px] text-muted-foreground">{item.category}</span><p className="text-sm font-medium">{item.name}</p></div>{editable && <div className="flex shrink-0 items-center"><button type="button" onClick={() => { setDraft({ name: item.name, detail: item.detail, visualBrief: item.visualBrief }); setEditing((value) => !value); }} className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-white/5 hover:text-white" aria-label="修改主美工作项"><Pencil className="h-3.5 w-3.5" /></button><button type="button" onClick={onDelete} className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-red-400/10 hover:text-red-300" aria-label="删除主美工作项"><Trash2 className="h-3.5 w-3.5" /></button></div>}</div>
+  return <div className={`asset-card rounded-xl border bg-white/[.025] p-3 ${selected ? 'border-red-400/45' : 'border-white/10'}`}>
+    <div className="flex items-start justify-between gap-2"><div className="flex flex-wrap items-center gap-2">{editable && selectable && <Checkbox checked={selected} onCheckedChange={(next) => onSelect(Boolean(next))} aria-label={`选择道具${item.name}`} className="no-print size-4 border-red-300/60 data-checked:border-red-400 data-checked:bg-red-400 data-checked:text-black" />}<span className="rounded-md bg-white/6 px-2 py-0.5 text-[10px] text-muted-foreground">{item.category}</span><p className="text-sm font-medium">{item.name}</p></div>{editable && <div className="no-print flex shrink-0 items-center"><button type="button" onClick={() => { setDraft({ name: item.name, detail: item.detail, visualBrief: item.visualBrief }); setEditing((value) => !value); }} className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-white/5 hover:text-white" aria-label="修改主美工作项"><Pencil className="h-3.5 w-3.5" /></button><button type="button" onClick={onDelete} className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-red-400/10 hover:text-red-300" aria-label="删除主美工作项"><Trash2 className="h-3.5 w-3.5" /></button></div>}</div>
     {editing ? <div className="mt-3 space-y-2"><input value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} className="edit-input" placeholder="工作项名称" /><Textarea value={draft.detail} onChange={(event) => setDraft((current) => ({ ...current, detail: event.target.value }))} rows={3} placeholder="根据剧本判断出的具体内容" /><Textarea value={draft.visualBrief} onChange={(event) => setDraft((current) => ({ ...current, visualBrief: event.target.value }))} rows={3} placeholder="主美具体需要生成什么图" /><div className="flex justify-end gap-2"><Button size="sm" variant="outline" onClick={() => setEditing(false)}>取消</Button><Button size="sm" disabled={saving || !draft.name.trim()} onClick={async () => { setSaving(true); try { await onSave(draft); setEditing(false); } finally { setSaving(false); } }}><Check />{saving ? '保存中…' : '保存'}</Button></div></div> : <><p className="mt-2 text-xs leading-5 text-zinc-300">{item.detail}</p>{item.visualBrief && <p className="mt-2 border-t border-white/6 pt-2 text-[11px] leading-5 text-muted-foreground"><span className="text-zinc-400">主美需要出：</span>{item.visualBrief}</p>}</>}
   </div>;
 }
