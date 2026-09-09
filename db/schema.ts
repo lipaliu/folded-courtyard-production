@@ -63,3 +63,27 @@ export const appSettings = sqliteTable('app_settings', {
   value: text('value').notNull(),
   updatedAt: text('updated_at').notNull(),
 });
+
+export const scriptAnalyses = sqliteTable('script_analyses', {
+  id: text('id').primaryKey(),
+  episode: text('episode').notNull(),
+  sceneNo: integer('scene_no').notNull(),
+  sceneTitle: text('scene_title').notNull(),
+  scriptText: text('script_text').notNull(),
+  sceneSummary: text('scene_summary').notNull().default(''),
+  location: text('location').notNull().default(''),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const scriptAnalysisItems = sqliteTable('script_analysis_items', {
+  id: text('id').primaryKey(),
+  analysisId: text('analysis_id').notNull(),
+  category: text('category').notNull(),
+  name: text('name').notNull(),
+  detail: text('detail').notNull().default(''),
+  visualBrief: text('visual_brief').notNull().default(''),
+  yoyoApproved: integer('yoyo_approved', { mode: 'boolean' }).notNull().default(false),
+  sortOrder: integer('sort_order').notNull().default(0),
+  updatedAt: text('updated_at').notNull(),
+});

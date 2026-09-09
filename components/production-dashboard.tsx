@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  CalendarDays, Check, CheckCircle2, ChevronRight, CircleDashed,
-  ClipboardCopy, Clock3, Film, LayoutDashboard, ListChecks, Loader2, Pencil, RefreshCw, Rows3, X,
+  CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, CircleDashed,
+  ClipboardCopy, Clock3, Film, LayoutDashboard, ListChecks, Loader2, Pencil, RefreshCw, Rows3, Sparkles, X,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -32,6 +32,14 @@ const statusStyle: Record<Status, string> = {
 };
 
 const roles = ['编剧', '主美', 'AIGC抽卡师', '剪辑', '制片人（叶总）', '红人（Yoyo）', '联合制片人／导演：Lipa'];
+const timeOptions = Array.from({ length: 96 }, (_, index) => {
+  const hour = Math.floor(index / 4).toString().padStart(2, '0');
+  const minute = ((index % 4) * 15).toString().padStart(2, '0');
+  return `${hour}:${minute}`;
+});
+
+type ScriptAnalysis = { id: string; episode: string; sceneNo: number; sceneTitle: string; scriptText: string; sceneSummary: string; location: string; createdAt: string; updatedAt: string };
+type ScriptAssetItem = { id: string; analysisId: string; category: string; name: string; detail: string; visualBrief: string; yoyoApproved: boolean; sortOrder: number; updatedAt: string };
 
 export function ProductionDashboard() {
   const [items, setItems] = useState<ProductionItem[]>(initialItems);
@@ -159,14 +167,16 @@ export function ProductionDashboard() {
             <TabsContent value="today" className="mt-0"><TodayView selectedDate={selectedDate} setSelectedDate={setSelectedDate} items={todayItems} progress={dayProgress} completed={completed} planned={planned} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedItem} onAdd={setCreatingRole} onToggle={(item, checked) => void updateItem(item.id, { status: checked ? '已通过' : '未开始', completedQty: checked ? item.plannedQty : 0 })} /></TabsContent>
             <TabsContent value="plan" className="mt-0"><PlanView items={items} batches={batches} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedBatch} /></TabsContent>
             <TabsContent value="scenes" className="mt-0"><ScenesView scenes={scenes} isAdmin={Boolean(me?.isAdmin)} onChange={updateScene} /></TabsContent>
+            <TabsContent value="breakdown" className="mt-0"><ScriptAnalysisView isAdmin={Boolean(me?.isAdmin)} /></TabsContent>
             <TabsContent value="review" className="mt-0"><ReviewView items={pendingReview} scenes={scenes} isAdmin={Boolean(me?.isAdmin)} updateItem={updateItem} updateScene={updateScene} /></TabsContent>
           </div>
         </div>
 
-        <TabsList className="fixed inset-x-3 bottom-3 z-40 mx-auto grid h-[68px] max-w-md grid-cols-4 rounded-[22px] border border-white/10 bg-[#17191d]/96 p-1.5 shadow-2xl backdrop-blur-xl md:static md:mt-2 md:h-12 md:max-w-xl md:rounded-xl">
+        <TabsList className="fixed inset-x-3 bottom-3 z-40 mx-auto grid h-[68px] max-w-xl grid-cols-5 rounded-[22px] border border-white/10 bg-[#17191d]/96 p-1.5 shadow-2xl backdrop-blur-xl md:static md:mt-2 md:h-12 md:max-w-2xl md:rounded-xl">
           <NavTab value="today" label="今日" icon={<LayoutDashboard />} />
           <NavTab value="plan" label="大计划" icon={<Rows3 />} />
           <NavTab value="scenes" label="场次" icon={<Film />} />
+          <NavTab value="breakdown" label="拆剧本" icon={<Sparkles />} />
           <NavTab value="review" label={`微信确认${pendingReview.length ? ` ${pendingReview.length}` : ''}`} icon={<ListChecks />} />
         </TabsList>
       </Tabs>
@@ -194,7 +204,16 @@ function TodayView({ selectedDate, setSelectedDate, items, progress, completed, 
   const unfinishedItems = items.filter((item) => item.status !== '已通过');
   const rolloverItems = unfinishedItems.filter((item) => item.owner !== '红人（Yoyo）');
   const yoyoPendingItems = unfinishedItems.filter((item) => item.owner === '红人（Yoyo）');
+  const dayNumber = Math.max(1, Math.round((new Date(`${selectedDate}T00:00:00Z`).getTime() - new Date('2026-09-10T00:00:00Z').getTime()) / 86400000) + 1);
+  const selectedMonthDay = `${Number(selectedDate.slice(5, 7))}月${Number(selectedDate.slice(8, 10))}日`;
   useEffect(() => { setShowSummary(false); setCopied(false); }, [selectedDate]);
+
+  function moveDay(offset: number) {
+    const next = new Date(`${selectedDate}T00:00:00Z`);
+    next.setUTCDate(next.getUTCDate() + offset);
+    const value = next.toISOString().slice(0, 10);
+    if (value >= '2026-09-10' && value <= '2026-10-09') setSelectedDate(value);
+  }
 
   async function copySummary() {
     const lines = [
@@ -231,7 +250,8 @@ function TodayView({ selectedDate, setSelectedDate, items, progress, completed, 
       <div className="control-card p-5 md:p-6">
         <div className="flex items-center justify-between"><p className="eyebrow">选择工作日</p><CalendarDays className="h-4 w-4 text-[#ff6240]" /></div>
         <input type="date" min="2026-09-10" max="2026-10-09" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} className="mt-4 h-11 w-full rounded-lg border border-white/10 bg-white/5 px-3 text-base outline-none focus:border-[#ff6240]" />
-        <p className="mt-5 text-3xl font-semibold tracking-[-.04em]">9月10日</p><p className="mt-1 text-sm text-muted-foreground">正式筹备 Day 1 · 10月9日硬交付</p>
+        <div className="mt-3 grid grid-cols-2 gap-2"><Button variant="outline" disabled={selectedDate === '2026-09-10'} onClick={() => moveDay(-1)}><ChevronLeft />前一天</Button><Button variant="outline" disabled={selectedDate === '2026-10-09'} onClick={() => moveDay(1)}>后一天<ChevronRight /></Button></div>
+        <p className="mt-5 text-3xl font-semibold tracking-[-.04em]">{selectedMonthDay}</p><p className="mt-1 text-sm text-muted-foreground">正式筹备 Day {dayNumber} · 10月9日硬交付</p>
       </div>
     </section>
     {items.length > 0 && <section className="mt-7">
@@ -263,6 +283,76 @@ function TodayView({ selectedDate, setSelectedDate, items, progress, completed, 
     </section>
     <section className="mt-4 rounded-2xl border border-[#ff6240]/20 bg-[#ff6240]/8 p-4 md:p-5"><div className="flex gap-3"><div className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#ff6240] text-black"><ChevronRight className="h-4 w-4" /></div><div><p className="font-medium">怎么推进</p><p className="mt-1 text-sm leading-6 text-muted-foreground">Yoyo没回复时，编剧、美术和白模继续做。第一集的最终意见确认后，再开始生成正式视频。视频素材全部生成后，先粗搭一版交给剪辑师，剪辑师用2—3天完成剪辑。</p></div></div></section>
   </>;
+}
+
+function ScriptAnalysisView({ isAdmin }: { isAdmin: boolean }) {
+  const [analyses, setAnalyses] = useState<ScriptAnalysis[]>([]);
+  const [assetItems, setAssetItems] = useState<ScriptAssetItem[]>([]);
+  const [modelReady, setModelReady] = useState<boolean | null>(null);
+  const [episode, setEpisode] = useState('第1集');
+  const [sceneNo, setSceneNo] = useState(1);
+  const [sceneTitle, setSceneTitle] = useState('');
+  const [scriptText, setScriptText] = useState('');
+  const [analyzing, setAnalyzing] = useState(false);
+  const [error, setError] = useState('');
+
+  async function loadAnalyses() {
+    try {
+      const response = await fetch('/api/script-analysis', { cache: 'no-store' });
+      const data = await response.json() as { analyses?: ScriptAnalysis[]; items?: Array<Omit<ScriptAssetItem, 'yoyoApproved'> & { yoyoApproved: boolean | number }>; modelReady?: boolean };
+      setAnalyses(data.analyses || []);
+      setAssetItems((data.items || []).map((item) => ({ ...item, yoyoApproved: Boolean(item.yoyoApproved) })));
+      setModelReady(Boolean(data.modelReady));
+    } catch {
+      setError('暂时无法读取拆解记录，请刷新后重试');
+    }
+  }
+
+  useEffect(() => { void loadAnalyses(); }, []);
+
+  async function analyzeScript() {
+    if (!scriptText.trim()) return;
+    setAnalyzing(true);
+    setError('');
+    try {
+      const response = await fetch('/api/script-analysis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ episode, sceneNo, sceneTitle, scriptText }) });
+      const data = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(data.error || '分析失败');
+      await loadAnalyses();
+      setScriptText('');
+      setSceneTitle('');
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : '分析失败');
+    } finally {
+      setAnalyzing(false);
+    }
+  }
+
+  async function toggleApproval(item: ScriptAssetItem, checked: boolean) {
+    setAssetItems((current) => current.map((candidate) => candidate.id === item.id ? { ...candidate, yoyoApproved: checked } : candidate));
+    const response = await fetch('/api/script-analysis', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: item.id, yoyoApproved: checked }) });
+    if (!response.ok) {
+      setAssetItems((current) => current.map((candidate) => candidate.id === item.id ? { ...candidate, yoyoApproved: !checked } : candidate));
+      setError('审核结果保存失败，请重试');
+    }
+  }
+
+  return <section>
+    <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">AI SCRIPT BREAKDOWN</p><h2 className="mt-1 text-2xl font-semibold">单场剧本拆解</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">粘贴一场戏，自动拆出场景、人物、服装、妆发、道具和需要生成的美术图。</p></div><span className={`w-fit rounded-full border px-3 py-1.5 text-xs ${modelReady ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300' : 'border-amber-400/20 bg-amber-400/10 text-amber-300'}`}>{modelReady ? '模型已接通' : '等待接入模型'}</span></div>
+    <div className="control-card p-4 md:p-6">
+      <div className="grid gap-3 sm:grid-cols-[120px_100px_1fr]"><Field label="集数"><input value={episode} onChange={(event) => setEpisode(event.target.value)} className="edit-input" /></Field><Field label="场次"><input type="number" min="1" value={sceneNo} onChange={(event) => setSceneNo(Number(event.target.value))} className="edit-input" /></Field><Field label="场名（可不填）"><input value={sceneTitle} onChange={(event) => setSceneTitle(event.target.value)} className="edit-input" placeholder="例如：陆文川初入庭院" /></Field></div>
+      <Field label="单场剧本文字"><Textarea value={scriptText} onChange={(event) => setScriptText(event.target.value)} rows={10} className="mt-3" placeholder="把这一场的场景描述、动作和台词粘贴到这里……" /></Field>
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs leading-5 text-muted-foreground">模型只做初步拆解；Lipa检查后发微信给Yoyo逐项确认。</p><Button disabled={!isAdmin || !modelReady || !scriptText.trim() || analyzing} onClick={() => void analyzeScript()} className="h-11 shrink-0"><Sparkles className={analyzing ? 'animate-pulse' : ''} />{analyzing ? '正在拆解…' : '开始AI拆解'}</Button></div>
+      {error && <p className="mt-3 rounded-xl border border-red-400/20 bg-red-400/[.06] px-3 py-2 text-sm text-red-300">{error}</p>}
+    </div>
+
+    <div className="mt-7 flex items-end justify-between"><div><p className="eyebrow">YOYO CHECKLIST</p><h2 className="mt-1 text-xl font-semibold">逐项确认清单</h2></div><span className="text-sm text-muted-foreground">红色未过 · 绿色已过</span></div>
+    <div className="mt-3 space-y-4">{analyses.length ? analyses.map((analysis) => {
+      const rows = assetItems.filter((item) => item.analysisId === analysis.id).sort((a, b) => a.sortOrder - b.sortOrder);
+      const approved = rows.filter((item) => item.yoyoApproved).length;
+      return <article key={analysis.id} className="control-card p-4 md:p-5"><div className="flex flex-col gap-2 border-b border-white/8 pb-4 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-xs text-[#ff8066]">{analysis.episode} · 第{analysis.sceneNo}场</p><h3 className="mt-1 text-lg font-medium">{analysis.sceneTitle}</h3><p className="mt-1 text-sm text-muted-foreground">{analysis.location}{analysis.sceneSummary ? ` · ${analysis.sceneSummary}` : ''}</p></div><span className={`w-fit rounded-full border px-3 py-1 text-xs ${approved === rows.length && rows.length ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300' : 'border-white/10 bg-white/5 text-muted-foreground'}`}>{approved}/{rows.length} 已通过</span></div><div className="mt-4 grid gap-3 md:grid-cols-2">{rows.map((item) => <div key={item.id} className={`rounded-xl border p-3 ${item.yoyoApproved ? 'border-emerald-400/25 bg-emerald-400/[.05]' : 'border-red-400/25 bg-red-400/[.045]'}`}><div className="flex items-start gap-3"><Checkbox checked={item.yoyoApproved} disabled={!isAdmin} onCheckedChange={(checked) => void toggleApproval(item, Boolean(checked))} aria-label={`${item.name}${item.yoyoApproved ? '已通过' : '未通过'}`} className="mt-0.5 size-5 border-red-400/70 text-black data-checked:border-emerald-400 data-checked:bg-emerald-400" /><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><span className="rounded-md bg-white/6 px-2 py-0.5 text-[10px] text-muted-foreground">{item.category}</span><p className={`text-sm font-medium ${item.yoyoApproved ? 'text-zinc-500 line-through' : ''}`}>{item.name}</p></div><p className="mt-2 text-xs leading-5 text-zinc-300">{item.detail}</p>{item.visualBrief && <p className="mt-2 border-t border-white/6 pt-2 text-[11px] leading-5 text-muted-foreground"><span className="text-zinc-400">美术出图：</span>{item.visualBrief}</p>}</div></div></div>)}</div></article>;
+    }) : <Empty text={modelReady === false ? '模型接通后，在上方粘贴单场剧本开始拆解' : '还没有剧本拆解记录'} />}</div>
+  </section>;
 }
 
 function PlanView({ items, batches, isAdmin, onEdit }: { items: ProductionItem[]; batches: PlanBatch[]; isAdmin: boolean; onEdit: (batch: PlanBatch) => void }) {
@@ -317,7 +407,7 @@ function TaskEditor({ item, allItems, open, saving, onClose, onDelete, onSave }:
   useEffect(() => { if (item) setDraft({ ...item }); }, [item]);
   if (!open || !draft) return null;
   const set = <K extends keyof ProductionItem>(key: K, value: ProductionItem[K]) => setDraft((current) => current ? { ...current, [key]: value } : current);
-  return <div className="fixed inset-0 z-50 grid place-items-end bg-black/70 backdrop-blur-sm sm:place-items-center sm:p-4" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}><section role="dialog" aria-modal="true" aria-labelledby="task-editor-title" className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-t-[24px] border border-white/10 bg-[#1b1d22] p-5 shadow-2xl sm:rounded-[20px]"><div className="flex items-start justify-between gap-4"><div><h2 id="task-editor-title" className="text-lg font-medium">编辑任务</h2><p className="mt-1 text-sm text-muted-foreground">任务、材料接收关系、交接对象和deadline都可以调整</p></div><button onClick={onClose} aria-label="关闭" className="grid h-8 w-8 place-items-center rounded-full bg-white/5"><X className="h-4 w-4" /></button></div><div className="mt-5 space-y-4"><Field label="任务名称"><input value={draft.title} onChange={(event) => set('title', event.target.value)} className="edit-input" /></Field><div className="grid grid-cols-2 gap-3"><Field label="工作日期"><input type="date" value={draft.workDate} onChange={(event) => set('workDate', event.target.value)} className="edit-input" /></Field><Field label="本人完成 deadline"><input value={draft.dueTime} onChange={(event) => set('dueTime', event.target.value)} className="edit-input" placeholder="18:00 / 异步 / 收到后" /></Field></div><div className="grid grid-cols-2 gap-3"><Field label="负责人"><select value={draft.owner} onChange={(event) => set('owner', event.target.value)} className="edit-input">{roles.map((role) => <option key={role} value={role}>{role === 'AIGC抽卡师' ? '抽卡师' : role}</option>)}</select></Field><Field label="状态"><select value={draft.status} onChange={(event) => set('status', event.target.value as Status)} className="edit-input">{STATUSES.map((value) => <option key={value} value={value}>{value}</option>)}</select></Field></div><Field label="必须先收到的任务 / 材料"><select value={draft.dependsOnId} onChange={(event) => set('dependsOnId', event.target.value)} className="edit-input"><option value="">不需要等材料，可直接开始</option>{allItems.filter((candidate) => candidate.id !== draft.id).map((candidate) => <option key={candidate.id} value={candidate.id}>{shortDate(candidate.workDate)} · {candidate.owner} · {candidate.title}</option>)}</select></Field><div className="grid grid-cols-2 gap-3"><Field label="完成后交给谁"><input value={draft.handoffTo} onChange={(event) => set('handoffTo', event.target.value)} className="edit-input" placeholder="如：剪辑 / Yoyo" /></Field><Field label="交接 deadline"><input value={draft.handoffDeadline} onChange={(event) => set('handoffDeadline', event.target.value)} className="edit-input" placeholder="如：20:00" /></Field></div><div className="grid grid-cols-2 gap-3"><Field label="集数"><input value={draft.episode} onChange={(event) => set('episode', event.target.value)} className="edit-input" /></Field><Field label="工作类型"><input value={draft.category} onChange={(event) => set('category', event.target.value)} className="edit-input" /></Field></div><div className="grid grid-cols-2 gap-3"><Field label="计划量"><input type="number" min="0" value={draft.plannedQty} onChange={(event) => set('plannedQty', Number(event.target.value))} className="edit-input" /></Field><Field label="实际完成"><input type="number" min="0" value={draft.completedQty} onChange={(event) => set('completedQty', Number(event.target.value))} className="edit-input" /></Field></div><Field label="同步统筹 / 备注 / 打回原因"><Textarea value={draft.note} onChange={(event) => set('note', event.target.value)} rows={3} /></Field></div><div className="mt-5 grid grid-cols-[auto_1fr_1fr] gap-2"><Button variant="destructive" className="h-11" onClick={() => void onDelete()}>删除</Button><Button variant="outline" className="h-11" onClick={onClose}>取消</Button><Button className="h-11" disabled={saving} onClick={() => void onSave(draft)}>{saving ? <Loader2 className="animate-spin" /> : <Check />}保存并同步</Button></div></section></div>;
+  return <div className="fixed inset-0 z-50 grid place-items-end bg-black/70 backdrop-blur-sm sm:place-items-center sm:p-4" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}><section role="dialog" aria-modal="true" aria-labelledby="task-editor-title" className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-t-[24px] border border-white/10 bg-[#1b1d22] p-5 shadow-2xl sm:rounded-[20px]"><div className="flex items-start justify-between gap-4"><div><h2 id="task-editor-title" className="text-lg font-medium">编辑任务</h2><p className="mt-1 text-sm text-muted-foreground">任务、材料接收关系、交接对象和deadline都可以调整</p></div><button onClick={onClose} aria-label="关闭" className="grid h-8 w-8 place-items-center rounded-full bg-white/5"><X className="h-4 w-4" /></button></div><div className="mt-5 space-y-4"><Field label="任务名称"><input value={draft.title} onChange={(event) => set('title', event.target.value)} className="edit-input" /></Field><div className="grid grid-cols-2 gap-3"><Field label="工作日期"><input type="date" value={draft.workDate} onChange={(event) => set('workDate', event.target.value)} className="edit-input" /></Field><Field label="本人完成 deadline"><TimeSelect value={draft.dueTime} onChange={(value) => set('dueTime', value)} /></Field></div><div className="grid grid-cols-2 gap-3"><Field label="负责人"><select value={draft.owner} onChange={(event) => set('owner', event.target.value)} className="edit-input">{roles.map((role) => <option key={role} value={role}>{role === 'AIGC抽卡师' ? '抽卡师' : role}</option>)}</select></Field><Field label="状态"><select value={draft.status} onChange={(event) => set('status', event.target.value as Status)} className="edit-input">{STATUSES.map((value) => <option key={value} value={value}>{value}</option>)}</select></Field></div><Field label="必须先收到的任务 / 材料"><select value={draft.dependsOnId} onChange={(event) => set('dependsOnId', event.target.value)} className="edit-input"><option value="">不需要等材料，可直接开始</option>{allItems.filter((candidate) => candidate.id !== draft.id).map((candidate) => <option key={candidate.id} value={candidate.id}>{shortDate(candidate.workDate)} · {candidate.owner} · {candidate.title}</option>)}</select></Field><div className="grid grid-cols-2 gap-3"><Field label="完成后交给谁"><input value={draft.handoffTo} onChange={(event) => set('handoffTo', event.target.value)} className="edit-input" placeholder="如：剪辑 / Yoyo" /></Field><Field label="交接 deadline"><input value={draft.handoffDeadline} onChange={(event) => set('handoffDeadline', event.target.value)} className="edit-input" placeholder="如：20:00" /></Field></div><div className="grid grid-cols-2 gap-3"><Field label="集数"><input value={draft.episode} onChange={(event) => set('episode', event.target.value)} className="edit-input" /></Field><Field label="工作类型"><input value={draft.category} onChange={(event) => set('category', event.target.value)} className="edit-input" /></Field></div><div className="grid grid-cols-2 gap-3"><Field label="计划量"><input type="number" min="0" value={draft.plannedQty} onChange={(event) => set('plannedQty', Number(event.target.value))} className="edit-input" /></Field><Field label="实际完成"><input type="number" min="0" value={draft.completedQty} onChange={(event) => set('completedQty', Number(event.target.value))} className="edit-input" /></Field></div><Field label="同步统筹 / 备注 / 打回原因"><Textarea value={draft.note} onChange={(event) => set('note', event.target.value)} rows={3} /></Field></div><div className="mt-5 grid grid-cols-[auto_1fr_1fr] gap-2"><Button variant="destructive" className="h-11" onClick={() => void onDelete()}>删除</Button><Button variant="outline" className="h-11" onClick={onClose}>取消</Button><Button className="h-11" disabled={saving} onClick={() => void onSave(draft)}>{saving ? <Loader2 className="animate-spin" /> : <Check />}保存并同步</Button></div></section></div>;
 }
 
 function LegacyTaskEditor({ item, open, saving, onClose, onSave }: { item: ProductionItem | null; open: boolean; saving: boolean; onClose: () => void; onSave: (changes: Partial<Pick<ProductionItem, 'status' | 'completedQty' | 'note'>>) => Promise<void> }) {
@@ -357,7 +447,7 @@ function NewTaskEditor({ role, workDate, allItems, open, onClose, onSave }: { ro
   const [handoffDeadline, setHandoffDeadline] = useState('');
   useEffect(() => { if (open) { setTitle(''); setDate(workDate); setTime('18:00'); setNote(''); setDependsOnId(''); setHandoffTo(''); setHandoffDeadline(''); setCategory(role === '编剧' ? '剧本' : role === '主美' ? '场景图' : role === 'AIGC抽卡师' ? '正式镜头' : role === '剪辑' ? '初剪' : role?.includes('Yoyo') ? '审核' : '统筹'); } }, [open, role, workDate]);
   if (!open || !role) return null;
-  return <div className="fixed inset-0 z-50 grid place-items-end bg-black/70 backdrop-blur-sm sm:place-items-center sm:p-4"><section role="dialog" aria-modal="true" className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-[24px] border border-white/10 bg-[#1b1d22] p-5 sm:rounded-[20px]"><div className="flex items-center justify-between"><div><h2 className="text-lg font-medium">给{role === 'AIGC抽卡师' ? '抽卡师' : role}安排工作</h2><p className="mt-1 text-sm text-muted-foreground">新增后全组同步可见</p></div><button onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full bg-white/5"><X className="h-4 w-4" /></button></div><div className="mt-5 space-y-4"><Field label="任务名称"><input autoFocus value={title} onChange={(event) => setTitle(event.target.value)} className="edit-input" placeholder="今天必须完成什么" /></Field><div className="grid grid-cols-2 gap-3"><Field label="日期"><input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="edit-input" /></Field><Field label="本人 deadline"><input type="time" value={time} onChange={(event) => setTime(event.target.value)} className="edit-input" /></Field></div><Field label="必须先收到的任务 / 材料"><select value={dependsOnId} onChange={(event) => setDependsOnId(event.target.value)} className="edit-input"><option value="">不需要等材料，可直接开始</option>{allItems.map((candidate) => <option key={candidate.id} value={candidate.id}>{shortDate(candidate.workDate)} · {candidate.owner} · {candidate.title}</option>)}</select></Field><div className="grid grid-cols-2 gap-3"><Field label="完成后交给谁"><input value={handoffTo} onChange={(event) => setHandoffTo(event.target.value)} className="edit-input" /></Field><Field label="交接 deadline"><input value={handoffDeadline} onChange={(event) => setHandoffDeadline(event.target.value)} className="edit-input" /></Field></div><div className="grid grid-cols-3 gap-3"><Field label="集数"><input value={episode} onChange={(event) => setEpisode(event.target.value)} className="edit-input" /></Field><Field label="类型"><input value={category} onChange={(event) => setCategory(event.target.value)} className="edit-input" /></Field><Field label="计划量"><input type="number" min="0" value={qty} onChange={(event) => setQty(Number(event.target.value))} className="edit-input" /></Field></div><Field label="同步统筹备注"><Textarea value={note} onChange={(event) => setNote(event.target.value)} rows={3} placeholder="交接条件、风险、需要等待的材料……" /></Field></div><div className="mt-5 grid grid-cols-2 gap-2"><Button variant="outline" className="h-11" onClick={onClose}>取消</Button><Button className="h-11" disabled={!title.trim()} onClick={() => void onSave({ title, workDate: date, dueTime: time, episode, category, plannedQty: qty, owner: role, reviewer: 'Yoyo', dependsOnId, handoffTo, handoffDeadline, note })}><Check />添加并同步</Button></div></section></div>;
+  return <div className="fixed inset-0 z-50 grid place-items-end bg-black/70 backdrop-blur-sm sm:place-items-center sm:p-4"><section role="dialog" aria-modal="true" className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-[24px] border border-white/10 bg-[#1b1d22] p-5 sm:rounded-[20px]"><div className="flex items-center justify-between"><div><h2 className="text-lg font-medium">给{role === 'AIGC抽卡师' ? '抽卡师' : role}安排工作</h2><p className="mt-1 text-sm text-muted-foreground">新增后全组同步可见</p></div><button onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full bg-white/5"><X className="h-4 w-4" /></button></div><div className="mt-5 space-y-4"><Field label="任务名称"><input autoFocus value={title} onChange={(event) => setTitle(event.target.value)} className="edit-input" placeholder="今天必须完成什么" /></Field><div className="grid grid-cols-2 gap-3"><Field label="日期"><input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="edit-input" /></Field><Field label="本人 deadline"><TimeSelect value={time} onChange={setTime} /></Field></div><Field label="必须先收到的任务 / 材料"><select value={dependsOnId} onChange={(event) => setDependsOnId(event.target.value)} className="edit-input"><option value="">不需要等材料，可直接开始</option>{allItems.map((candidate) => <option key={candidate.id} value={candidate.id}>{shortDate(candidate.workDate)} · {candidate.owner} · {candidate.title}</option>)}</select></Field><div className="grid grid-cols-2 gap-3"><Field label="完成后交给谁"><input value={handoffTo} onChange={(event) => setHandoffTo(event.target.value)} className="edit-input" /></Field><Field label="交接 deadline"><input value={handoffDeadline} onChange={(event) => setHandoffDeadline(event.target.value)} className="edit-input" /></Field></div><div className="grid grid-cols-3 gap-3"><Field label="集数"><input value={episode} onChange={(event) => setEpisode(event.target.value)} className="edit-input" /></Field><Field label="类型"><input value={category} onChange={(event) => setCategory(event.target.value)} className="edit-input" /></Field><Field label="计划量"><input type="number" min="0" value={qty} onChange={(event) => setQty(Number(event.target.value))} className="edit-input" /></Field></div><Field label="同步统筹备注"><Textarea value={note} onChange={(event) => setNote(event.target.value)} rows={3} placeholder="交接条件、风险、需要等待的材料……" /></Field></div><div className="mt-5 grid grid-cols-2 gap-2"><Button variant="outline" className="h-11" onClick={onClose}>取消</Button><Button className="h-11" disabled={!title.trim()} onClick={() => void onSave({ title, workDate: date, dueTime: time, episode, category, plannedQty: qty, owner: role, reviewer: 'Yoyo', dependsOnId, handoffTo, handoffDeadline, note })}><Check />添加并同步</Button></div></section></div>;
 }
 
 function BatchEditor({ batch, open, onClose, onSave }: { batch: PlanBatch | null; open: boolean; onClose: () => void; onSave: (batch: PlanBatch) => Promise<void> }) {
@@ -369,6 +459,11 @@ function BatchEditor({ batch, open, onClose, onSave }: { batch: PlanBatch | null
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block"><span className="mb-1.5 block text-sm text-muted-foreground">{label}</span>{children}</label>; }
+
+function TimeSelect({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const standardValues = new Set([...timeOptions, '异步', '收到后']);
+  return <select value={value} onChange={(event) => onChange(event.target.value)} className="edit-input">{!standardValues.has(value) && <option value={value}>{value}</option>}<option value="异步">异步（不设时间）</option><option value="收到后">收到后</option>{timeOptions.map((time) => <option key={time} value={time}>{time}</option>)}</select>;
+}
 
 function Metric({ label, value, suffix, accent = false }: { label: string; value: string; suffix: string; accent?: boolean }) { return <div><p className="text-xs text-muted-foreground">{label}</p><p className={`mt-1 text-xl font-semibold ${accent ? 'text-violet-300' : ''}`}>{value}<span className="ml-1 text-xs font-normal text-muted-foreground">{suffix}</span></p></div>; }
 function SummaryGroup({ title, tone, items, empty }: { title: string; tone: 'green' | 'red' | 'amber'; items: ProductionItem[]; empty: string }) {

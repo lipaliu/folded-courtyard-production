@@ -15,6 +15,13 @@
       "when": 1788954128603,
       "tag": "0001_chilly_sumo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1788971700117,
+      "tag": "0002_organic_slipstream",
+      "breakpoints": true
     }
   ]
 }
