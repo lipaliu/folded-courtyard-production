@@ -21,6 +21,18 @@ export async function GET() {
         env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_plan_v3', 'done', ?)").bind(new Date().toISOString()),
       ]);
     }
+    const calendarVersion = await env.DB.prepare("SELECT value FROM app_settings WHERE key = 'workflow_plan_calendar_v1'").first<{ value: string }>();
+    if (!calendarVersion) {
+      const updatedAt = new Date().toISOString();
+      await env.DB.batch([
+        env.DB.prepare('DELETE FROM plan_batches'),
+        ...initialBatches.map((row) => env.DB.prepare(`INSERT INTO plan_batches
+          (id, start_date, end_date, production, prep, note, sort_order, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+          .bind(row.id, row.startDate, row.endDate, row.production, row.prep, row.note, row.sortOrder, updatedAt)),
+        env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_plan_calendar_v1', 'done', ?)").bind(updatedAt),
+      ]);
+    }
     const result = await env.DB.prepare(`
       SELECT id, start_date AS startDate, end_date AS endDate, production, prep, note,
              sort_order AS sortOrder, updated_at AS updatedAt

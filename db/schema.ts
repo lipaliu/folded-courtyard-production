@@ -64,6 +64,17 @@ export const appSettings = sqliteTable('app_settings', {
   updatedAt: text('updated_at').notNull(),
 });
 
+export const dailyReports = sqliteTable('daily_reports', {
+  id: text('id').primaryKey(),
+  workDate: text('work_date').notNull().unique(),
+  completedCount: integer('completed_count').notNull().default(0),
+  incompleteCount: integer('incomplete_count').notNull().default(0),
+  rolloverCount: integer('rollover_count').notNull().default(0),
+  summaryJson: text('summary_json').notNull(),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
 export const scriptAnalyses = sqliteTable('script_analyses', {
   id: text('id').primaryKey(),
   episode: text('episode').notNull(),

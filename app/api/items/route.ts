@@ -125,6 +125,19 @@ export async function GET() {
       statements.push(env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_episode_rollup_v1', 'done', ?)").bind(updatedAt));
       await env.DB.batch(statements);
     }
+    const calendarVersion = await env.DB.prepare("SELECT value FROM app_settings WHERE key = 'workflow_calendar_six_on_one_off_v1'").first<{ value: string }>();
+    if (!calendarVersion) {
+      const updatedAt = new Date().toISOString();
+      const scheduleRows = initialItems.filter((row) => /^2026-/.test(row.id) || row.id === '1021-delivery');
+      await env.DB.prepare("DELETE FROM production_items WHERE id LIKE '2026-%' OR id IN ('1009-delivery', '1020-delivery', '1021-delivery')").run();
+      for (let index = 0; index < scheduleRows.length; index += 50) {
+        await env.DB.batch(scheduleRows.slice(index, index + 50).map((row) => env.DB.prepare(`INSERT INTO production_items
+          (id, work_date, episode, category, title, owner, reviewer, status, planned_qty, completed_qty, due_time, depends_on_id, handoff_to, handoff_deadline, note, sort_order, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+          .bind(row.id, row.workDate, row.episode, row.category, row.title, row.owner, row.reviewer, row.status, row.plannedQty, row.completedQty, row.dueTime, row.dependsOnId, row.handoffTo, row.handoffDeadline, row.note, row.sortOrder, updatedAt)));
+      }
+      await env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_calendar_six_on_one_off_v1', 'done', ?)").bind(updatedAt).run();
+    }
     const result = await env.DB.prepare(`
       SELECT id, work_date AS workDate, episode, category, title, owner, reviewer, status,
              planned_qty AS plannedQty, completed_qty AS completedQty, due_time AS dueTime,
