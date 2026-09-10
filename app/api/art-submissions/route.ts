@@ -25,7 +25,7 @@ export async function GET(request: Request) {
         FROM art_submission_details ORDER BY updated_at DESC`).all(),
       env.DB.prepare(`SELECT id, item_id AS itemId, file_name AS fileName, content_type AS contentType,
         byte_size AS byteSize, uploaded_by AS uploadedBy, sort_order AS sortOrder, created_at AS createdAt
-        FROM art_submission_files ORDER BY item_id, sort_order, created_at`).all(),
+        FROM art_submission_files ORDER BY item_id, sort_order, created_at`).all<{ id: string; itemId: string; fileName: string; contentType: string; byteSize: number; uploadedBy: string; sortOrder: number; createdAt: string }>(),
     ]);
     return Response.json({
       details: details.results,
@@ -43,7 +43,8 @@ export async function POST(request: Request) {
   if (!canEditArt(user)) return Response.json({ error: '只有Lipa、主美或美术可以上传参考图' }, { status: 403 });
 
   const form = await request.formData();
-  const itemId = String(form.get('itemId') || '').trim();
+  const itemIdValue = form.get('itemId');
+  const itemId = typeof itemIdValue === 'string' ? itemIdValue.trim() : '';
   const file = form.get('file');
   if (!itemId || !(file instanceof File)) return Response.json({ error: '请选择要上传的图片' }, { status: 400 });
   if (!allowedImageTypes.has(file.type)) return Response.json({ error: '只支持 JPG、PNG 或 WebP 图片' }, { status: 400 });

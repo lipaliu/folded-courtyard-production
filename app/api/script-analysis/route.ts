@@ -67,7 +67,7 @@ export async function POST(request: Request) {
     const analysisIds: string[] = [];
     const statements = [];
     const versionRows: Array<{ id: string; episode: string; versionNo: number }> = [];
-    for (const episode of [...new Set(scenes.slice(0, 40).map((scene) => scene.episode))]) {
+    for (const episode of new Set(scenes.slice(0, 40).map((scene) => scene.episode))) {
       const previous = await env.DB.prepare('SELECT COALESCE(MAX(version_no), 0) AS latest FROM script_versions WHERE episode = ?').bind(episode).first<{ latest: number }>();
       const versionNo = Number(previous?.latest || 0) + 1;
       const versionId = `script-version-${crypto.randomUUID()}`;
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
       });
       statements.push(env.DB.prepare('INSERT INTO activity_log (item_type, item_id, action, operator, created_at) VALUES (?, ?, ?, ?, ?)').bind('script_analysis', analysisId, `导入${body.fileName || '剧本文件'}并自动拆解主美工作`, 'Lipa', now));
     }
-    for (const episode of [...new Set(scenes.slice(0, 40).map((scene) => scene.episode))]) {
+    for (const episode of new Set(scenes.slice(0, 40).map((scene) => scene.episode))) {
       statements.push(env.DB.prepare("UPDATE production_items SET status = '未开始', completed_qty = 0, updated_at = ? WHERE episode = ? AND category = '整集资产确认'").bind(now, episode));
       statements.push(env.DB.prepare('DELETE FROM production_items WHERE id = ?').bind(`rollup-${body.workDate}-${episodeKey(episode)}-aigc`));
     }
@@ -186,7 +186,7 @@ export async function POST(request: Request) {
   const now = new Date().toISOString();
   const workDate = body.workDate!;
   const latestVersionByEpisode = new Map<string, string>();
-  for (const episode of [...new Set(analysisRows.results.map((row) => row.episode))]) {
+  for (const episode of new Set(analysisRows.results.map((row) => row.episode))) {
     const latestVersion = await env.DB.prepare('SELECT id FROM script_versions WHERE episode = ? ORDER BY version_no DESC LIMIT 1').bind(episode).first<{ id: string }>();
     latestVersionByEpisode.set(episode, latestVersion?.id || '');
   }
