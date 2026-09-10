@@ -43,6 +43,13 @@
       "when": 1789027196313,
       "tag": "0005_special_lifeguard",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1789035101615,
+      "tag": "0006_graceful_fenris",
+      "breakpoints": true
     }
   ]
 }

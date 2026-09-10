@@ -44,8 +44,8 @@ type ScriptAssetItem = { id: string; analysisId: string; category: string; name:
 type DailyReportTask = Pick<ProductionItem, 'id' | 'workDate' | 'episode' | 'category' | 'title' | 'owner' | 'status' | 'plannedQty' | 'completedQty' | 'dependsOnId' | 'handoffDeadline'>;
 type DailyReportSummary = { completed: DailyReportTask[]; incomplete: DailyReportTask[]; yoyoPending: DailyReportTask[]; rollovers: Array<DailyReportTask & { fromDate: string; toDate: string }> };
 type DailyReport = { id: string; workDate: string; completedCount: number; incompleteCount: number; rolloverCount: number; summary: DailyReportSummary; createdAt: string; updatedAt: string };
-type CurrentUser = { id?: string; email?: string; name: string; phone?: string; role: string; isAdmin: boolean; needsRegistration?: boolean };
-const registrationRoles = ['编剧', '主美', 'AIGC抽卡师', '剪辑', '制片人（叶总）', '红人（Yoyo）', '项目成员'];
+type CurrentUser = { id: string; username: string; name: string; role: string; isAdmin: boolean };
+const registrationRoles = ['编剧', '主美', '美术', 'AIGC抽卡师', '剪辑'];
 
 export function ProductionDashboard() {
   const [activeTab, setActiveTab] = useState('today');
@@ -60,6 +60,7 @@ export function ProductionDashboard() {
   const [syncing, setSyncing] = useState(true);
   const [me, setMe] = useState<CurrentUser | null>(null);
   const [loadError, setLoadError] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
 
   async function loadData() {
     setSyncing(true);
@@ -67,9 +68,8 @@ export function ProductionDashboard() {
     try {
       const meResponse = await fetch('/api/me', { cache: 'no-store' });
       const meData = await meResponse.json() as { user?: CurrentUser; error?: string };
-      if (!meResponse.ok || !meData.user) { setMe(null); setLoadError(meData.error || '登录状态失效，请重新登录'); return; }
+      if (!meResponse.ok || !meData.user) { setMe(null); setLoadError(''); return; }
       setMe(meData.user);
-      if (meData.user.needsRegistration) return;
       const [itemResponse, sceneResponse, planResponse] = await Promise.all([fetch('/api/items'), fetch('/api/scenes'), fetch('/api/plan')]);
       const itemData = await itemResponse.json() as { items?: ProductionItem[] };
       const sceneData = await sceneResponse.json() as { scenes?: Scene[] };
@@ -157,9 +157,15 @@ export function ProductionDashboard() {
     } catch { /* optimistic update remains visible in local preview */ }
   }
 
+  async function logout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    setMe(null);
+    setItems(initialItems);
+    setScenes(initialScenes);
+  }
+
   if (syncing && !me) return <main className="grid min-h-screen place-items-center"><div className="control-card flex items-center gap-3 px-5 py-4 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin text-[#ff6240]" />正在确认项目身份…</div></main>;
-  if (me?.needsRegistration) return <MemberRegistration user={me} onRegistered={loadData} />;
-  if (!me) return <main className="grid min-h-screen place-items-center px-5"><section className="control-card w-full max-w-md p-7 text-center"><h1 className="text-xl font-semibold">需要重新登录</h1><p className="mt-2 text-sm text-muted-foreground">{loadError || '没有读取到项目账号。'}</p><a href="/signin-with-chatgpt?return_to=%2F" target="_top" className="mt-5 flex h-11 items-center justify-center rounded-xl bg-[#ff6240] font-medium text-[#17110f]">重新登录</a></section></main>;
+  if (!me) return <AccountAccess onAuthenticated={loadData} initialError={loadError} />;
 
   return (
     <main className="min-h-screen bg-transparent text-foreground">
@@ -175,8 +181,8 @@ export function ProductionDashboard() {
               <button onClick={() => void loadData()} aria-label="刷新全组进度" className="grid h-9 w-9 place-items-center rounded-full border border-white/8 bg-white/4 text-muted-foreground">
                 <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
               </button>
-              <div className="hidden rounded-full border border-emerald-400/20 bg-emerald-400/8 px-3 py-1.5 text-xs text-emerald-300 sm:block"><span className="font-medium">{me.name}</span><span className="ml-2 text-emerald-300/70">{me.isAdmin ? 'Lipa管理权限' : me.role}</span></div>
-              <a href="/signout-with-chatgpt?return_to=%2F" target="_top" className="rounded-full border border-white/8 bg-white/4 px-3 py-2 text-xs text-muted-foreground hover:text-white">退出</a>
+              <button onClick={() => setChangingPassword(true)} className="hidden rounded-full border border-emerald-400/20 bg-emerald-400/8 px-3 py-1.5 text-left text-xs text-emerald-300 sm:block"><span className="font-medium">{me.name}</span><span className="ml-2 text-emerald-300/70">{me.isAdmin ? 'Lipa管理权限' : me.role}</span></button>
+              <button onClick={() => void logout()} className="rounded-full border border-white/8 bg-white/4 px-3 py-2 text-xs text-muted-foreground hover:text-white">退出</button>
             </div>
           </div>
         </header>
@@ -209,27 +215,52 @@ export function ProductionDashboard() {
       }} />
       <NewTaskEditor role={creatingRole} workDate={selectedDate} allItems={items} open={Boolean(creatingRole)} onClose={() => setCreatingRole(null)} onSave={async (draft) => { await createItem(draft); setCreatingRole(null); }} />
       <BatchEditor batch={selectedBatch} open={Boolean(selectedBatch)} onClose={() => setSelectedBatch(null)} onSave={async (batch) => { await updateBatch(batch); setSelectedBatch(null); }} />
+      <PasswordEditor user={me} open={changingPassword} onClose={() => setChangingPassword(false)} />
     </main>
   );
 }
 
-function MemberRegistration({ user, onRegistered }: { user: CurrentUser; onRegistered: () => Promise<void> }) {
-  const [name, setName] = useState(user.name || '');
-  const [phone, setPhone] = useState('');
+function AccountAccess({ onAuthenticated, initialError }: { onAuthenticated: () => Promise<void>; initialError?: string }) {
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [name, setName] = useState('');
   const [role, setRole] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(initialError || '');
   async function submit() {
     setSaving(true); setError('');
     try {
-      const response = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, phone, role }) });
+      const response = await fetch(`/api/auth/${mode}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(mode === 'login' ? { username, password } : { name, role, username, password }) });
       const data = await response.json() as { error?: string };
-      if (!response.ok) throw new Error(data.error || '注册失败');
-      await onRegistered();
-    } catch (nextError) { setError(nextError instanceof Error ? nextError.message : '注册失败'); }
+      if (!response.ok) throw new Error(data.error || (mode === 'login' ? '登录失败' : '注册失败'));
+      await onAuthenticated();
+    } catch (nextError) { setError(nextError instanceof Error ? nextError.message : '操作失败'); }
     finally { setSaving(false); }
   }
-  return <main className="grid min-h-screen place-items-center px-5 py-10"><section className="control-card w-full max-w-lg p-6 md:p-8"><p className="eyebrow">JOIN THE PRODUCTION</p><h1 className="mt-2 text-2xl font-semibold">注册项目岗位</h1><p className="mt-2 text-sm leading-6 text-muted-foreground">注册后可以查看每天的剧本、任务和交接时间。只有Lipa可以新增、删除和调整每日项目。</p><div className="mt-6 space-y-4"><Field label="姓名"><input value={name} onChange={(event) => setName(event.target.value)} className="edit-input" placeholder="请输入真实姓名" /></Field><Field label="手机号"><input type="tel" inputMode="tel" value={phone} onChange={(event) => setPhone(event.target.value)} className="edit-input" placeholder="用于绑定项目成员身份" /></Field><Field label="所属岗位"><select value={role} onChange={(event) => setRole(event.target.value)} className="edit-input"><option value="">请选择岗位</option>{registrationRoles.map((item) => <option key={item} value={item}>{item}</option>)}</select></Field></div>{error && <p className="mt-4 rounded-xl border border-red-400/20 bg-red-400/[.06] px-3 py-2 text-sm text-red-300">{error}</p>}<Button className="mt-6 h-12 w-full" disabled={saving || !name.trim() || !phone.trim() || !role} onClick={() => void submit()}>{saving ? <Loader2 className="animate-spin" /> : <Check />}{saving ? '正在注册…' : '注册并进入项目'}</Button><p className="mt-4 text-center text-xs text-muted-foreground">登录身份由ChatGPT保护；项目只保存姓名、手机号和岗位，不保存密码。</p></section></main>;
+  const ready = username.trim().length >= 3 && password.length >= 8 && (mode === 'login' || (name.trim().length >= 2 && Boolean(role)));
+  return <main className="grid min-h-screen place-items-center px-5 py-10"><section className="control-card w-full max-w-md p-6 md:p-8"><p className="eyebrow">PRODUCTION ACCESS</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">折叠庭院的她</h1><p className="mt-2 text-sm leading-6 text-muted-foreground">使用项目自己的账号进入，不需要ChatGPT账号。</p><div className="mt-6 grid grid-cols-2 rounded-xl border border-white/10 bg-black/20 p-1"><button type="button" onClick={() => { setMode('login'); setError(''); }} className={`h-10 rounded-lg text-sm transition ${mode === 'login' ? 'bg-white/10 text-white' : 'text-muted-foreground'}`}>登录</button><button type="button" onClick={() => { setMode('register'); setError(''); }} className={`h-10 rounded-lg text-sm transition ${mode === 'register' ? 'bg-white/10 text-white' : 'text-muted-foreground'}`}>注册</button></div><div className="mt-5 space-y-4">{mode === 'register' && <><Field label="姓名"><input autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} className="edit-input" placeholder="请输入真实姓名" /></Field><Field label="岗位"><select value={role} onChange={(event) => setRole(event.target.value)} className="edit-input"><option value="">请选择岗位</option>{registrationRoles.map((item) => <option key={item} value={item}>{item}</option>)}</select></Field></>}<Field label="登录名"><input autoCapitalize="none" autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} className="edit-input" placeholder="3—30位，之后用它登录" /></Field><Field label="密码"><input type="password" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} value={password} onChange={(event) => setPassword(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && ready) void submit(); }} className="edit-input" placeholder="至少8位" /></Field></div>{error && <p className="mt-4 rounded-xl border border-red-400/20 bg-red-400/[.06] px-3 py-2 text-sm text-red-300">{error}</p>}<Button className="mt-6 h-12 w-full" disabled={saving || !ready} onClick={() => void submit()}>{saving ? <Loader2 className="animate-spin" /> : <Check />}{saving ? (mode === 'login' ? '正在登录…' : '正在注册…') : (mode === 'login' ? '登录项目' : '注册并进入项目')}</Button><p className="mt-4 text-center text-xs leading-5 text-muted-foreground">团队成员注册后可查看工作；只有Lipa可以增删和调整项目。</p></section></main>;
+}
+
+function PasswordEditor({ user, open, onClose }: { user: CurrentUser; open: boolean; onClose: () => void }) {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+  useEffect(() => { if (open) { setCurrentPassword(''); setNewPassword(''); setConfirmPassword(''); setMessage(''); } }, [open]);
+  if (!open) return null;
+  async function save() {
+    if (newPassword !== confirmPassword) { setMessage('两次输入的新密码不一致'); return; }
+    setSaving(true); setMessage('');
+    const response = await fetch('/api/auth/password', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ currentPassword, newPassword }) });
+    const data = await response.json() as { error?: string };
+    setSaving(false);
+    if (!response.ok) { setMessage(data.error || '密码修改失败'); return; }
+    setMessage('密码已更新');
+    setTimeout(onClose, 700);
+  }
+  return <div className="fixed inset-0 z-50 grid place-items-end bg-black/70 backdrop-blur-sm sm:place-items-center sm:p-4" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}><section role="dialog" aria-modal="true" className="w-full max-w-md rounded-t-[24px] border border-white/10 bg-[#1b1d22] p-5 shadow-2xl sm:rounded-[20px]"><div className="flex items-start justify-between gap-4"><div><h2 className="text-lg font-medium">账号与密码</h2><p className="mt-1 text-sm text-muted-foreground">{user.name} · {user.username} · {user.role}</p></div><button onClick={onClose} aria-label="关闭" className="grid h-8 w-8 place-items-center rounded-full bg-white/5"><X className="h-4 w-4" /></button></div><div className="mt-5 space-y-4"><Field label="当前密码"><input type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} className="edit-input" /></Field><Field label="新密码"><input type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} className="edit-input" placeholder="至少8位" /></Field><Field label="再次输入新密码"><input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className="edit-input" /></Field></div>{message && <p className={`mt-4 rounded-xl border px-3 py-2 text-sm ${message === '密码已更新' ? 'border-emerald-400/20 bg-emerald-400/[.06] text-emerald-300' : 'border-red-400/20 bg-red-400/[.06] text-red-300'}`}>{message}</p>}<div className="mt-5 grid grid-cols-2 gap-2"><Button variant="outline" className="h-11" onClick={onClose}>取消</Button><Button className="h-11" disabled={saving || currentPassword.length < 8 || newPassword.length < 8 || confirmPassword.length < 8} onClick={() => void save()}>{saving ? <Loader2 className="animate-spin" /> : <Check />}{saving ? '正在保存…' : '修改密码'}</Button></div></section></div>;
 }
 
 function TodayView({ selectedDate, setSelectedDate, items, isAdmin, onEdit, onAdd, onOpenHandbook, onReload, onToggle }: { selectedDate: string; setSelectedDate: (value: string) => void; items: ProductionItem[]; isAdmin: boolean; onEdit: (item: ProductionItem) => void; onAdd: (role: string) => void; onOpenHandbook: () => void; onReload: () => Promise<void>; onToggle: (item: ProductionItem, checked: boolean) => void }) {

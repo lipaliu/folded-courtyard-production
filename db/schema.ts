@@ -75,6 +75,31 @@ export const teamMembers = sqliteTable('team_members', {
   updatedAt: text('updated_at').notNull(),
 });
 
+export const memberAccounts = sqliteTable('member_accounts', {
+  id: text('id').primaryKey(),
+  username: text('username').notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  passwordSalt: text('password_salt').notNull(),
+  passwordIterations: integer('password_iterations').notNull().default(120000),
+  name: text('name').notNull(),
+  role: text('role').notNull(),
+  isAdmin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
+  active: integer('active', { mode: 'boolean' }).notNull().default(true),
+  failedAttempts: integer('failed_attempts').notNull().default(0),
+  lockedUntil: text('locked_until').notNull().default(''),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const memberSessions = sqliteTable('member_sessions', {
+  id: text('id').primaryKey(),
+  accountId: text('account_id').notNull(),
+  tokenHash: text('token_hash').notNull().unique(),
+  expiresAt: text('expires_at').notNull(),
+  createdAt: text('created_at').notNull(),
+  lastSeenAt: text('last_seen_at').notNull(),
+});
+
 export const dailyReports = sqliteTable('daily_reports', {
   id: text('id').primaryKey(),
   workDate: text('work_date').notNull().unique(),
