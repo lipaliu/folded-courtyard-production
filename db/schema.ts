@@ -64,6 +64,17 @@ export const appSettings = sqliteTable('app_settings', {
   updatedAt: text('updated_at').notNull(),
 });
 
+export const teamMembers = sqliteTable('team_members', {
+  userId: text('user_id').primaryKey(),
+  email: text('email').notNull(),
+  name: text('name').notNull(),
+  phone: text('phone').notNull(),
+  role: text('role').notNull(),
+  active: integer('active', { mode: 'boolean' }).notNull().default(true),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
 export const dailyReports = sqliteTable('daily_reports', {
   id: text('id').primaryKey(),
   workDate: text('work_date').notNull().unique(),

@@ -1,8 +1,9 @@
 import { env } from 'cloudflare:workers';
 import { initialItems, STATUSES } from '@/lib/plan-data';
-import { requireAdmin } from '@/lib/auth';
+import { requireAdmin, requireMember } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(request: Request) {
+  if (!await requireMember(request)) return Response.json({ error: '请先登录并注册岗位' }, { status: 401 });
   try {
     const count = await env.DB.prepare('SELECT COUNT(*) AS count FROM production_items').first<{ count: number }>();
     if (!count?.count) {

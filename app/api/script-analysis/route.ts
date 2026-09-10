@@ -1,5 +1,5 @@
 import { env } from 'cloudflare:workers';
-import { requireAdmin } from '@/lib/auth';
+import { requireAdmin, requireMember } from '@/lib/auth';
 import { initialScriptBreakdowns } from '@/lib/script-breakdown-data';
 import { parseScriptDocument } from '@/lib/script-import';
 
@@ -25,7 +25,8 @@ async function ensureFirstEpisodeBreakdown() {
   ]);
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  if (!await requireMember(request)) return Response.json({ error: '请先登录并注册岗位' }, { status: 401 });
   try {
     await ensureFirstEpisodeBreakdown();
     const [analyses, items] = await Promise.all([

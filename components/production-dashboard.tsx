@@ -44,6 +44,8 @@ type ScriptAssetItem = { id: string; analysisId: string; category: string; name:
 type DailyReportTask = Pick<ProductionItem, 'id' | 'workDate' | 'episode' | 'category' | 'title' | 'owner' | 'status' | 'plannedQty' | 'completedQty' | 'dependsOnId' | 'handoffDeadline'>;
 type DailyReportSummary = { completed: DailyReportTask[]; incomplete: DailyReportTask[]; yoyoPending: DailyReportTask[]; rollovers: Array<DailyReportTask & { fromDate: string; toDate: string }> };
 type DailyReport = { id: string; workDate: string; completedCount: number; incompleteCount: number; rolloverCount: number; summary: DailyReportSummary; createdAt: string; updatedAt: string };
+type CurrentUser = { id?: string; email?: string; name: string; phone?: string; role: string; isAdmin: boolean; needsRegistration?: boolean };
+const registrationRoles = ['编剧', '主美', 'AIGC抽卡师', '剪辑', '制片人（叶总）', '红人（Yoyo）', '项目成员'];
 
 export function ProductionDashboard() {
   const [activeTab, setActiveTab] = useState('today');
@@ -56,20 +58,27 @@ export function ProductionDashboard() {
   const [creatingRole, setCreatingRole] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(true);
-  const [me, setMe] = useState<{ name: string; role: string; isAdmin: boolean } | null>(null);
+  const [me, setMe] = useState<CurrentUser | null>(null);
+  const [loadError, setLoadError] = useState('');
 
   async function loadData() {
     setSyncing(true);
+    setLoadError('');
     try {
-      const [itemResponse, sceneResponse, planResponse, meResponse] = await Promise.all([fetch('/api/items'), fetch('/api/scenes'), fetch('/api/plan'), fetch('/api/me')]);
+      const meResponse = await fetch('/api/me', { cache: 'no-store' });
+      const meData = await meResponse.json() as { user?: CurrentUser; error?: string };
+      if (!meResponse.ok || !meData.user) { setMe(null); setLoadError(meData.error || '登录状态失效，请重新登录'); return; }
+      setMe(meData.user);
+      if (meData.user.needsRegistration) return;
+      const [itemResponse, sceneResponse, planResponse] = await Promise.all([fetch('/api/items'), fetch('/api/scenes'), fetch('/api/plan')]);
       const itemData = await itemResponse.json() as { items?: ProductionItem[] };
       const sceneData = await sceneResponse.json() as { scenes?: Scene[] };
       const planData = await planResponse.json() as { batches?: PlanBatch[] };
-      const meData = await meResponse.json() as { user?: { name: string; role: string; isAdmin: boolean } };
       if (itemData.items?.length) setItems(itemData.items);
       if (sceneData.scenes?.length) setScenes(sceneData.scenes);
       if (planData.batches?.length) setBatches(planData.batches);
-      if (meData.user) setMe(meData.user);
+    } catch {
+      setLoadError('暂时无法读取项目，请刷新后重试');
     } finally {
       setSyncing(false);
     }
@@ -148,6 +157,10 @@ export function ProductionDashboard() {
     } catch { /* optimistic update remains visible in local preview */ }
   }
 
+  if (syncing && !me) return <main className="grid min-h-screen place-items-center"><div className="control-card flex items-center gap-3 px-5 py-4 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin text-[#ff6240]" />正在确认项目身份…</div></main>;
+  if (me?.needsRegistration) return <MemberRegistration user={me} onRegistered={loadData} />;
+  if (!me) return <main className="grid min-h-screen place-items-center px-5"><section className="control-card w-full max-w-md p-7 text-center"><h1 className="text-xl font-semibold">需要重新登录</h1><p className="mt-2 text-sm text-muted-foreground">{loadError || '没有读取到项目账号。'}</p><a href="/signin-with-chatgpt?return_to=%2F" target="_top" className="mt-5 flex h-11 items-center justify-center rounded-xl bg-[#ff6240] font-medium text-[#17110f]">重新登录</a></section></main>;
+
   return (
     <main className="min-h-screen bg-transparent text-foreground">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mx-auto min-h-screen w-full max-w-6xl pb-24 md:pb-9">
@@ -162,9 +175,8 @@ export function ProductionDashboard() {
               <button onClick={() => void loadData()} aria-label="刷新全组进度" className="grid h-9 w-9 place-items-center rounded-full border border-white/8 bg-white/4 text-muted-foreground">
                 <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
               </button>
-              <div className="flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/8 px-3 py-1.5 text-sm text-emerald-300">
-                <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_14px_rgba(52,211,153,.85)]" />全组同步
-              </div>
+              <div className="hidden rounded-full border border-emerald-400/20 bg-emerald-400/8 px-3 py-1.5 text-xs text-emerald-300 sm:block"><span className="font-medium">{me.name}</span><span className="ml-2 text-emerald-300/70">{me.isAdmin ? 'Lipa管理权限' : me.role}</span></div>
+              <a href="/signout-with-chatgpt?return_to=%2F" target="_top" className="rounded-full border border-white/8 bg-white/4 px-3 py-2 text-xs text-muted-foreground hover:text-white">退出</a>
             </div>
           </div>
         </header>
@@ -199,6 +211,25 @@ export function ProductionDashboard() {
       <BatchEditor batch={selectedBatch} open={Boolean(selectedBatch)} onClose={() => setSelectedBatch(null)} onSave={async (batch) => { await updateBatch(batch); setSelectedBatch(null); }} />
     </main>
   );
+}
+
+function MemberRegistration({ user, onRegistered }: { user: CurrentUser; onRegistered: () => Promise<void> }) {
+  const [name, setName] = useState(user.name || '');
+  const [phone, setPhone] = useState('');
+  const [role, setRole] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  async function submit() {
+    setSaving(true); setError('');
+    try {
+      const response = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, phone, role }) });
+      const data = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(data.error || '注册失败');
+      await onRegistered();
+    } catch (nextError) { setError(nextError instanceof Error ? nextError.message : '注册失败'); }
+    finally { setSaving(false); }
+  }
+  return <main className="grid min-h-screen place-items-center px-5 py-10"><section className="control-card w-full max-w-lg p-6 md:p-8"><p className="eyebrow">JOIN THE PRODUCTION</p><h1 className="mt-2 text-2xl font-semibold">注册项目岗位</h1><p className="mt-2 text-sm leading-6 text-muted-foreground">注册后可以查看每天的剧本、任务和交接时间。只有Lipa可以新增、删除和调整每日项目。</p><div className="mt-6 space-y-4"><Field label="姓名"><input value={name} onChange={(event) => setName(event.target.value)} className="edit-input" placeholder="请输入真实姓名" /></Field><Field label="手机号"><input type="tel" inputMode="tel" value={phone} onChange={(event) => setPhone(event.target.value)} className="edit-input" placeholder="用于绑定项目成员身份" /></Field><Field label="所属岗位"><select value={role} onChange={(event) => setRole(event.target.value)} className="edit-input"><option value="">请选择岗位</option>{registrationRoles.map((item) => <option key={item} value={item}>{item}</option>)}</select></Field></div>{error && <p className="mt-4 rounded-xl border border-red-400/20 bg-red-400/[.06] px-3 py-2 text-sm text-red-300">{error}</p>}<Button className="mt-6 h-12 w-full" disabled={saving || !name.trim() || !phone.trim() || !role} onClick={() => void submit()}>{saving ? <Loader2 className="animate-spin" /> : <Check />}{saving ? '正在注册…' : '注册并进入项目'}</Button><p className="mt-4 text-center text-xs text-muted-foreground">登录身份由ChatGPT保护；项目只保存姓名、手机号和岗位，不保存密码。</p></section></main>;
 }
 
 function TodayView({ selectedDate, setSelectedDate, items, isAdmin, onEdit, onAdd, onOpenHandbook, onReload, onToggle }: { selectedDate: string; setSelectedDate: (value: string) => void; items: ProductionItem[]; isAdmin: boolean; onEdit: (item: ProductionItem) => void; onAdd: (role: string) => void; onOpenHandbook: () => void; onReload: () => Promise<void>; onToggle: (item: ProductionItem, checked: boolean) => void }) {

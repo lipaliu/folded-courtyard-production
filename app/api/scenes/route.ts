@@ -1,6 +1,6 @@
 import { env } from 'cloudflare:workers';
 import { initialScenes, STATUSES } from '@/lib/plan-data';
-import { requireAdmin } from '@/lib/auth';
+import { requireAdmin, requireMember } from '@/lib/auth';
 
 const allowedFields = new Set(['scriptStatus', 'characterStatus', 'locationStatus', 'wardrobeStatus', 'whiteModelStatus', 'shotStatus', 'roughCutStatus', 'finalStatus']);
 const columns: Record<string, string> = {
@@ -9,7 +9,8 @@ const columns: Record<string, string> = {
   roughCutStatus: 'rough_cut_status', finalStatus: 'final_status',
 };
 
-export async function GET() {
+export async function GET(request: Request) {
+  if (!await requireMember(request)) return Response.json({ error: '请先登录并注册岗位' }, { status: 401 });
   try {
     const count = await env.DB.prepare('SELECT COUNT(*) AS count FROM scenes').first<{ count: number }>();
     if (!count?.count) {

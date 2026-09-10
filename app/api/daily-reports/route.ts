@@ -1,5 +1,5 @@
 import { env } from 'cloudflare:workers';
-import { requireAdmin } from '@/lib/auth';
+import { requireAdmin, requireMember } from '@/lib/auth';
 import { nextProductionDay } from '@/lib/work-calendar';
 
 type TaskRow = {
@@ -66,7 +66,8 @@ function parseReport(row: Record<string, unknown>) {
   };
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  if (!await requireMember(request)) return Response.json({ error: '请先登录并注册岗位' }, { status: 401 });
   const result = await env.DB.prepare(`SELECT id, work_date AS workDate, completed_count AS completedCount,
     incomplete_count AS incompleteCount, rollover_count AS rolloverCount, summary_json AS summaryJson,
     created_at AS createdAt, updated_at AS updatedAt FROM daily_reports ORDER BY work_date DESC`).all<Record<string, unknown>>();
