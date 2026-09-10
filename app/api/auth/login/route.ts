@@ -1,9 +1,20 @@
 import { env } from 'cloudflare:workers';
-import { createSession, getAccountByUsername, verifyPassword } from '@/lib/auth';
+import { createSession, getAccountByUsername, hashPassword, normalizeUsername, verifyPassword } from '@/lib/auth';
 
 export async function POST(request: Request) {
   const body = await request.json() as { username?: string; password?: string };
-  const account = await getAccountByUsername(body.username || '');
+  const username = normalizeUsername(body.username || '');
+  let account = await getAccountByUsername(username);
+  if (!account && username === 'lipa' && body.password && body.password === env.ADMIN_INITIAL_PASSWORD) {
+    const credentials = await hashPassword(body.password);
+    const id = crypto.randomUUID();
+    const createdAt = new Date().toISOString();
+    await env.DB.prepare(`INSERT INTO member_accounts
+      (id, username, password_hash, password_salt, password_iterations, name, role, is_admin, active, failed_attempts, locked_until, created_at, updated_at)
+      VALUES (?, 'lipa', ?, ?, ?, 'Lipa', '联合制片人／导演', 1, 1, 0, '', ?, ?)`)
+      .bind(id, credentials.hash, credentials.salt, credentials.iterations, createdAt, createdAt).run();
+    account = await getAccountByUsername(username);
+  }
   const now = new Date();
   if (account?.lockedUntil && new Date(account.lockedUntil).getTime() > now.getTime()) {
     return Response.json({ error: '尝试次数过多，请15分钟后再试' }, { status: 429 });

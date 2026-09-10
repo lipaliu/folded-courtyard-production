@@ -181,7 +181,7 @@ export function ProductionDashboard() {
               <button onClick={() => void loadData()} aria-label="刷新全组进度" className="grid h-9 w-9 place-items-center rounded-full border border-white/8 bg-white/4 text-muted-foreground">
                 <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
               </button>
-              <button onClick={() => setChangingPassword(true)} className="hidden rounded-full border border-emerald-400/20 bg-emerald-400/8 px-3 py-1.5 text-left text-xs text-emerald-300 sm:block"><span className="font-medium">{me.name}</span><span className="ml-2 text-emerald-300/70">{me.isAdmin ? 'Lipa管理权限' : me.role}</span></button>
+              <button onClick={() => setChangingPassword(true)} className="rounded-full border border-emerald-400/20 bg-emerald-400/8 px-3 py-1.5 text-left text-xs text-emerald-300"><span className="font-medium">{me.name}</span><span className="ml-2 hidden text-emerald-300/70 sm:inline">{me.isAdmin ? 'Lipa管理权限' : me.role}</span></button>
               <button onClick={() => void logout()} className="rounded-full border border-white/8 bg-white/4 px-3 py-2 text-xs text-muted-foreground hover:text-white">退出</button>
             </div>
           </div>
