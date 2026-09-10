@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 export const productionItems = sqliteTable('production_items', {
   id: text('id').primaryKey(),
@@ -135,3 +135,60 @@ export const scriptAnalysisItems = sqliteTable('script_analysis_items', {
   sortOrder: integer('sort_order').notNull().default(0),
   updatedAt: text('updated_at').notNull(),
 });
+
+export const scriptVersions = sqliteTable('script_versions', {
+  id: text('id').primaryKey(),
+  episode: text('episode').notNull(),
+  versionNo: integer('version_no').notNull(),
+  fileName: text('file_name').notNull().default(''),
+  sourceText: text('source_text').notNull(),
+  changeSummary: text('change_summary').notNull().default(''),
+  workDate: text('work_date').notNull(),
+  submittedBy: text('submitted_by').notNull(),
+  sceneCount: integer('scene_count').notNull().default(0),
+  itemCount: integer('item_count').notNull().default(0),
+  createdAt: text('created_at').notNull(),
+}, (table) => [
+  uniqueIndex('script_versions_episode_version_unique').on(table.episode, table.versionNo),
+  index('idx_script_versions_episode_created').on(table.episode, table.createdAt),
+]);
+
+export const artSubmissionDetails = sqliteTable('art_submission_details', {
+  itemId: text('item_id').primaryKey(),
+  assignedTo: text('assigned_to').notNull().default('主美小金'),
+  dueAt: text('due_at').notNull().default(''),
+  handoffTo: text('handoff_to').notNull().default('Lipa'),
+  doneDefinition: text('done_definition').notNull().default(''),
+  status: text('status').notNull().default('待上传'),
+  submissionNote: text('submission_note').notNull().default(''),
+  reviewNote: text('review_note').notNull().default(''),
+  submittedAt: text('submitted_at').notNull().default(''),
+  reviewedAt: text('reviewed_at').notNull().default(''),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const artSubmissionFiles = sqliteTable('art_submission_files', {
+  id: text('id').primaryKey(),
+  itemId: text('item_id').notNull(),
+  objectKey: text('object_key').notNull().unique(),
+  fileName: text('file_name').notNull(),
+  contentType: text('content_type').notNull(),
+  byteSize: integer('byte_size').notNull(),
+  uploadedBy: text('uploaded_by').notNull(),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: text('created_at').notNull(),
+}, (table) => [
+  index('idx_art_submission_files_item').on(table.itemId, table.sortOrder),
+]);
+
+export const dailySceneAssignments = sqliteTable('daily_scene_assignments', {
+  id: text('id').primaryKey(),
+  workDate: text('work_date').notNull(),
+  analysisId: text('analysis_id').notNull(),
+  scriptVersionId: text('script_version_id').notNull().default(''),
+  assignedBy: text('assigned_by').notNull(),
+  createdAt: text('created_at').notNull(),
+}, (table) => [
+  uniqueIndex('daily_scene_assignments_date_analysis_unique').on(table.workDate, table.analysisId),
+  index('idx_daily_scene_assignments_work_date').on(table.workDate),
+]);

@@ -6,7 +6,7 @@ export type SiteUser = { id: string; username: string; name: string; role: strin
 
 const SESSION_COOKIE = 'folded_courtyard_session';
 const SESSION_DAYS = 14;
-export const PASSWORD_ITERATIONS = 120000;
+export const PASSWORD_ITERATIONS = 100000;
 
 export type AccountRow = {
   id: string;

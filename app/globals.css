@@ -94,6 +94,20 @@ button { font: inherit; }
 .edit-input:focus { border-color: #ff6240; box-shadow: 0 0 0 2px rgba(255,98,64,.12); }
 .edit-input option { background: #24272d; color: #f5f4f2; }
 
+.submission-pdf-source {
+  position: fixed;
+  left: -20000px;
+  top: 0;
+  width: 794px;
+  pointer-events: none;
+}
+.submission-pdf-page {
+  width: 794px;
+  height: 1123px;
+  overflow: hidden;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
 @media (min-width: 768px) {
   body { background-position: center top; }
 }

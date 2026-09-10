@@ -12,6 +12,7 @@ import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { initialBatches, initialItems, initialScenes, PlanBatch, ProductionItem, Scene, STATUSES, Status } from '@/lib/plan-data';
 import { dayType, isProductionDay, productionDayNumber, PROJECT_END, PROJECT_START } from '@/lib/work-calendar';
+import { SubmissionCenter } from '@/components/submission-center';
 
 const stageLabels: Array<{ key: keyof Scene; label: string }> = [
   { key: 'scriptStatus', label: '剧本' },
@@ -192,7 +193,7 @@ export function ProductionDashboard() {
             <TabsContent value="today" className="mt-0"><TodayView selectedDate={selectedDate} setSelectedDate={setSelectedDate} items={todayItems} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedItem} onAdd={setCreatingRole} onOpenHandbook={() => setActiveTab('breakdown')} onReload={loadData} onToggle={(item, checked) => void (item.category === '整集资产确认' ? updateEpisodeApproval(item, checked) : updateItem(item.id, { status: checked ? '已通过' : '未开始', completedQty: checked ? item.plannedQty : 0 }))} /></TabsContent>
             <TabsContent value="plan" className="mt-0"><PlanView items={items} batches={batches} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedBatch} /></TabsContent>
             <TabsContent value="scenes" className="mt-0"><ScenesView scenes={scenes} isAdmin={Boolean(me?.isAdmin)} onChange={updateScene} /></TabsContent>
-            <TabsContent value="breakdown" className="mt-0"><ScriptAnalysisView isAdmin={Boolean(me?.isAdmin)} selectedDate={selectedDate} productionItems={items} onAssigned={async (workDate) => { setSelectedDate(workDate); await loadData(); }} /></TabsContent>
+            <TabsContent value="breakdown" className="mt-0"><SubmissionCenter me={me} selectedDate={selectedDate} productionItems={items} onAssigned={async (workDate) => { setSelectedDate(workDate); await loadData(); }} /></TabsContent>
             <TabsContent value="review" className="mt-0"><ReviewView items={pendingReview} scenes={scenes} isAdmin={Boolean(me?.isAdmin)} updateItem={updateItem} updateScene={updateScene} /></TabsContent>
           </div>
         </div>
@@ -201,7 +202,7 @@ export function ProductionDashboard() {
           <NavTab value="today" label="今日" icon={<LayoutDashboard />} />
           <NavTab value="plan" label="大计划" icon={<Rows3 />} />
           <NavTab value="scenes" label="场次" icon={<Film />} />
-          <NavTab value="breakdown" label="生产手册" icon={<Sparkles />} />
+          <NavTab value="breakdown" label="提报中心" icon={<Sparkles />} />
           <NavTab value="review" label={`微信确认${pendingReview.length ? ` ${pendingReview.length}` : ''}`} icon={<ListChecks />} />
         </TabsList>
       </Tabs>

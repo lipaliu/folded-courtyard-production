@@ -1,7 +1,7 @@
 import { env } from 'cloudflare:workers';
 import { createSession, getAccountByUsername, hashPassword, normalizeUsername, verifyPassword } from '@/lib/auth';
 
-export async function POST(request: Request) {
+async function handleLogin(request: Request) {
   const body = await request.json() as { username?: string; password?: string };
   const username = normalizeUsername(body.username || '');
   let account = await getAccountByUsername(username);
@@ -33,4 +33,16 @@ export async function POST(request: Request) {
     .bind(now.toISOString(), account.id).run();
   const cookie = await createSession(account.id);
   return Response.json({ user: { id: account.id, username: account.username, name: account.name, role: account.role, isAdmin: Boolean(account.isAdmin) } }, { headers: { 'Set-Cookie': cookie } });
+}
+
+export async function POST(request: Request) {
+  try {
+    return await handleLogin(request);
+  } catch (error) {
+    console.error('Login failed unexpectedly', error);
+    return Response.json(
+      { error: '登录服务暂时不可用，请稍后重试' },
+      { status: 500 },
+    );
+  }
 }

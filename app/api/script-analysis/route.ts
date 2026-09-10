@@ -29,24 +29,34 @@ export async function GET(request: Request) {
   if (!await requireMember(request)) return Response.json({ error: '请先登录并注册岗位' }, { status: 401 });
   try {
     await ensureFirstEpisodeBreakdown();
-    const [analyses, items] = await Promise.all([
+    const now = new Date().toISOString();
+    await env.DB.prepare(`INSERT OR IGNORE INTO art_submission_details
+      (item_id, assigned_to, due_at, handoff_to, done_definition, status, submission_note, review_note, submitted_at, reviewed_at, updated_at)
+      SELECT id, '主美小金', '', 'Lipa', visual_brief, '待上传', '', '', '', '', ? FROM script_analysis_items`).bind(now).run();
+    const [analyses, items, versions, assignments] = await Promise.all([
       env.DB.prepare(`SELECT id, episode, scene_no AS sceneNo, scene_title AS sceneTitle,
         script_text AS scriptText, scene_summary AS sceneSummary, location, created_at AS createdAt,
         updated_at AS updatedAt FROM script_analyses ORDER BY episode, scene_no`).all(),
       env.DB.prepare(`SELECT id, analysis_id AS analysisId, category, name, detail,
         visual_brief AS visualBrief, yoyo_approved AS yoyoApproved, producer_approved AS producerApproved, sort_order AS sortOrder,
         updated_at AS updatedAt FROM script_analysis_items ORDER BY analysis_id, sort_order`).all(),
+      env.DB.prepare(`SELECT id, episode, version_no AS versionNo, file_name AS fileName, source_text AS sourceText,
+        change_summary AS changeSummary, work_date AS workDate, submitted_by AS submittedBy,
+        scene_count AS sceneCount, item_count AS itemCount, created_at AS createdAt
+        FROM script_versions ORDER BY created_at DESC LIMIT 30`).all(),
+      env.DB.prepare(`SELECT id, work_date AS workDate, analysis_id AS analysisId, script_version_id AS scriptVersionId,
+        assigned_by AS assignedBy, created_at AS createdAt FROM daily_scene_assignments ORDER BY work_date DESC, created_at`).all(),
     ]);
-    return Response.json({ analyses: analyses.results, items: items.results, mode: 'manual' });
+    return Response.json({ analyses: analyses.results, items: items.results, versions: versions.results, assignments: assignments.results, mode: 'manual' });
   } catch (error) {
-    return Response.json({ analyses: [], items: [], mode: 'manual', error: error instanceof Error ? error.message : '读取失败' });
+    return Response.json({ analyses: [], items: [], versions: [], assignments: [], mode: 'manual', error: error instanceof Error ? error.message : '读取失败' });
   }
 }
 
 export async function POST(request: Request) {
   const admin = await requireAdmin(request);
   if (!admin) return Response.json({ error: '只有Lipa可以分配当天工作' }, { status: 403 });
-  const body = await request.json() as Partial<{ action: string; workDate: string; analysisIds: string[]; episode: string; sceneNo: number; sceneTitle: string; location: string; scriptText: string; fileName: string; text: string }>;
+  const body = await request.json() as Partial<{ action: string; workDate: string; analysisIds: string[]; episode: string; sceneNo: number; sceneTitle: string; location: string; scriptText: string; fileName: string; text: string; changeSummary: string }>;
 
   if (body.action === 'importScript') {
     if (!/^2026-\d{2}-\d{2}$/.test(body.workDate || '') || !body.text?.trim()) return Response.json({ error: '没有读取到剧本文字' }, { status: 400 });
@@ -56,6 +66,18 @@ export async function POST(request: Request) {
     const now = new Date().toISOString();
     const analysisIds: string[] = [];
     const statements = [];
+    const versionRows: Array<{ id: string; episode: string; versionNo: number }> = [];
+    for (const episode of [...new Set(scenes.slice(0, 40).map((scene) => scene.episode))]) {
+      const previous = await env.DB.prepare('SELECT COALESCE(MAX(version_no), 0) AS latest FROM script_versions WHERE episode = ?').bind(episode).first<{ latest: number }>();
+      const versionNo = Number(previous?.latest || 0) + 1;
+      const versionId = `script-version-${crypto.randomUUID()}`;
+      const episodeScenes = scenes.slice(0, 40).filter((scene) => scene.episode === episode);
+      versionRows.push({ id: versionId, episode, versionNo });
+      statements.push(env.DB.prepare(`INSERT INTO script_versions
+        (id, episode, version_no, file_name, source_text, change_summary, work_date, submitted_by, scene_count, item_count, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        .bind(versionId, episode, versionNo, (body.fileName || '').slice(0, 180), body.text.slice(0, 300000), (body.changeSummary || (versionNo === 1 ? '首次单集提报' : '未填写更新说明')).slice(0, 1000), body.workDate, admin.name, episodeScenes.length, episodeScenes.reduce((sum, scene) => sum + scene.items.length, 0), now));
+    }
     for (const scene of scenes.slice(0, 40)) {
       const existing = await env.DB.prepare('SELECT id FROM script_analyses WHERE episode = ? AND scene_no = ?').bind(scene.episode, scene.sceneNo).first<{ id: string }>();
       const analysisId = existing?.id || `import-${crypto.randomUUID()}`;
@@ -69,10 +91,19 @@ export async function POST(request: Request) {
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
           .bind(analysisId, scene.episode, scene.sceneNo, scene.sceneTitle, scene.scriptText, scene.sceneSummary, scene.location, now, now));
       }
-      scene.items.forEach((item, index) => statements.push(env.DB.prepare(`INSERT INTO script_analysis_items
-        (id, analysis_id, category, name, detail, visual_brief, yoyo_approved, producer_approved, sort_order, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?, ?)`)
-        .bind(`${analysisId}-auto-${index + 1}`, analysisId, item.category, item.name, item.detail, item.visualBrief, index + 1, now)));
+      scene.items.forEach((item, index) => {
+        const itemId = `${analysisId}-auto-${index + 1}`;
+        statements.push(env.DB.prepare(`INSERT INTO script_analysis_items
+          (id, analysis_id, category, name, detail, visual_brief, yoyo_approved, producer_approved, sort_order, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?, ?)`)
+          .bind(itemId, analysisId, item.category, item.name, item.detail, item.visualBrief, index + 1, now));
+        statements.push(env.DB.prepare(`INSERT INTO art_submission_details
+          (item_id, assigned_to, due_at, handoff_to, done_definition, status, submission_note, review_note, submitted_at, reviewed_at, updated_at)
+          VALUES (?, '主美小金', ?, 'Lipa', ?, '待上传', '', '', '', '', ?)
+          ON CONFLICT(item_id) DO UPDATE SET due_at = excluded.due_at, done_definition = excluded.done_definition,
+            status = '需复核', review_note = '剧本已更新，请按最新版本复核此项。', reviewed_at = '', updated_at = excluded.updated_at`)
+          .bind(itemId, `${body.workDate}T18:00`, item.visualBrief, now));
+      });
       statements.push(env.DB.prepare('INSERT INTO activity_log (item_type, item_id, action, operator, created_at) VALUES (?, ?, ?, ?, ?)').bind('script_analysis', analysisId, `导入${body.fileName || '剧本文件'}并自动拆解主美工作`, 'Lipa', now));
     }
     for (const episode of [...new Set(scenes.slice(0, 40).map((scene) => scene.episode))]) {
@@ -80,7 +111,7 @@ export async function POST(request: Request) {
       statements.push(env.DB.prepare('DELETE FROM production_items WHERE id = ?').bind(`rollup-${body.workDate}-${episodeKey(episode)}-aigc`));
     }
     await env.DB.batch(statements);
-    return Response.json({ ok: true, analysisIds, sceneCount: analysisIds.length, itemCount: scenes.slice(0, 40).reduce((sum, scene) => sum + scene.items.length, 0) });
+    return Response.json({ ok: true, analysisIds, versions: versionRows, sceneCount: analysisIds.length, itemCount: scenes.slice(0, 40).reduce((sum, scene) => sum + scene.items.length, 0) });
   }
 
   if (body.action === 'saveScene') {
@@ -96,12 +127,20 @@ export async function POST(request: Request) {
     const existing = await env.DB.prepare('SELECT id FROM script_analyses WHERE episode = ? AND scene_no = ?').bind(episode, sceneNo).first<{ id: string }>();
     const analysisId = existing?.id || `manual-${crypto.randomUUID()}`;
     const now = new Date().toISOString();
+    const previousVersion = await env.DB.prepare('SELECT COALESCE(MAX(version_no), 0) AS latest FROM script_versions WHERE episode = ?').bind(episode).first<{ latest: number }>();
+    const versionNo = Number(previousVersion?.latest || 0) + 1;
+    const versionStatement = env.DB.prepare(`INSERT INTO script_versions
+      (id, episode, version_no, file_name, source_text, change_summary, work_date, submitted_by, scene_count, item_count, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 4, ?)`).bind(`script-version-${crypto.randomUUID()}`, episode, versionNo, `手工补录_第${sceneNo}场.txt`, scriptText, (body.changeSummary || (versionNo === 1 ? '首次单集提报' : `手工更新第${sceneNo}场`)).slice(0, 1000), body.workDate, admin.name, now);
     if (existing) {
       await env.DB.batch([
+        versionStatement,
         env.DB.prepare('UPDATE script_analyses SET scene_title = ?, script_text = ?, location = ?, updated_at = ? WHERE id = ?').bind(sceneTitle, scriptText, location, now, analysisId),
+        env.DB.prepare(`UPDATE art_submission_details SET status = '需复核', review_note = '剧本已更新，请按最新版本复核此项。', reviewed_at = '', updated_at = ?
+          WHERE item_id IN (SELECT id FROM script_analysis_items WHERE analysis_id = ?)`).bind(now, analysisId),
         env.DB.prepare('INSERT INTO activity_log (item_type, item_id, action, operator, created_at) VALUES (?, ?, ?, ?, ?)').bind('script_analysis', analysisId, `更新${body.workDate}当天工作剧本`, 'Lipa', now),
       ]);
-      return Response.json({ ok: true, analysisId, created: false });
+      return Response.json({ ok: true, analysisId, versionNo, created: false });
     }
 
     const starterItems = [
@@ -111,6 +150,7 @@ export async function POST(request: Request) {
       { category: '场景', name: '本场场景图', detail: '根据剧本中的内外景、日夜、空间关系和动作调度确定场景。', visualBrief: '场景全景、关键机位方向、出入口和主要陈设；足够支持后续白模调度。' },
     ];
     await env.DB.batch([
+      versionStatement,
       env.DB.prepare(`INSERT INTO script_analyses
         (id, episode, scene_no, scene_title, script_text, scene_summary, location, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
@@ -119,9 +159,13 @@ export async function POST(request: Request) {
         (id, analysis_id, category, name, detail, visual_brief, yoyo_approved, producer_approved, sort_order, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?, ?)`)
         .bind(`${analysisId}-${index + 1}`, analysisId, item.category, item.name, item.detail, item.visualBrief, index + 1, now)),
+      ...starterItems.map((item, index) => env.DB.prepare(`INSERT INTO art_submission_details
+        (item_id, assigned_to, due_at, handoff_to, done_definition, status, submission_note, review_note, submitted_at, reviewed_at, updated_at)
+        VALUES (?, '主美小金', ?, 'Lipa', ?, '待上传', '', '', '', '', ?)`)
+        .bind(`${analysisId}-${index + 1}`, `${body.workDate}T18:00`, item.visualBrief, now)),
       env.DB.prepare('INSERT INTO activity_log (item_type, item_id, action, operator, created_at) VALUES (?, ?, ?, ?, ?)').bind('script_analysis', analysisId, `新增${body.workDate}当天工作剧本并建立主美四类工作`, 'Lipa', now),
     ]);
-    return Response.json({ ok: true, analysisId, created: true });
+    return Response.json({ ok: true, analysisId, versionNo, created: true });
   }
 
   if (body.action !== 'assign' || !/^2026-\d{2}-\d{2}$/.test(body.workDate || '') || !Array.isArray(body.analysisIds) || !body.analysisIds.length) {
@@ -131,15 +175,21 @@ export async function POST(request: Request) {
   await ensureFirstEpisodeBreakdown();
   const uniqueIds = [...new Set(body.analysisIds)].slice(0, 30);
   const placeholders = uniqueIds.map(() => '?').join(',');
-  const [analysisRows, itemRows] = await Promise.all([
+  const [analysisRows, itemRows, submissionRows] = await Promise.all([
     env.DB.prepare(`SELECT id, episode, scene_no AS sceneNo, scene_title AS sceneTitle FROM script_analyses WHERE id IN (${placeholders}) ORDER BY episode, scene_no`).bind(...uniqueIds).all<{ id: string; episode: string; sceneNo: number; sceneTitle: string }>(),
     env.DB.prepare(`SELECT analysis_id AS analysisId, COUNT(*) AS itemCount FROM script_analysis_items WHERE analysis_id IN (${placeholders}) GROUP BY analysis_id`).bind(...uniqueIds).all<{ analysisId: string; itemCount: number }>(),
+    env.DB.prepare(`SELECT id, visual_brief AS visualBrief FROM script_analysis_items WHERE analysis_id IN (${placeholders})`).bind(...uniqueIds).all<{ id: string; visualBrief: string }>(),
   ]);
   if (!analysisRows.results.length) return Response.json({ error: '没有找到所选场次' }, { status: 404 });
 
   const itemCountByAnalysis = new Map(itemRows.results.map((row) => [row.analysisId, Number(row.itemCount)]));
   const now = new Date().toISOString();
   const workDate = body.workDate!;
+  const latestVersionByEpisode = new Map<string, string>();
+  for (const episode of [...new Set(analysisRows.results.map((row) => row.episode))]) {
+    const latestVersion = await env.DB.prepare('SELECT id FROM script_versions WHERE episode = ? ORDER BY version_no DESC LIMIT 1').bind(episode).first<{ id: string }>();
+    latestVersionByEpisode.set(episode, latestVersion?.id || '');
+  }
   const groups = new Map<string, { episode: string; count: number; sceneCount: number }>();
   for (const analysis of analysisRows.results) {
     const group = groups.get(analysis.episode) || { episode: analysis.episode, count: 0, sceneCount: 0 };
@@ -150,7 +200,18 @@ export async function POST(request: Request) {
   const tasks = [...groups.values()].flatMap((group, groupIndex) => episodeRollupTasks(workDate, group.episode, group.count, group.sceneCount, groupIndex, now));
   const obsoleteTaskDeletes = uniqueIds.flatMap((analysisId) => ['script', 'breakdown', 'art', 'white', 'send', 'yoyo', 'producer'].map((suffix) => env.DB.prepare('DELETE FROM production_items WHERE id = ?').bind(`daily-${workDate}-${analysisId}-${suffix}`)));
 
-  await env.DB.batch([...obsoleteTaskDeletes, ...tasks.map((row) => env.DB.prepare(`INSERT INTO production_items
+  const submissionDefaults = submissionRows.results.map((row) => env.DB.prepare(`INSERT INTO art_submission_details
+    (item_id, assigned_to, due_at, handoff_to, done_definition, status, submission_note, review_note, submitted_at, reviewed_at, updated_at)
+    VALUES (?, '主美小金', ?, 'Lipa', ?, '待上传', '', '', '', '', ?)
+    ON CONFLICT(item_id) DO UPDATE SET due_at = CASE WHEN art_submission_details.due_at = '' THEN excluded.due_at ELSE art_submission_details.due_at END,
+      done_definition = CASE WHEN art_submission_details.done_definition = '' THEN excluded.done_definition ELSE art_submission_details.done_definition END,
+      updated_at = excluded.updated_at`).bind(row.id, `${workDate}T18:00`, row.visualBrief, now));
+  const assignmentStatements = analysisRows.results.map((row) => env.DB.prepare(`INSERT INTO daily_scene_assignments
+    (id, work_date, analysis_id, script_version_id, assigned_by, created_at) VALUES (?, ?, ?, ?, ?, ?)
+    ON CONFLICT(work_date, analysis_id) DO UPDATE SET script_version_id = excluded.script_version_id,
+      assigned_by = excluded.assigned_by, created_at = excluded.created_at`)
+    .bind(`daily-scene-${workDate}-${row.id}`, workDate, row.id, latestVersionByEpisode.get(row.episode) || '', admin.name, now));
+  await env.DB.batch([...obsoleteTaskDeletes, ...submissionDefaults, ...assignmentStatements, ...tasks.map((row) => env.DB.prepare(`INSERT INTO production_items
     (id, work_date, episode, category, title, owner, reviewer, status, planned_qty, completed_qty, due_time, depends_on_id, handoff_to, handoff_deadline, note, sort_order, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, '未开始', ?, 0, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET episode = excluded.episode, category = excluded.category, title = excluded.title,
