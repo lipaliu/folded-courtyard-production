@@ -56,18 +56,21 @@ export async function POST(request: Request) {
 
   const extension = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
   const id = crypto.randomUUID();
-  const objectKey = `art-submissions/${safePart(item.episode)}/scene-${item.sceneNo}/${safePart(itemId)}/${id}.${extension}`;
+  const artAssets = (env as unknown as { ART_ASSETS?: R2Bucket }).ART_ASSETS;
+  if (!artAssets && file.size > 1_600_000) return Response.json({ error: '图片过大，请压缩到1.5MB以再上传' }, { status: 400 });
+  const objectKey = artAssets ? `art-submissions/${safePart(item.episode)}/scene-${item.sceneNo}/${safePart(itemId)}/${id}.${extension}` : `d1:${id}`;
+  const fileBytes = await file.arrayBuffer();
   const now = new Date().toISOString();
   const sortRow = await env.DB.prepare('SELECT COALESCE(MAX(sort_order), 0) AS maxSort FROM art_submission_files WHERE item_id = ?').bind(itemId).first<{ maxSort: number }>();
   try {
-    await env.ART_ASSETS.put(objectKey, await file.arrayBuffer(), {
+    if (artAssets) await artAssets.put(objectKey, fileBytes, {
       httpMetadata: { contentType: file.type, cacheControl: 'private, max-age=3600' },
       customMetadata: { itemId, episode: item.episode, sceneNo: String(item.sceneNo), uploadedBy: user.name },
     });
     await env.DB.batch([
       env.DB.prepare(`INSERT INTO art_submission_files
-        (id, item_id, object_key, file_name, content_type, byte_size, uploaded_by, sort_order, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(id, itemId, objectKey, file.name.slice(0, 180), file.type, file.size, user.name, Number(sortRow?.maxSort || 0) + 1, now),
+        (id, item_id, object_key, file_name, content_type, byte_size, uploaded_by, sort_order, file_data, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(id, itemId, objectKey, file.name.slice(0, 180), file.type, file.size, user.name, Number(sortRow?.maxSort || 0) + 1, artAssets ? null : fileBytes, now),
       env.DB.prepare(`INSERT OR IGNORE INTO art_submission_details
         (item_id, assigned_to, due_at, handoff_to, done_definition, status, submission_note, review_note, submitted_at, reviewed_at, updated_at)
         VALUES (?, ?, '', 'Lipa', '', '待上传', '', '', '', '', ?)`).bind(itemId, user.name, now),
@@ -76,7 +79,7 @@ export async function POST(request: Request) {
       env.DB.prepare('INSERT INTO activity_log (item_type, item_id, action, operator, created_at) VALUES (?, ?, ?, ?, ?)').bind('art_submission_file', id, `上传参考图：${file.name.slice(0, 120)}`, user.name, now),
     ]);
   } catch (error) {
-    await env.ART_ASSETS.delete(objectKey).catch(() => undefined);
+    await artAssets?.delete(objectKey).catch(() => undefined);
     return Response.json({ error: error instanceof Error ? error.message : '图片上传失败' }, { status: 500 });
   }
 
@@ -141,7 +144,8 @@ export async function DELETE(request: Request) {
   const file = await env.DB.prepare('SELECT id, item_id AS itemId, object_key AS objectKey, uploaded_by AS uploadedBy FROM art_submission_files WHERE id = ?').bind(body.fileId).first<{ id: string; itemId: string; objectKey: string; uploadedBy: string }>();
   if (!file) return Response.json({ error: '图片不存在' }, { status: 404 });
   if (!user.isAdmin && !artRoles.has(user.role)) return Response.json({ error: '没有删除权限' }, { status: 403 });
-  await env.ART_ASSETS.delete(file.objectKey);
+  const artAssets = (env as unknown as { ART_ASSETS?: R2Bucket }).ART_ASSETS;
+  if (!file.objectKey.startsWith('static:') && !file.objectKey.startsWith('d1:')) await artAssets?.delete(file.objectKey);
   await env.DB.batch([
     env.DB.prepare('DELETE FROM art_submission_files WHERE id = ?').bind(file.id),
     env.DB.prepare(`UPDATE art_submission_details SET status = CASE WHEN (SELECT COUNT(*) FROM art_submission_files WHERE item_id = ?) = 0 THEN '待上传' ELSE status END,

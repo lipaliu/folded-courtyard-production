@@ -1,4 +1,4 @@
-import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { blob, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 export const productionItems = sqliteTable('production_items', {
   id: text('id').primaryKey(),
@@ -176,6 +176,7 @@ export const artSubmissionFiles = sqliteTable('art_submission_files', {
   byteSize: integer('byte_size').notNull(),
   uploadedBy: text('uploaded_by').notNull(),
   sortOrder: integer('sort_order').notNull().default(0),
+  fileData: blob('file_data'),
   createdAt: text('created_at').notNull(),
 }, (table) => [
   index('idx_art_submission_files_item').on(table.itemId, table.sortOrder),
