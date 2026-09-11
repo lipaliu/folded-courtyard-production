@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import {
   CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, CircleDashed,
   ClipboardCopy, Clock3, Download, Film, LayoutDashboard, ListChecks, Loader2, Pencil, RefreshCw, Rows3, Sparkles, Trash2, Upload, X,
@@ -33,7 +34,7 @@ const statusStyle: Record<Status, string> = {
   打回: 'border-red-400/20 bg-red-400/10 text-red-300',
 };
 
-const roles = ['编剧', '主美', 'AIGC抽卡师', '剪辑', '制片人（叶总）', '红人（Yoyo）', '联合制片人／导演：Lipa'];
+const roles = ['编剧', '主美', 'AIGC抽卡师', '剪辑', '制片人（叶总）', '红人（Yoyo）', '执行制片人：Lipa'];
 const timeOptions = Array.from({ length: 96 }, (_, index) => {
   const hour = Math.floor(index / 4).toString().padStart(2, '0');
   const minute = ((index % 4) * 15).toString().padStart(2, '0');
@@ -46,7 +47,6 @@ type DailyReportTask = Pick<ProductionItem, 'id' | 'workDate' | 'episode' | 'cat
 type DailyReportSummary = { completed: DailyReportTask[]; incomplete: DailyReportTask[]; yoyoPending: DailyReportTask[]; rollovers: Array<DailyReportTask & { fromDate: string; toDate: string }> };
 type DailyReport = { id: string; workDate: string; completedCount: number; incompleteCount: number; rolloverCount: number; summary: DailyReportSummary; createdAt: string; updatedAt: string };
 type CurrentUser = { id: string; username: string; name: string; role: string; isAdmin: boolean };
-const registrationRoles = ['编剧', '主美', '美术', 'AIGC抽卡师', '剪辑'];
 
 export function ProductionDashboard() {
   const [activeTab, setActiveTab] = useState('today');
@@ -136,7 +136,7 @@ export function ProductionDashboard() {
       const data = await response.json() as { item: ProductionItem };
       setItems((current) => [...current, data.item].sort((a, b) => a.workDate.localeCompare(b.workDate) || a.sortOrder - b.sortOrder));
     } else {
-      const local: ProductionItem = { id: crypto.randomUUID(), workDate: draft.workDate || selectedDate, episode: draft.episode || '全片', category: draft.category || '统筹', title: draft.title || '新任务', owner: draft.owner || '联合制片人／导演：Lipa', reviewer: draft.reviewer || 'Yoyo', status: '未开始', plannedQty: draft.plannedQty || 1, completedQty: 0, dueTime: draft.dueTime || '18:00', dependsOnId: draft.dependsOnId || '', handoffTo: draft.handoffTo || '', handoffDeadline: draft.handoffDeadline || '', note: draft.note || '', sortOrder: Date.now(), updatedAt: new Date().toISOString() };
+      const local: ProductionItem = { id: crypto.randomUUID(), workDate: draft.workDate || selectedDate, episode: draft.episode || '全片', category: draft.category || '统筹', title: draft.title || '新任务', owner: draft.owner || '执行制片人：Lipa', reviewer: draft.reviewer || 'Yoyo', status: '未开始', plannedQty: draft.plannedQty || 1, completedQty: 0, dueTime: draft.dueTime || '18:00', dependsOnId: draft.dependsOnId || '', handoffTo: draft.handoffTo || '', handoffDeadline: draft.handoffDeadline || '', note: draft.note || '', sortOrder: Date.now(), updatedAt: new Date().toISOString() };
       setItems((current) => [...current, local]);
     }
   }
@@ -176,13 +176,13 @@ export function ProductionDashboard() {
             <div>
               <p className="text-[12px] font-medium tracking-[0.16em] text-muted-foreground">总制片推进台</p>
               <h1 className="mt-0.5 text-lg font-semibold tracking-tight">折叠庭院的她</h1>
-              <p className="mt-1 max-w-[245px] text-[10px] leading-4 text-muted-foreground sm:max-w-none">出品人：叶总　出演：Yoyo　联合制片人／导演：Lipa　编剧：丙丙　主美：小金</p>
+              <p className="mt-1 max-w-[245px] text-[10px] leading-4 text-muted-foreground sm:max-w-none">出品人：叶总　出演：Yoyo　执行制片人：Lipa　编剧：丙丙　主美：小金</p>
             </div>
             <div className="flex items-center gap-2">
               <button onClick={() => void loadData()} aria-label="刷新全组进度" className="grid h-9 w-9 place-items-center rounded-full border border-white/8 bg-white/4 text-muted-foreground">
                 <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
               </button>
-              <button onClick={() => setChangingPassword(true)} className="rounded-full border border-emerald-400/20 bg-emerald-400/8 px-3 py-1.5 text-left text-xs text-emerald-300"><span className="font-medium">{me.name}</span><span className="ml-2 hidden text-emerald-300/70 sm:inline">{me.isAdmin ? 'Lipa管理权限' : me.role}</span></button>
+              <button onClick={() => setChangingPassword(true)} className="rounded-full border border-emerald-400/20 bg-emerald-400/8 px-3 py-1.5 text-left text-xs text-emerald-300"><span className="font-medium">{me.name}</span><span className="ml-2 hidden text-emerald-300/70 sm:inline">{me.role}</span></button>
               <button onClick={() => void logout()} className="rounded-full border border-white/8 bg-white/4 px-3 py-2 text-xs text-muted-foreground hover:text-white">退出</button>
             </div>
           </div>
@@ -222,9 +222,6 @@ export function ProductionDashboard() {
 }
 
 function AccountAccess({ onAuthenticated, initialError }: { onAuthenticated: () => Promise<void>; initialError?: string }) {
-  const [mode, setMode] = useState<'login' | 'register'>('login');
-  const [name, setName] = useState('');
-  const [role, setRole] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [saving, setSaving] = useState(false);
@@ -232,15 +229,15 @@ function AccountAccess({ onAuthenticated, initialError }: { onAuthenticated: () 
   async function submit() {
     setSaving(true); setError('');
     try {
-      const response = await fetch(`/api/auth/${mode}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(mode === 'login' ? { username, password } : { name, role, username, password }) });
+      const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
       const data = await response.json() as { error?: string };
-      if (!response.ok) throw new Error(data.error || (mode === 'login' ? '登录失败' : '注册失败'));
+      if (!response.ok) throw new Error(data.error || '登录失败');
       await onAuthenticated();
     } catch (nextError) { setError(nextError instanceof Error ? nextError.message : '操作失败'); }
     finally { setSaving(false); }
   }
-  const ready = username.trim().length >= 3 && password.length >= 8 && (mode === 'login' || (name.trim().length >= 2 && Boolean(role)));
-  return <main className="grid min-h-screen place-items-center px-5 py-10"><section className="control-card w-full max-w-md p-6 md:p-8"><p className="eyebrow">PRODUCTION ACCESS</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">折叠庭院的她</h1><p className="mt-2 text-sm leading-6 text-muted-foreground">使用项目自己的账号进入，不需要ChatGPT账号。</p><div className="mt-6 grid grid-cols-2 rounded-xl border border-white/10 bg-black/20 p-1"><button type="button" onClick={() => { setMode('login'); setError(''); }} className={`h-10 rounded-lg text-sm transition ${mode === 'login' ? 'bg-white/10 text-white' : 'text-muted-foreground'}`}>登录</button><button type="button" onClick={() => { setMode('register'); setError(''); }} className={`h-10 rounded-lg text-sm transition ${mode === 'register' ? 'bg-white/10 text-white' : 'text-muted-foreground'}`}>注册</button></div><div className="mt-5 space-y-4">{mode === 'register' && <><Field label="姓名"><input autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} className="edit-input" placeholder="请输入真实姓名" /></Field><Field label="岗位"><select value={role} onChange={(event) => setRole(event.target.value)} className="edit-input"><option value="">请选择岗位</option>{registrationRoles.map((item) => <option key={item} value={item}>{item}</option>)}</select></Field></>}<Field label="登录名"><input autoCapitalize="none" autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} className="edit-input" placeholder="3—30位，之后用它登录" /></Field><Field label="密码"><input type="password" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} value={password} onChange={(event) => setPassword(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && ready) void submit(); }} className="edit-input" placeholder="至少8位" /></Field></div>{error && <p className="mt-4 rounded-xl border border-red-400/20 bg-red-400/[.06] px-3 py-2 text-sm text-red-300">{error}</p>}<Button className="mt-6 h-12 w-full" disabled={saving || !ready} onClick={() => void submit()}>{saving ? <Loader2 className="animate-spin" /> : <Check />}{saving ? (mode === 'login' ? '正在登录…' : '正在注册…') : (mode === 'login' ? '登录项目' : '注册并进入项目')}</Button><p className="mt-4 text-center text-xs leading-5 text-muted-foreground">团队成员注册后可查看工作；只有Lipa可以增删和调整项目。</p></section></main>;
+  const ready = username.trim().length >= 3 && password.length >= 8;
+  return <main className="grid min-h-screen place-items-center px-5 py-10"><section className="control-card w-full max-w-md p-6 md:p-8"><p className="eyebrow">TEAM ACCESS</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">折叠庭院的她</h1><p className="mt-2 text-sm leading-6 text-muted-foreground">内部协作入口，仅限编剧、导演、制片人。账号由制片人统一开通。</p><div className="mt-6 space-y-4"><Field label="登录名"><input autoCapitalize="none" autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} className="edit-input" placeholder="请输入项目登录名" /></Field><Field label="密码"><input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && ready) void submit(); }} className="edit-input" placeholder="至少8位" /></Field></div>{error && <p className="mt-4 rounded-xl border border-red-400/20 bg-red-400/[.06] px-3 py-2 text-sm text-red-300">{error}</p>}<Button className="mt-6 h-12 w-full" disabled={saving || !ready} onClick={() => void submit()}>{saving ? <Loader2 className="animate-spin" /> : <Check />}{saving ? '正在登录…' : '登录项目'}</Button><Link href="/pitch.html" className="mt-4 block text-center text-xs leading-5 text-muted-foreground hover:text-white">← 返回公开剧本提报</Link></section></main>;
 }
 
 function PasswordEditor({ user, open, onClose }: { user: CurrentUser; open: boolean; onClose: () => void }) {

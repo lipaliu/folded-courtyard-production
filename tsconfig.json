@@ -9,7 +9,7 @@
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",
-    "types": ["node", "@cloudflare/workers-types", "vinext/types"],
+    "types": ["node", "vinext/types", "./worker-configuration.d.ts"],
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",

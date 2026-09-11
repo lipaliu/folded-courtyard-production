@@ -1,6 +1,6 @@
 import { env } from 'cloudflare:workers';
 
-export const TEAM_ROLES = ['编剧', '主美', '美术', 'AIGC抽卡师', '剪辑'] as const;
+export const TEAM_ROLES = ['编剧', '导演', '制片人', '执行制片人'] as const;
 export type TeamRole = (typeof TEAM_ROLES)[number];
 export type SiteUser = { id: string; username: string; name: string; role: string; isAdmin: boolean };
 
@@ -114,12 +114,17 @@ export async function getSiteUser(request: Request): Promise<SiteUser | null> {
   const row = await env.DB.prepare(`SELECT a.id, a.username, a.name, a.role, a.is_admin AS isAdmin
     FROM member_sessions s JOIN member_accounts a ON a.id = s.account_id
     WHERE s.token_hash = ? AND s.expires_at > ? AND a.active = 1`).bind(tokenHash, now).first<{ id: string; username: string; name: string; role: string; isAdmin: number }>();
-  if (!row) return null;
+  if (!row || (!row.isAdmin && !TEAM_ROLES.includes(row.role as TeamRole))) return null;
   void env.DB.prepare('UPDATE member_sessions SET last_seen_at = ? WHERE token_hash = ?').bind(now, tokenHash).run();
   return { ...row, isAdmin: Boolean(row.isAdmin) };
 }
 
 export async function requireMember(request: Request) { return getSiteUser(request); }
+
+export async function requireScriptUploader(request: Request) {
+  const user = await getSiteUser(request);
+  return user && (user.isAdmin || user.role === '编剧') ? user : null;
+}
 
 export async function requireAdmin(request: Request) {
   const user = await getSiteUser(request);

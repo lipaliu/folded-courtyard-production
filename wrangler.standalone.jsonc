@@ -2,7 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "folded-courtyard-production",
   "main": "dist/server/index.js",
-  "compatibility_date": "2026-05-15",
+  "compatibility_date": "2026-09-11",
   "compatibility_flags": ["nodejs_compat"],
   "no_bundle": true,
   "find_additional_modules": true,
@@ -24,6 +24,7 @@
     }
   ],
   "observability": {
-    "enabled": true
+    "enabled": true,
+    "head_sampling_rate": 1
   }
 }

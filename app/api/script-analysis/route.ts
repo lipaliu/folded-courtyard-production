@@ -54,12 +54,13 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const admin = await requireAdmin(request);
-  if (!admin) return Response.json({ error: '只有Lipa可以分配当天工作' }, { status: 403 });
+  const member = await requireMember(request);
+  if (!member) return Response.json({ error: '请先登录' }, { status: 401 });
   const body = await request.json() as Partial<{ action: string; workDate: string; analysisIds: string[]; episode: string; sceneNo: number; sceneTitle: string; location: string; scriptText: string; fileName: string; text: string; changeSummary: string }>;
 
   if (body.action === 'importScript') {
-    if (!/^2026-\d{2}-\d{2}$/.test(body.workDate || '') || !body.text?.trim()) return Response.json({ error: '没有读取到剧本文字' }, { status: 400 });
+    if (!member.isAdmin && member.role !== '编剧') return Response.json({ error: '只有编剧可以上传新一集' }, { status: 403 });
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(body.workDate || '') || !body.text?.trim()) return Response.json({ error: '没有读取到剧本文字' }, { status: 400 });
     await ensureFirstEpisodeBreakdown();
     const scenes = parseScriptDocument(body.text.slice(0, 300000), body.fileName || '');
     if (!scenes.length) return Response.json({ error: '没有识别到场次。请检查剧本是否有“1. 地点 时间 内/外”这样的场头。' }, { status: 400 });
@@ -76,7 +77,7 @@ export async function POST(request: Request) {
       statements.push(env.DB.prepare(`INSERT INTO script_versions
         (id, episode, version_no, file_name, source_text, change_summary, work_date, submitted_by, scene_count, item_count, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-        .bind(versionId, episode, versionNo, (body.fileName || '').slice(0, 180), body.text.slice(0, 300000), (body.changeSummary || (versionNo === 1 ? '首次单集提报' : '未填写更新说明')).slice(0, 1000), body.workDate, admin.name, episodeScenes.length, episodeScenes.reduce((sum, scene) => sum + scene.items.length, 0), now));
+        .bind(versionId, episode, versionNo, (body.fileName || '').slice(0, 180), body.text.slice(0, 300000), (body.changeSummary || (versionNo === 1 ? '首次单集提报' : '未填写更新说明')).slice(0, 1000), body.workDate, member.name, episodeScenes.length, episodeScenes.reduce((sum, scene) => sum + scene.items.length, 0), now));
     }
     for (const scene of scenes.slice(0, 40)) {
       const existing = await env.DB.prepare('SELECT id FROM script_analyses WHERE episode = ? AND scene_no = ?').bind(scene.episode, scene.sceneNo).first<{ id: string }>();
@@ -104,7 +105,7 @@ export async function POST(request: Request) {
             status = '需复核', review_note = '剧本已更新，请按最新版本复核此项。', reviewed_at = '', updated_at = excluded.updated_at`)
           .bind(itemId, `${body.workDate}T18:00`, item.visualBrief, now));
       });
-      statements.push(env.DB.prepare('INSERT INTO activity_log (item_type, item_id, action, operator, created_at) VALUES (?, ?, ?, ?, ?)').bind('script_analysis', analysisId, `导入${body.fileName || '剧本文件'}并自动拆解主美工作`, 'Lipa', now));
+      statements.push(env.DB.prepare('INSERT INTO activity_log (item_type, item_id, action, operator, created_at) VALUES (?, ?, ?, ?, ?)').bind('script_analysis', analysisId, `导入${body.fileName || '剧本文件'}并自动拆解主美工作`, member.name, now));
     }
     for (const episode of new Set(scenes.slice(0, 40).map((scene) => scene.episode))) {
       statements.push(env.DB.prepare("UPDATE production_items SET status = '未开始', completed_qty = 0, updated_at = ? WHERE episode = ? AND category = '整集资产确认'").bind(now, episode));
@@ -113,6 +114,9 @@ export async function POST(request: Request) {
     await env.DB.batch(statements);
     return Response.json({ ok: true, analysisIds, versions: versionRows, sceneCount: analysisIds.length, itemCount: scenes.slice(0, 40).reduce((sum, scene) => sum + scene.items.length, 0) });
   }
+
+  const admin = member.isAdmin ? member : null;
+  if (!admin) return Response.json({ error: '只有制片人可以分配当天工作' }, { status: 403 });
 
   if (body.action === 'saveScene') {
     if (!/^2026-\d{2}-\d{2}$/.test(body.workDate || '') || !body.episode?.trim() || !Number.isInteger(Number(body.sceneNo)) || Number(body.sceneNo) < 1 || !body.sceneTitle?.trim() || !body.scriptText?.trim()) {
@@ -244,7 +248,7 @@ export async function PATCH(request: Request) {
     if (fullyApproved) {
       await env.DB.prepare(`INSERT INTO production_items
         (id, work_date, episode, category, title, owner, reviewer, status, planned_qty, completed_qty, due_time, depends_on_id, handoff_to, handoff_deadline, note, sort_order, updated_at)
-        VALUES (?, ?, ?, '抽卡生成', ?, 'AIGC抽卡师', '联合制片人／导演：Lipa', '未开始', 1, 0, '21:00', ?, '联合制片人／导演：Lipa', '完成后同步', ?, 90, ?)
+        VALUES (?, ?, ?, '抽卡生成', ?, 'AIGC抽卡师', '执行制片人：Lipa', '未开始', 1, 0, '21:00', ?, '执行制片人：Lipa', '完成后同步', ?, 90, ?)
         ON CONFLICT(id) DO NOTHING`)
         .bind(aigcTaskId, body.workDate, body.episode, `开始${body.episode}抽卡与正式镜头生成`, `${prefix}-producer`, '叶总和Yoyo均已在微信确认整集资产，正式放行抽卡与视频生成。', updatedAt).run();
     } else {
@@ -325,11 +329,11 @@ function episodeRollupTasks(workDate: string, episode: string, count: number, sc
   const prefix = `rollup-${workDate}-${episodeKey(episode)}`;
   const base = index * 10;
   return [
-    task(`${prefix}-script`, workDate, episode, '剧本', `交付${episode}完整剧本`, '编剧', 1, '12:00', '', '联合制片人／导演：Lipa', '交付后继续下一集', `整集一次交付，不再按${sceneCount}个场次分别确认，也不参与美术资产审核。`, base + 1, updatedAt),
-    task(`${prefix}-art`, workDate, episode, '美术清单', `完成${episode}全部主美资产清单与出图`, '主美', count, '18:00', `${prefix}-script`, '联合制片人／导演：Lipa', '18:15', `点开生产手册查看${sceneCount}场、共${count}项人物造型/服装/道具/场景图清单；不逐项做审核勾选。`, base + 2, updatedAt),
-    task(`${prefix}-send`, workDate, episode, '资产提报', `整理${episode}完整资产包并发微信`, '联合制片人／导演：Lipa', 1, '18:30', `${prefix}-art`, '制片人（叶总）＋红人（Yoyo）', '发出后等待微信确认', '只负责整集资产包提报，不逐项确认。', base + 3, updatedAt),
-    task(`${prefix}-producer`, workDate, episode, '整集资产确认', `记录叶总是否已确认${episode}全部资产`, '制片人（叶总）', 1, '收到后', `${prefix}-send`, '联合制片人／导演：Lipa', '收到微信后录入', '叶总在微信确认；本平台仅由Lipa记录最终结果。', base + 4, updatedAt),
-    task(`${prefix}-yoyo`, workDate, episode, '整集资产确认', `记录Yoyo是否已确认${episode}全部资产`, '红人（Yoyo）', 1, '微信待回复', `${prefix}-send`, '联合制片人／导演：Lipa', '收到微信后录入', 'Yoyo在微信确认；本平台仅由Lipa记录最终结果。', base + 5, updatedAt),
+    task(`${prefix}-script`, workDate, episode, '剧本', `交付${episode}完整剧本`, '编剧', 1, '12:00', '', '执行制片人：Lipa', '交付后继续下一集', `整集一次交付，不再按${sceneCount}个场次分别确认，也不参与美术资产审核。`, base + 1, updatedAt),
+    task(`${prefix}-art`, workDate, episode, '美术清单', `完成${episode}全部主美资产清单与出图`, '主美', count, '18:00', `${prefix}-script`, '执行制片人：Lipa', '18:15', `点开生产手册查看${sceneCount}场、共${count}项人物造型/服装/道具/场景图清单；不逐项做审核勾选。`, base + 2, updatedAt),
+    task(`${prefix}-send`, workDate, episode, '资产提报', `整理${episode}完整资产包并发微信`, '执行制片人：Lipa', 1, '18:30', `${prefix}-art`, '制片人（叶总）＋红人（Yoyo）', '发出后等待微信确认', '只负责整集资产包提报，不逐项确认。', base + 3, updatedAt),
+    task(`${prefix}-producer`, workDate, episode, '整集资产确认', `记录叶总是否已确认${episode}全部资产`, '制片人（叶总）', 1, '收到后', `${prefix}-send`, '执行制片人：Lipa', '收到微信后录入', '叶总在微信确认；本平台仅由Lipa记录最终结果。', base + 4, updatedAt),
+    task(`${prefix}-yoyo`, workDate, episode, '整集资产确认', `记录Yoyo是否已确认${episode}全部资产`, '红人（Yoyo）', 1, '微信待回复', `${prefix}-send`, '执行制片人：Lipa', '收到微信后录入', 'Yoyo在微信确认；本平台仅由Lipa记录最终结果。', base + 5, updatedAt),
   ];
 }
 

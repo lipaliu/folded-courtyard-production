@@ -1,5 +1,5 @@
 import { env } from 'cloudflare:workers';
-import { createSession, getAccountByUsername, hashPassword, normalizeUsername, verifyPassword } from '@/lib/auth';
+import { createSession, getAccountByUsername, hashPassword, normalizeUsername, TEAM_ROLES, type TeamRole, verifyPassword } from '@/lib/auth';
 
 async function handleLogin(request: Request) {
   const body = await request.json() as { username?: string; password?: string };
@@ -11,7 +11,7 @@ async function handleLogin(request: Request) {
     const createdAt = new Date().toISOString();
     await env.DB.prepare(`INSERT INTO member_accounts
       (id, username, password_hash, password_salt, password_iterations, name, role, is_admin, active, failed_attempts, locked_until, created_at, updated_at)
-      VALUES (?, 'lipa', ?, ?, ?, 'Lipa', '联合制片人／导演', 1, 1, 0, '', ?, ?)`)
+      VALUES (?, 'lipa', ?, ?, ?, 'Lipa', '执行制片人', 1, 1, 0, '', ?, ?)`)
       .bind(id, credentials.hash, credentials.salt, credentials.iterations, createdAt, createdAt).run();
     account = await getAccountByUsername(username);
   }
@@ -28,6 +28,9 @@ async function handleLogin(request: Request) {
         .bind(attempts >= 5 ? 0 : attempts, lockedUntil, now.toISOString(), account.id).run();
     }
     return Response.json({ error: '登录名或密码不正确' }, { status: 401 });
+  }
+  if (!account.isAdmin && !TEAM_ROLES.includes(account.role as TeamRole)) {
+    return Response.json({ error: '该账号岗位无权进入；仅限编剧、导演、制片人' }, { status: 403 });
   }
   await env.DB.prepare("UPDATE member_accounts SET failed_attempts = 0, locked_until = '', updated_at = ? WHERE id = ?")
     .bind(now.toISOString(), account.id).run();

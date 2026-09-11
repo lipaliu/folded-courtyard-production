@@ -30,10 +30,15 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   return new Response(object.body, { headers });
 }
 
-function asImageBytes(value: number[] | ArrayBuffer | ArrayBufferView) {
-  if (Array.isArray(value)) return Uint8Array.from(value);
-  if (value instanceof ArrayBuffer) return new Uint8Array(value);
-  return new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+function asImageBytes(value: number[] | ArrayBuffer | ArrayBufferView): ArrayBuffer {
+  const bytes = Array.isArray(value)
+    ? Uint8Array.from(value)
+    : value instanceof ArrayBuffer
+      ? new Uint8Array(value)
+      : new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy.buffer;
 }
 
 function imageHeaders(contentType: string, fileName: string) {

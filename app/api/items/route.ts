@@ -39,10 +39,10 @@ export async function GET(request: Request) {
       const meeting = initialItems.find((row) => row.id === '0910-script-meeting');
       if (meeting) {
         await env.DB.batch([
-          env.DB.prepare("UPDATE production_items SET episode = '第1—10集', category = '剧本', title = '提交全剧大纲＋分集初版', owner = '编剧', status = '未开始', planned_qty = 1, completed_qty = 0, due_time = '15:00', depends_on_id = '', handoff_to = '联合制片人／导演：Lipa', handoff_deadline = '15:30', note = '先锁定强逻辑内容和每集方向', sort_order = 1, updated_at = ? WHERE id = '0910-script'").bind(updatedAt),
+          env.DB.prepare("UPDATE production_items SET episode = '第1—10集', category = '剧本', title = '提交全剧大纲＋分集初版', owner = '编剧', status = '未开始', planned_qty = 1, completed_qty = 0, due_time = '15:00', depends_on_id = '', handoff_to = '执行制片人：Lipa', handoff_deadline = '15:30', note = '先锁定强逻辑内容和每集方向', sort_order = 1, updated_at = ? WHERE id = '0910-script'").bind(updatedAt),
           env.DB.prepare(`INSERT OR REPLACE INTO production_items (id, work_date, episode, category, title, owner, reviewer, status, planned_qty, completed_qty, due_time, depends_on_id, handoff_to, handoff_deadline, note, sort_order, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
             .bind(meeting.id, meeting.workDate, meeting.episode, meeting.category, meeting.title, meeting.owner, meeting.reviewer, meeting.status, meeting.plannedQty, meeting.completedQty, meeting.dueTime, meeting.dependsOnId, meeting.handoffTo, meeting.handoffDeadline, meeting.note, meeting.sortOrder, updatedAt),
-          env.DB.prepare("UPDATE production_items SET title = '完成第一集台词细化版并交Lipa', status = '未开始', completed_qty = 0, due_time = '20:00', depends_on_id = '0910-script-meeting', handoff_to = '联合制片人／导演：Lipa', handoff_deadline = '20:15', note = '按9月10日过会意见细化人物状态、动作与全部台词', updated_at = ? WHERE id = '0911-lock'").bind(updatedAt),
+          env.DB.prepare("UPDATE production_items SET title = '完成第一集台词细化版并交Lipa', status = '未开始', completed_qty = 0, due_time = '20:00', depends_on_id = '0910-script-meeting', handoff_to = '执行制片人：Lipa', handoff_deadline = '20:15', note = '按9月10日过会意见细化人物状态、动作与全部台词', updated_at = ? WHERE id = '0911-lock'").bind(updatedAt),
           env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_script_flow_v1', 'done', ?)").bind(updatedAt),
         ]);
       }
@@ -71,7 +71,7 @@ export async function GET(request: Request) {
         env.DB.prepare("UPDATE production_items SET note = '依据剧本完成全部场景与调度白模；无需等待Yoyo回复，完成后同步审核材料', handoff_deadline = '完成后即提报', updated_at = ? WHERE id = '0911-white'").bind(updatedAt),
         env.DB.prepare("UPDATE production_items SET due_time = '异步', handoff_deadline = '收到回复后更新', note = 'Yoyo不登录系统、不设硬deadline；Lipa收到微信意见后更新结果', updated_at = ? WHERE id = '0911-yoyo-white'").bind(updatedAt),
         env.DB.prepare("UPDATE production_items SET due_time = '异步', handoff_deadline = '收到回复后更新', note = 'Yoyo不登录系统、不设硬deadline；未回复不阻断剧本、场景图和白模，只影响最终锁定', updated_at = ? WHERE owner = '红人（Yoyo）' AND id LIKE '2026-%-review'").bind(updatedAt),
-        env.DB.prepare("UPDATE production_items SET title = '更新已收到的微信意见并调整次日Rundown', depends_on_id = '', note = '不等待Yoyo回复；Lipa按已收到的信息更新进度与次日安排', updated_at = ? WHERE owner = '联合制片人／导演：Lipa' AND id LIKE '2026-%-lipa'").bind(updatedAt),
+        env.DB.prepare("UPDATE production_items SET owner = '执行制片人：Lipa', title = '更新已收到的微信意见并调整次日Rundown', depends_on_id = '', note = '不等待Yoyo回复；Lipa按已收到的信息更新进度与次日安排', updated_at = ? WHERE owner IN ('联合制片人／导演：Lipa', '执行制片人：Lipa') AND id LIKE '2026-%-lipa'").bind(updatedAt),
         env.DB.prepare("UPDATE production_items SET note = '每天提报2场；发给Yoyo后继续下一场，不等待回复', handoff_deadline = '完成后即提报', updated_at = ? WHERE owner = '主美' AND id LIKE '2026-%-prep'").bind(updatedAt),
         env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_yoyo_async_v1', 'done', ?)").bind(updatedAt),
       ]);
@@ -112,11 +112,11 @@ export async function GET(request: Request) {
         const prefix = `rollup-${row.workDate}-${episodeRollupKey(row.episode)}`;
         const base = index * 10;
         const rows = [
-          rollupRow(`${prefix}-script`, row.workDate, row.episode, '剧本', `交付${row.episode}完整剧本`, '编剧', 1, '12:00', '', '联合制片人／导演：Lipa', '交付后继续下一集', '整集一次交付，不按单场与资产审核绑定。', base + 1, updatedAt),
-          rollupRow(`${prefix}-art`, row.workDate, row.episode, '美术清单', `完成${row.episode}全部主美资产清单与出图`, '主美', count, '18:00', `${prefix}-script`, '联合制片人／导演：Lipa', '18:15', `点开查看全部人物造型、服装、道具、场景图，共${count}项。`, base + 2, updatedAt),
-          rollupRow(`${prefix}-send`, row.workDate, row.episode, '资产提报', `整理${row.episode}完整资产包并发微信`, '联合制片人／导演：Lipa', 1, '18:30', `${prefix}-art`, '制片人（叶总）＋红人（Yoyo）', '发出后等待微信确认', '只负责整集资产包提报，不逐项确认。', base + 3, updatedAt),
-          rollupRow(`${prefix}-producer`, row.workDate, row.episode, '整集资产确认', `记录叶总是否已确认${row.episode}全部资产`, '制片人（叶总）', 1, '收到后', `${prefix}-send`, '联合制片人／导演：Lipa', '收到微信后录入', '叶总在微信确认；本平台仅由Lipa记录最终结果。', base + 4, updatedAt, Number(totals?.producerCount) === count),
-          rollupRow(`${prefix}-yoyo`, row.workDate, row.episode, '整集资产确认', `记录Yoyo是否已确认${row.episode}全部资产`, '红人（Yoyo）', 1, '微信待回复', `${prefix}-send`, '联合制片人／导演：Lipa', '收到微信后录入', 'Yoyo在微信确认；本平台仅由Lipa记录最终结果。', base + 5, updatedAt, Number(totals?.yoyoCount) === count),
+          rollupRow(`${prefix}-script`, row.workDate, row.episode, '剧本', `交付${row.episode}完整剧本`, '编剧', 1, '12:00', '', '执行制片人：Lipa', '交付后继续下一集', '整集一次交付，不按单场与资产审核绑定。', base + 1, updatedAt),
+          rollupRow(`${prefix}-art`, row.workDate, row.episode, '美术清单', `完成${row.episode}全部主美资产清单与出图`, '主美', count, '18:00', `${prefix}-script`, '执行制片人：Lipa', '18:15', `点开查看全部人物造型、服装、道具、场景图，共${count}项。`, base + 2, updatedAt),
+          rollupRow(`${prefix}-send`, row.workDate, row.episode, '资产提报', `整理${row.episode}完整资产包并发微信`, '执行制片人：Lipa', 1, '18:30', `${prefix}-art`, '制片人（叶总）＋红人（Yoyo）', '发出后等待微信确认', '只负责整集资产包提报，不逐项确认。', base + 3, updatedAt),
+          rollupRow(`${prefix}-producer`, row.workDate, row.episode, '整集资产确认', `记录叶总是否已确认${row.episode}全部资产`, '制片人（叶总）', 1, '收到后', `${prefix}-send`, '执行制片人：Lipa', '收到微信后录入', '叶总在微信确认；本平台仅由Lipa记录最终结果。', base + 4, updatedAt, Number(totals?.producerCount) === count),
+          rollupRow(`${prefix}-yoyo`, row.workDate, row.episode, '整集资产确认', `记录Yoyo是否已确认${row.episode}全部资产`, '红人（Yoyo）', 1, '微信待回复', `${prefix}-send`, '执行制片人：Lipa', '收到微信后录入', 'Yoyo在微信确认；本平台仅由Lipa记录最终结果。', base + 5, updatedAt, Number(totals?.yoyoCount) === count),
         ];
         rows.forEach((item) => statements.push(env.DB.prepare(`INSERT OR REPLACE INTO production_items
           (id, work_date, episode, category, title, owner, reviewer, status, planned_qty, completed_qty, due_time, depends_on_id, handoff_to, handoff_deadline, note, sort_order, updated_at)
