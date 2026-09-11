@@ -204,17 +204,11 @@ export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned
       if (!container) throw new Error('PDF版式没有准备好');
       const images = [...container.querySelectorAll('img')];
       await Promise.all(images.map((image) => image.complete ? Promise.resolve() : new Promise<void>((resolve) => { image.addEventListener('load', () => resolve(), { once: true }); image.addEventListener('error', () => resolve(), { once: true }); })));
-      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import('html2canvas'), import('jspdf')]);
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import('html2canvas-pro'), import('jspdf')]);
       const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
       const pages = [...container.querySelectorAll<HTMLElement>('.submission-pdf-page')];
       for (let index = 0; index < pages.length; index += 1) {
-        const canvas = await html2canvas(pages[index], {
-          scale: 1.45,
-          backgroundColor: '#111820',
-          useCORS: true,
-          logging: false,
-          onclone: (clonedDocument) => sanitizePdfColors(clonedDocument),
-        });
+        const canvas = await html2canvas(pages[index], { scale: 1.45, backgroundColor: '#111820', useCORS: true, logging: false });
         if (index) pdf.addPage('a4', 'landscape');
         pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 297, 210, undefined, 'FAST');
       }
@@ -317,33 +311,6 @@ function friendlyReferenceLabel(item: ScriptAssetItem, file: SubmissionFile) {
   return /^[a-f\d]{24,}\.(?:jpe?g|png|webp)$/i.test(file.fileName) ? item.name : file.fileName;
 }
 
-const unsupportedPdfColor = /\b(?:lab|lch|oklab|oklch)\(/i;
-function sanitizePdfColors(clonedDocument: Document) {
-  const view = clonedDocument.defaultView;
-  if (!view) return;
-  const probe = clonedDocument.createElement('canvas');
-  probe.width = 1; probe.height = 1;
-  const context = probe.getContext('2d', { willReadFrequently: true });
-  if (!context) return;
-  const toRgba = (value: string) => {
-    context.clearRect(0, 0, 1, 1);
-    context.fillStyle = '#000000';
-    context.fillStyle = value;
-    context.fillRect(0, 0, 1, 1);
-    const [red, green, blue, alpha] = context.getImageData(0, 0, 1, 1).data;
-    return `rgba(${red}, ${green}, ${blue}, ${(alpha / 255).toFixed(3)})`;
-  };
-  const colorProperties = ['color', 'background-color', 'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color', 'outline-color', 'text-decoration-color', 'fill', 'stroke'] as const;
-  clonedDocument.querySelectorAll<HTMLElement>('.submission-pdf-page, .submission-pdf-page *').forEach((element) => {
-    const computed = view.getComputedStyle(element);
-    for (const property of colorProperties) {
-      const value = computed.getPropertyValue(property);
-      if (unsupportedPdfColor.test(value)) element.style.setProperty(property, toRgba(value), 'important');
-    }
-    if (unsupportedPdfColor.test(computed.boxShadow)) element.style.setProperty('box-shadow', 'none', 'important');
-    if (unsupportedPdfColor.test(computed.textShadow)) element.style.setProperty('text-shadow', 'none', 'important');
-  });
-}
 function formatDate(value: string) { if (!value) return '未定日期'; const [, month, day] = value.split('-'); return `${Number(month)}月${Number(day)}日`; }
 function formatDateTime(value: string) { if (!value) return '未记录'; return value.replace('T', ' ').slice(0, 16); }
 
