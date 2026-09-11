@@ -285,8 +285,8 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const admin = await requireAdmin(request);
-  if (!admin) return Response.json({ error: '只有Lipa可以删除主美工作项' }, { status: 403 });
+  const member = await requireMember(request);
+  if (!member || (!member.isAdmin && member.role !== '执行制片人')) return Response.json({ error: '只有执行制片人可以删除自动拆出的道具' }, { status: 403 });
   const body = await request.json() as { id?: string; ids?: string[] };
   if (Array.isArray(body.ids) && body.ids.length) {
     const ids = [...new Set(body.ids)].slice(0, 100);
@@ -299,24 +299,29 @@ export async function DELETE(request: Request) {
     const affectedEpisodes = [...new Set(matched.results.map((row) => row.episode))];
     const updatedAt = new Date().toISOString();
     const statements = [
+      env.DB.prepare(`DELETE FROM art_submission_files WHERE item_id IN (${matchedPlaceholders})`).bind(...matchedIds),
+      env.DB.prepare(`DELETE FROM art_submission_details WHERE item_id IN (${matchedPlaceholders})`).bind(...matchedIds),
       env.DB.prepare(`DELETE FROM script_analysis_items WHERE id IN (${matchedPlaceholders}) AND category = '道具'`).bind(...matchedIds),
       ...affectedEpisodes.map((episode) => env.DB.prepare(`UPDATE production_items SET planned_qty = (SELECT COUNT(*) FROM script_analysis_items i JOIN script_analyses a ON a.id = i.analysis_id WHERE a.episode = ?), updated_at = ?
         WHERE episode = ? AND category = '美术清单'`).bind(episode, updatedAt, episode)),
-      env.DB.prepare('INSERT INTO activity_log (item_type, item_id, action, operator, created_at) VALUES (?, ?, ?, ?, ?)').bind('script_analysis_item', matchedIds.join(',').slice(0, 500), `批量删除${matchedIds.length}项道具`, 'Lipa', updatedAt),
+      env.DB.prepare('INSERT INTO activity_log (item_type, item_id, action, operator, created_at) VALUES (?, ?, ?, ?, ?)').bind('script_analysis_item', matchedIds.join(',').slice(0, 500), `批量删除${matchedIds.length}项道具`, member.name, updatedAt),
     ];
     await env.DB.batch(statements);
     return Response.json({ ok: true, ids: matchedIds, deletedCount: matchedIds.length });
   }
   if (!body.id) return Response.json({ error: '缺少工作项ID' }, { status: 400 });
-  const current = await env.DB.prepare(`SELECT i.analysis_id AS analysisId, i.name, a.episode
-    FROM script_analysis_items i JOIN script_analyses a ON a.id = i.analysis_id WHERE i.id = ?`).bind(body.id).first<{ analysisId: string; name: string; episode: string }>();
+  const current = await env.DB.prepare(`SELECT i.analysis_id AS analysisId, i.name, i.category, a.episode
+    FROM script_analysis_items i JOIN script_analyses a ON a.id = i.analysis_id WHERE i.id = ?`).bind(body.id).first<{ analysisId: string; name: string; category: string; episode: string }>();
   if (!current) return Response.json({ error: '工作项不存在' }, { status: 404 });
+  if (!member.isAdmin && current.category !== '道具') return Response.json({ error: '执行制片人只能删除道具，人物、服装和场景不能删除' }, { status: 403 });
   const updatedAt = new Date().toISOString();
   await env.DB.batch([
+    env.DB.prepare('DELETE FROM art_submission_files WHERE item_id = ?').bind(body.id),
+    env.DB.prepare('DELETE FROM art_submission_details WHERE item_id = ?').bind(body.id),
     env.DB.prepare('DELETE FROM script_analysis_items WHERE id = ?').bind(body.id),
     env.DB.prepare(`UPDATE production_items SET planned_qty = (SELECT COUNT(*) FROM script_analysis_items i JOIN script_analyses a ON a.id = i.analysis_id WHERE a.episode = ?), updated_at = ?
       WHERE episode = ? AND category = '美术清单'`).bind(current.episode, updatedAt, current.episode),
-    env.DB.prepare('INSERT INTO activity_log (item_type, item_id, action, operator, created_at) VALUES (?, ?, ?, ?, ?)').bind('script_analysis_item', body.id, `删除主美工作项：${current.name}`, 'Lipa', updatedAt),
+    env.DB.prepare('INSERT INTO activity_log (item_type, item_id, action, operator, created_at) VALUES (?, ?, ?, ?, ?)').bind('script_analysis_item', body.id, `删除主美工作项：${current.name}`, member.name, updatedAt),
   ]);
   return Response.json({ ok: true, id: body.id });
 }
