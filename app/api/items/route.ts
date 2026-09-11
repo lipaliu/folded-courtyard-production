@@ -3,7 +3,8 @@ import { initialItems, STATUSES } from '@/lib/plan-data';
 import { requireAdmin, requireMember } from '@/lib/auth';
 
 export async function GET(request: Request) {
-  if (!await requireMember(request)) return Response.json({ error: '请先登录并注册岗位' }, { status: 401 });
+  const member = await requireMember(request);
+  if (!member) return Response.json({ error: '请先登录并注册岗位' }, { status: 401 });
   try {
     const count = await env.DB.prepare('SELECT COUNT(*) AS count FROM production_items').first<{ count: number }>();
     if (!count?.count) {
@@ -146,7 +147,8 @@ export async function GET(request: Request) {
              note, sort_order AS sortOrder, updated_at AS updatedAt
       FROM production_items ORDER BY work_date, sort_order
     `).all();
-    return Response.json({ items: result.results });
+    const visibleItems = member.isAdmin ? result.results : result.results.filter((item) => roleOwnsTask(member.role, String(item.owner)));
+    return Response.json({ items: visibleItems });
   } catch (error) {
     return Response.json({ items: initialItems, localFallback: true, error: error instanceof Error ? error.message : '读取失败' });
   }
@@ -162,8 +164,8 @@ function episodeRollupKey(episode: string) {
 }
 
 export async function PATCH(request: Request) {
-  const admin = await requireAdmin(request);
-  if (!admin) return Response.json({ error: '只有Lipa可以修改任务' }, { status: 403 });
+  const member = await requireMember(request);
+  if (!member) return Response.json({ error: '请先登录并注册岗位' }, { status: 401 });
   const body = await request.json() as Partial<{
     id: string; workDate: string; episode: string; category: string; title: string; owner: string;
     reviewer: string; status: string; plannedQty: number; completedQty: number; dueTime: string;
@@ -181,15 +183,19 @@ export async function PATCH(request: Request) {
       FROM production_items WHERE id = ?
     `).bind(body.id).first<Record<string, string | number>>();
     if (!existing) return Response.json({ error: '任务不存在' }, { status: 404 });
+    if (!member.isAdmin && !roleOwnsTask(member.role, String(existing.owner))) return Response.json({ error: '只能更新分配给自己的任务' }, { status: 403 });
+    if (!member.isAdmin && body.status && !['已通过', '延期', '未完成', '未开始'].includes(body.status)) return Response.json({ error: '只能标记完成、延期或未完成' }, { status: 403 });
+    const fullEdit = member.isAdmin;
+    const plannedQty = fullEdit && Number.isFinite(body.plannedQty) ? Math.max(0, Number(body.plannedQty)) : Number(existing.plannedQty);
     const updated = {
-      workDate: body.workDate ?? String(existing.workDate), episode: body.episode ?? String(existing.episode),
-      category: body.category ?? String(existing.category), title: body.title ?? String(existing.title),
-      owner: body.owner ?? String(existing.owner), reviewer: body.reviewer ?? String(existing.reviewer),
+      workDate: fullEdit && body.workDate !== undefined ? body.workDate : String(existing.workDate), episode: fullEdit && body.episode !== undefined ? body.episode : String(existing.episode),
+      category: fullEdit && body.category !== undefined ? body.category : String(existing.category), title: fullEdit && body.title !== undefined ? body.title : String(existing.title),
+      owner: fullEdit && body.owner !== undefined ? body.owner : String(existing.owner), reviewer: fullEdit && body.reviewer !== undefined ? body.reviewer : String(existing.reviewer),
       status: body.status ?? String(existing.status),
-      plannedQty: Number.isFinite(body.plannedQty) ? Math.max(0, Number(body.plannedQty)) : Number(existing.plannedQty),
-      completedQty: Number.isFinite(body.completedQty) ? Math.max(0, Number(body.completedQty)) : Number(existing.completedQty),
-      dueTime: body.dueTime ?? String(existing.dueTime), dependsOnId: body.dependsOnId ?? String(existing.dependsOnId),
-      handoffTo: body.handoffTo ?? String(existing.handoffTo), handoffDeadline: body.handoffDeadline ?? String(existing.handoffDeadline),
+      plannedQty,
+      completedQty: Number.isFinite(body.completedQty) ? Math.min(plannedQty, Math.max(0, Number(body.completedQty))) : Number(existing.completedQty),
+      dueTime: fullEdit && body.dueTime !== undefined ? body.dueTime : String(existing.dueTime), dependsOnId: fullEdit && body.dependsOnId !== undefined ? body.dependsOnId : String(existing.dependsOnId),
+      handoffTo: fullEdit && body.handoffTo !== undefined ? body.handoffTo : String(existing.handoffTo), handoffDeadline: fullEdit && body.handoffDeadline !== undefined ? body.handoffDeadline : String(existing.handoffDeadline),
       note: typeof body.note === 'string' ? body.note.slice(0, 500) : String(existing.note),
     };
     await env.DB.batch([
@@ -197,12 +203,20 @@ export async function PATCH(request: Request) {
         UPDATE production_items SET work_date = ?, episode = ?, category = ?, title = ?, owner = ?, reviewer = ?,
           status = ?, planned_qty = ?, completed_qty = ?, due_time = ?, depends_on_id = ?, handoff_to = ?, handoff_deadline = ?, note = ?, updated_at = ? WHERE id = ?
       `).bind(updated.workDate, updated.episode, updated.category, updated.title, updated.owner, updated.reviewer, updated.status, updated.plannedQty, updated.completedQty, updated.dueTime, updated.dependsOnId, updated.handoffTo, updated.handoffDeadline, updated.note, updatedAt, body.id),
-      env.DB.prepare('INSERT INTO activity_log (item_type, item_id, action, operator, created_at) VALUES (?, ?, ?, ?, ?)').bind('task', body.id, `任务更新：${updated.status}`, body.operator || 'Lipa', updatedAt),
+      env.DB.prepare('INSERT INTO activity_log (item_type, item_id, action, operator, created_at) VALUES (?, ?, ?, ?, ?)').bind('task', body.id, `任务更新：${updated.status}`, member.name, updatedAt),
     ]);
     return Response.json({ ok: true, item: { ...updated, id: body.id, updatedAt } });
   } catch (error) {
     return Response.json({ error: error instanceof Error ? error.message : '保存失败' }, { status: 500 });
   }
+}
+
+function roleOwnsTask(role: string, owner: string) {
+  if (role === '主美' || role === '美术') return owner === '主美' || owner === '美术';
+  if (role === 'AIGC抽卡师') return owner === 'AIGC抽卡师' || owner === '抽卡师';
+  if (role === '制片人') return owner === '制片人' || owner.includes('叶总');
+  if (role === '执行制片人') return owner === '执行制片人' || owner.includes('Lipa');
+  return owner === role;
 }
 
 export async function POST(request: Request) {

@@ -66,6 +66,22 @@ function initialScheduleDate() {
   return today;
 }
 
+function roleOwnsTask(role: string, owner: string) {
+  if (role === '主美' || role === '美术') return owner === '主美' || owner === '美术';
+  if (role === 'AIGC抽卡师') return owner === 'AIGC抽卡师' || owner === '抽卡师';
+  if (role === '制片人') return owner === '制片人' || owner.includes('叶总');
+  if (role === '执行制片人') return owner === '执行制片人' || owner.includes('Lipa');
+  return owner === role;
+}
+
+function taskOwnerLabel(role: string) {
+  if (role === '主美' || role === '美术') return '主美';
+  if (role === 'AIGC抽卡师') return 'AIGC抽卡师';
+  if (role === '制片人') return '制片人（叶总）';
+  if (role === '执行制片人') return '执行制片人：Lipa';
+  return role;
+}
+
 export function ProductionDashboard() {
   const [activeTab, setActiveTab] = useState('today');
   const [items, setItems] = useState<ProductionItem[]>(initialItems);
@@ -90,7 +106,7 @@ export function ProductionDashboard() {
       const meData = await meResponse.json() as { user?: CurrentUser; error?: string };
       if (!meResponse.ok || !meData.user) { setMe(null); setLoadError(''); return; }
       setMe(meData.user);
-      if (['主美', '美术'].includes(meData.user.role)) setActiveTab((current) => current === 'today' ? 'breakdown' : current);
+      if (!meData.user.isAdmin) setActiveTab((current) => ['today', 'plan'].includes(current) ? current : 'today');
       const [itemResponse, sceneResponse, planResponse, analysisResponse, submissionResponse] = await Promise.all([fetch('/api/items'), fetch('/api/scenes'), fetch('/api/plan'), fetch('/api/script-analysis'), fetch('/api/art-submissions')]);
       const itemData = await itemResponse.json() as { items?: ProductionItem[] };
       const sceneData = await sceneResponse.json() as { scenes?: Scene[] };
@@ -150,6 +166,7 @@ export function ProductionDashboard() {
   }, []);
 
   const todayItems = useMemo(() => items.filter((item) => item.workDate === selectedDate), [items, selectedDate]);
+  const visibleTodayItems = useMemo(() => me?.isAdmin ? todayItems : todayItems.filter((item) => roleOwnsTask(me?.role || '', item.owner)), [me, todayItems]);
   const scheduleEnd = useMemo(() => [PROJECT_END, ...items.map((item) => item.workDate), ...batches.map((batch) => batch.endDate)].sort().at(-1) || PROJECT_END, [items, batches]);
   const pendingReview = useMemo(() => items.filter((item) => item.status === '待审核'), [items]);
   async function updateItem(id: string, changes: Partial<ProductionItem>) {
@@ -206,8 +223,9 @@ export function ProductionDashboard() {
 
   return (
     <main className="min-h-screen bg-transparent text-foreground">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="mx-auto min-h-screen w-full max-w-6xl pb-24 md:pb-9">
-        <header className="no-print sticky top-0 z-30 border-b border-white/8 bg-background/88 px-4 py-3 backdrop-blur-xl md:px-8">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mx-auto min-h-screen w-full max-w-6xl pb-9">
+        <div className="no-print sticky top-0 z-50 bg-background/92 shadow-[0_12px_35px_rgba(0,0,0,.28)] backdrop-blur-xl">
+        <header className="border-b border-white/8 px-4 py-3 md:px-8">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
             <div>
               <p className="text-[12px] font-medium tracking-[0.16em] text-muted-foreground">总制片推进台</p>
@@ -224,10 +242,22 @@ export function ProductionDashboard() {
             </div>
           </div>
         </header>
+        <div className="border-b border-white/8 px-3 py-2 md:px-8">
+          <TabsList className={`mx-auto grid h-12 w-full rounded-xl border border-white/10 bg-[#17191d]/96 p-1 ${me.isAdmin ? 'max-w-2xl grid-cols-5' : 'max-w-sm grid-cols-2'}`}>
+            <NavTab value="today" label="今日" icon={<LayoutDashboard />} />
+            <NavTab value="plan" label="大计划" icon={<Rows3 />} />
+            {me.isAdmin && <>
+              <NavTab value="scenes" label="场次" icon={<Film />} />
+              <NavTab value="breakdown" label="主美上传" icon={<Sparkles />} />
+              <NavTab value="review" label={`微信确认${pendingReview.length ? ` ${pendingReview.length}` : ''}`} icon={<ListChecks />} />
+            </>}
+          </TabsList>
+        </div>
+        </div>
 
         <div className="px-4 py-5 md:px-8 md:py-8">
           <div className="mx-auto max-w-6xl">
-            <TabsContent value="today" className="mt-0"><TodayView selectedDate={selectedDate} setSelectedDate={setSelectedDate} scheduleEnd={scheduleEnd} items={todayItems} assetProgressByEpisode={assetProgressByEpisode} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedItem} onAdd={setCreatingRole} onOpenHandbook={() => setActiveTab('breakdown')} onReload={loadData} onUpdateItem={updateItem} onToggle={(item, checked) => void (item.category === '整集资产确认' ? updateEpisodeApproval(item, checked) : updateItem(item.id, { status: checked ? '已通过' : '未开始', completedQty: checked ? item.plannedQty : 0 }))} /></TabsContent>
+            <TabsContent value="today" className="mt-0"><TodayView selectedDate={selectedDate} setSelectedDate={setSelectedDate} scheduleEnd={scheduleEnd} items={visibleTodayItems} assetProgressByEpisode={assetProgressByEpisode} currentRole={me.role} isAdmin={Boolean(me?.isAdmin)} canOpenHandbook={Boolean(me.isAdmin || ['主美', '美术'].includes(me.role))} onEdit={setSelectedItem} onAdd={setCreatingRole} onOpenHandbook={() => setActiveTab('breakdown')} onReload={loadData} onUpdateItem={updateItem} onToggle={(item, checked) => void (item.category === '整集资产确认' ? updateEpisodeApproval(item, checked) : updateItem(item.id, { status: checked ? '已通过' : '未开始', completedQty: checked ? item.plannedQty : 0 }))} /></TabsContent>
             <TabsContent value="plan" className="mt-0"><PlanView items={items} batches={batches} scheduleEnd={scheduleEnd} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedBatch} /></TabsContent>
             <TabsContent value="scenes" className="mt-0"><ScenesView scenes={scenes} isAdmin={Boolean(me?.isAdmin)} onChange={updateScene} /></TabsContent>
             <TabsContent value="breakdown" className="mt-0"><SubmissionCenter me={me} selectedDate={selectedDate} productionItems={items} onAssigned={async (workDate) => { setSelectedDate(workDate); await loadData(); }} /></TabsContent>
@@ -235,13 +265,6 @@ export function ProductionDashboard() {
           </div>
         </div>
 
-        <TabsList className="no-print fixed inset-x-3 bottom-3 z-40 mx-auto grid h-[68px] max-w-xl grid-cols-5 rounded-[22px] border border-white/10 bg-[#17191d]/96 p-1.5 shadow-2xl backdrop-blur-xl md:static md:mt-2 md:h-12 md:max-w-2xl md:rounded-xl">
-          <NavTab value="today" label="今日" icon={<LayoutDashboard />} />
-          <NavTab value="plan" label="大计划" icon={<Rows3 />} />
-          <NavTab value="scenes" label="场次" icon={<Film />} />
-          <NavTab value="breakdown" label="主美上传" icon={<Sparkles />} />
-          <NavTab value="review" label={`微信确认${pendingReview.length ? ` ${pendingReview.length}` : ''}`} icon={<ListChecks />} />
-        </TabsList>
       </Tabs>
 
       <TaskEditor item={selectedItem} allItems={items} open={Boolean(selectedItem) && Boolean(me?.isAdmin)} saving={saving} onClose={() => setSelectedItem(null)} onDelete={async () => { if (!selectedItem || !window.confirm(`确定删除“${selectedItem.title}”吗？`)) return; await deleteItem(selectedItem.id); setSelectedItem(null); }} onSave={async (changes) => {
@@ -305,7 +328,7 @@ function PasswordEditor({ user, open, onClose }: { user: CurrentUser; open: bool
   return <div className="fixed inset-0 z-50 grid place-items-end bg-black/70 backdrop-blur-sm sm:place-items-center sm:p-4" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}><section role="dialog" aria-modal="true" className="w-full max-w-md rounded-t-[24px] border border-white/10 bg-[#1b1d22] p-5 shadow-2xl sm:rounded-[20px]"><div className="flex items-start justify-between gap-4"><div><h2 className="text-lg font-medium">账号与密码</h2><p className="mt-1 text-sm text-muted-foreground">{user.name} · {user.username} · {user.role}</p></div><button onClick={onClose} aria-label="关闭" className="grid h-8 w-8 place-items-center rounded-full bg-white/5"><X className="h-4 w-4" /></button></div><div className="mt-5 space-y-4"><Field label="当前密码"><input type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} className="edit-input" /></Field><Field label="新密码"><input type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} className="edit-input" placeholder="至少8位" /></Field><Field label="再次输入新密码"><input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className="edit-input" /></Field></div>{message && <p className={`mt-4 rounded-xl border px-3 py-2 text-sm ${message === '密码已更新' ? 'border-emerald-400/20 bg-emerald-400/[.06] text-emerald-300' : 'border-red-400/20 bg-red-400/[.06] text-red-300'}`}>{message}</p>}<div className="mt-5 grid grid-cols-2 gap-2"><Button variant="outline" className="h-11" onClick={onClose}>取消</Button><Button className="h-11" disabled={saving || currentPassword.length < 8 || newPassword.length < 8 || confirmPassword.length < 8} onClick={() => void save()}>{saving ? <Loader2 className="animate-spin" /> : <Check />}{saving ? '正在保存…' : '修改密码'}</Button></div></section></div>;
 }
 
-function TodayView({ selectedDate, setSelectedDate, scheduleEnd, items, assetProgressByEpisode, isAdmin, onEdit, onAdd, onOpenHandbook, onReload, onUpdateItem, onToggle }: { selectedDate: string; setSelectedDate: (value: string) => void; scheduleEnd: string; items: ProductionItem[]; assetProgressByEpisode: Record<string, AssetProgress>; isAdmin: boolean; onEdit: (item: ProductionItem) => void; onAdd: (role: string) => void; onOpenHandbook: () => void; onReload: () => Promise<void>; onUpdateItem: (id: string, changes: Partial<ProductionItem>) => Promise<void>; onToggle: (item: ProductionItem, checked: boolean) => void }) {
+function TodayView({ selectedDate, setSelectedDate, scheduleEnd, items, assetProgressByEpisode, currentRole, isAdmin, canOpenHandbook, onEdit, onAdd, onOpenHandbook, onReload, onUpdateItem, onToggle }: { selectedDate: string; setSelectedDate: (value: string) => void; scheduleEnd: string; items: ProductionItem[]; assetProgressByEpisode: Record<string, AssetProgress>; currentRole: string; isAdmin: boolean; canOpenHandbook: boolean; onEdit: (item: ProductionItem) => void; onAdd: (role: string) => void; onOpenHandbook: () => void; onReload: () => Promise<void>; onUpdateItem: (id: string, changes: Partial<ProductionItem>) => Promise<void>; onToggle: (item: ProductionItem, checked: boolean) => void }) {
   const [showSummary, setShowSummary] = useState(false);
   const [copied, setCopied] = useState(false);
   const [reports, setReports] = useState<DailyReport[]>([]);
@@ -334,6 +357,8 @@ function TodayView({ selectedDate, setSelectedDate, scheduleEnd, items, assetPro
     const stageItems = items.filter(stage.match);
     return { ...stage, itemCount: stageItems.length, done: Boolean(stageItems.length && stageItems.every((item) => item.status === '已通过')) };
   });
+  const visibleStageProgress = isAdmin ? stageProgress : stageProgress.filter((stage) => stage.itemCount > 0);
+  const visibleRoles = isAdmin ? roles : [...new Set(items.map((item) => item.owner))].length ? [...new Set(items.map((item) => item.owner))] : [taskOwnerLabel(currentRole)];
   const scheduledStages = stageProgress.filter((stage) => stage.itemCount > 0);
   const completedStages = scheduledStages.filter((stage) => stage.done).length;
   const stageRatio = scheduledStages.length ? Math.round(completedStages / scheduledStages.length * 100) : 0;
@@ -441,7 +466,7 @@ function TodayView({ selectedDate, setSelectedDate, scheduleEnd, items, assetPro
           <Metric label="主美清单" value={String(artCompleted)} suffix={`/ ${artPlanned}`} />
           <Metric label="Yoyo待回" value={String(items.filter((item) => item.owner === '红人（Yoyo）' && item.status !== '已通过').length)} suffix="项" accent />
         </div>
-        <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-6">{stageProgress.map((stage) => <div key={stage.label} className={`rounded-lg border px-2 py-2 text-center text-xs ${stage.done ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300' : stage.itemCount ? 'border-red-400/25 bg-red-400/[.045] text-red-300' : 'border-white/8 bg-white/[.025] text-zinc-600'}`}><span className="mr-1">{stage.done ? '✓' : stage.itemCount ? '□' : '—'}</span>{stage.label}<span className="mt-1 block text-[9px] opacity-70">{stage.done ? '已完成' : stage.itemCount ? '进行中' : '今日未排'}</span></div>)}</div>
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-6">{visibleStageProgress.map((stage) => <div key={stage.label} className={`rounded-lg border px-2 py-2 text-center text-xs ${stage.done ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300' : stage.itemCount ? 'border-red-400/25 bg-red-400/[.045] text-red-300' : 'border-white/8 bg-white/[.025] text-zinc-600'}`}><span className="mr-1">{stage.done ? '✓' : stage.itemCount ? '□' : '—'}</span>{stage.label}<span className="mt-1 block text-[9px] opacity-70">{stage.done ? '已完成' : stage.itemCount ? '进行中' : '今日未排'}</span></div>)}</div>
       </div>
       <div className="control-card p-5 md:p-6">
         <div className="flex items-center justify-between"><div className="flex items-center gap-2"><p className="eyebrow">选择工作日</p>{isToday && <span className="rounded-full bg-[#ff6240]/15 px-2 py-0.5 text-[10px] text-[#ff8066]">今天</span>}</div><CalendarDays className="h-4 w-4 text-[#ff6240]" /></div>
@@ -451,7 +476,7 @@ function TodayView({ selectedDate, setSelectedDate, scheduleEnd, items, assetPro
         <p className="mt-5 text-3xl font-semibold tracking-[-.04em]">{selectedMonthDay}</p><p className="mt-1 text-sm text-muted-foreground">{isProductionDay(selectedDate) ? `有效生产 Day ${dayNumber}` : selectedDayType} · 当前预计{shortDate(scheduleEnd)}交付</p>
       </div>
     </section>
-    <section className="mt-5 overflow-hidden rounded-2xl border border-[#ff6240]/25 bg-card">
+    {canOpenHandbook && <section className="mt-5 overflow-hidden rounded-2xl border border-[#ff6240]/25 bg-card">
       <button type="button" onClick={onOpenHandbook} className="flex w-full items-center gap-4 p-4 text-left transition hover:bg-white/[.025] md:p-5">
         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#ff6240]/15 text-[#ff8066]"><Film className="h-5 w-5" /></span>
         <div className="min-w-0 flex-1">
@@ -464,7 +489,7 @@ function TodayView({ selectedDate, setSelectedDate, scheduleEnd, items, assetPro
       <div className="grid grid-cols-2 border-t border-white/8 text-xs text-muted-foreground md:grid-cols-4">
         {['人物造型', '服装', '道具', '场景图'].map((label) => <div key={label} className="border-r border-white/8 px-3 py-2.5 last:border-r-0"><span className="mr-1 text-[#ff8066]">□</span>主美·{label}</div>)}
       </div>
-    </section>
+    </section>}
     {items.length > 0 && <section className="mt-7">
       <div className="mb-3 flex items-end justify-between gap-3"><div><p className="eyebrow">TODAY&apos;S WORKFLOWS</p><h2 className="mt-1 text-xl font-semibold">今日主要工作流</h2></div><span className="rounded-full border border-cyan-400/20 bg-cyan-400/8 px-3 py-1 text-xs text-cyan-300">{workflowLanes.length}条同步推进</span></div>
       <div className="space-y-3">{workflowLanes.map((lane, laneIndex) => {
@@ -472,23 +497,23 @@ function TodayView({ selectedDate, setSelectedDate, scheduleEnd, items, assetPro
         const isAsyncReview = lane.some((item) => item.owner === '红人（Yoyo）');
         return <article key={lane.map((item) => item.id).join('-')} className="rounded-2xl border border-white/8 bg-card p-3.5 md:p-4"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><span className="grid h-7 w-7 place-items-center rounded-full bg-white/6 text-xs font-semibold">{laneIndex + 1}</span><div><h3 className="text-sm font-medium">{workflowLaneName(lane)}</h3><p className={`text-[11px] ${isAsyncReview ? 'text-violet-300' : 'text-muted-foreground'}`}>{isAsyncReview ? '微信待回复 · 没回复不耽误其他制作' : lane.length > 1 ? `串行 · 按顺序完成${lane.length}步` : '可与其他工作流并行'}</p></div></div><span className={`rounded-full border px-2.5 py-1 text-xs ${laneDone === lane.length ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300' : 'border-white/8 bg-white/4 text-muted-foreground'}`}>{laneDone}/{lane.length}</span></div><div className="mt-3 flex gap-2 overflow-x-auto pb-1">{lane.map((item, index) => {
           const checked = item.status === '已通过';
-          return <div key={item.id} className="flex shrink-0 items-center gap-2"><div className={`w-[250px] rounded-xl border p-3 ${checked ? 'border-emerald-400/25 bg-emerald-400/[.055]' : 'border-red-400/25 bg-red-400/[.045]'}`}><div className="flex items-start gap-3"><Checkbox checked={checked} disabled={!isAdmin} onCheckedChange={(nextChecked) => onToggle(item, Boolean(nextChecked))} aria-label={`${item.title}${checked ? '已完成' : '未完成'}`} className="mt-0.5 size-5 border-red-400/70 text-black data-checked:border-emerald-400 data-checked:bg-emerald-400" /><div className="min-w-0 flex-1"><p className="text-[11px] text-muted-foreground">{item.owner} · {item.dueTime}</p><p className={`mt-1 text-sm font-medium leading-5 ${checked ? 'text-zinc-500 line-through' : ''}`}>{item.title}</p></div>{isAdmin && <button onClick={() => onEdit(item)} aria-label={`编辑${item.title}`} className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-white/5 hover:text-white"><Pencil className="h-3.5 w-3.5" /></button>}</div>{item.handoffTo && <p className={`mt-2 border-t border-white/6 pt-2 text-[11px] ${checked ? 'text-emerald-300' : 'text-muted-foreground'}`}>交给：{item.handoffTo} · {item.handoffDeadline}</p>}</div>{index < lane.length - 1 && <div className="flex shrink-0 flex-col items-center text-zinc-600"><ChevronRight className="h-5 w-5" /><span className="mt-0.5 text-[9px]">然后</span></div>}</div>;
+          return <div key={item.id} className="flex shrink-0 items-center gap-2"><div className={`w-[250px] rounded-xl border p-3 ${checked ? 'border-emerald-400/25 bg-emerald-400/[.055]' : 'border-red-400/25 bg-red-400/[.045]'}`}><div className="flex items-start gap-3"><Checkbox checked={checked} onCheckedChange={(nextChecked) => onToggle(item, Boolean(nextChecked))} aria-label={`${item.title}${checked ? '已完成' : '未完成'}`} className="mt-0.5 size-5 border-red-400/70 text-black data-checked:border-emerald-400 data-checked:bg-emerald-400" /><div className="min-w-0 flex-1"><p className="text-[11px] text-muted-foreground">{item.owner} · {item.dueTime}</p><p className={`mt-1 text-sm font-medium leading-5 ${checked ? 'text-zinc-500 line-through' : ''}`}>{item.title}</p></div>{isAdmin && <button onClick={() => onEdit(item)} aria-label={`编辑${item.title}`} className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-white/5 hover:text-white"><Pencil className="h-3.5 w-3.5" /></button>}</div>{item.handoffTo && <p className={`mt-2 border-t border-white/6 pt-2 text-[11px] ${checked ? 'text-emerald-300' : 'text-muted-foreground'}`}>交给：{item.handoffTo} · {item.handoffDeadline}</p>}</div>{index < lane.length - 1 && <div className="flex shrink-0 flex-col items-center text-zinc-600"><ChevronRight className="h-5 w-5" /><span className="mt-0.5 text-[9px]">然后</span></div>}</div>;
         })}</div></article>;
       })}</div>
     </section>}
     <section className="mt-7">
       <div className="mb-3 flex items-end justify-between"><div><p className="eyebrow">TODAY&apos;S HANDOFF</p><h2 className="mt-1 text-xl font-semibold">当天必须交付</h2></div><span className="text-sm text-muted-foreground">{items.length} 项</span></div>
       <div className="grid gap-3 lg:grid-cols-2">
-        {roles.map((role) => {
+        {visibleRoles.map((role) => {
           const roleItems = items.filter((item) => item.owner === role || (role === 'AIGC抽卡师' && item.owner === '抽卡师'));
           return <section key={role} className="rounded-2xl border border-white/8 bg-card p-3 md:p-4">
             <div className="mb-3 flex items-center justify-between"><div className="flex items-center gap-2"><span className="grid h-8 w-8 place-items-center rounded-full bg-white/6 text-sm font-semibold">{role.includes('Lipa') ? 'L' : role.includes('Yoyo') ? 'Y' : role.includes('叶总') ? '叶' : role.slice(0, 1)}</span><div><h3 className="text-sm font-medium">{role === 'AIGC抽卡师' ? '抽卡师' : role}</h3><p className="text-[10px] text-muted-foreground">{roleItems.length ? `${roleItems.length} 项工作` : '今天尚未排活'}</p></div></div>{isAdmin && <button onClick={() => onAdd(role)} className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-white">＋ 添加</button>}</div>
-            <div className="space-y-2">{roleItems.length ? roleItems.map((item) => <RoleTask key={item.id} item={item} assetProgress={item.owner === '主美' || item.category === '美术清单' ? assetProgressByEpisode[item.episode] : undefined} editable={isAdmin} onEdit={() => onEdit(item)} onOpenList={role === '主美' && item.category === '美术清单' ? onOpenHandbook : undefined} onUpdate={(changes) => onUpdateItem(item.id, changes)} />) : <div className="rounded-xl border border-dashed border-white/8 px-3 py-4 text-center text-xs leading-5 text-muted-foreground">{role === 'AIGC抽卡师' ? '等待叶总和Yoyo在微信确认整集资产后，再放行抽卡与视频生成。' : isAdmin ? <button onClick={() => onAdd(role)}>为{role}安排今日工作</button> : '今日无任务'}</div>}</div>
+            <div className="space-y-2">{roleItems.length ? roleItems.map((item) => <RoleTask key={item.id} item={item} assetProgress={item.owner === '主美' || item.category === '美术清单' ? assetProgressByEpisode[item.episode] : undefined} editable={isAdmin} canUpdateStatus onEdit={() => onEdit(item)} onOpenList={canOpenHandbook && (role === '主美' || role === '美术') && item.category === '美术清单' ? onOpenHandbook : undefined} onUpdate={(changes) => onUpdateItem(item.id, changes)} />) : <div className="rounded-xl border border-dashed border-white/8 px-3 py-4 text-center text-xs leading-5 text-muted-foreground">{role === 'AIGC抽卡师' ? '等待叶总和Yoyo在微信确认整集资产后，再放行抽卡与视频生成。' : isAdmin ? <button onClick={() => onAdd(role)}>为{role}安排今日工作</button> : '今日无任务'}</div>}</div>
           </section>;
         })}
       </div>
     </section>
-    <section className="mt-7 rounded-2xl border border-white/8 bg-card p-4 md:p-5">
+    {isAdmin && <section className="mt-7 rounded-2xl border border-white/8 bg-card p-4 md:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><div className="flex items-center gap-2"><p className="eyebrow">DAILY REPORT</p>{archivedReport && <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-0.5 text-[10px] text-emerald-300">已归档</span>}</div><h2 className="mt-1 text-xl font-semibold">每日生产汇总</h2><p className="mt-1 text-sm text-muted-foreground">当天逐项标记完成、延期或未完成，并写备注；小结会原样带出，未完成项可整体顺延。</p></div><div className="flex shrink-0 flex-wrap gap-2"><Button variant="outline" disabled={!canCloseDay} onClick={() => setShowSummary(true)}><ListChecks />查看</Button><Button disabled={!canCloseDay} onClick={() => void generateAndCopySummary()}><ClipboardCopy />{copied ? '已生成并复制' : '一键生成并复制'}</Button></div></div>
       {showSummary && <div className="mt-4 border-t border-white/8 pt-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium">{dateText} · 完成 {summaryFinished.length}/{summaryFinished.length + summaryIncomplete.length + summaryYoyoPending.length} 项</p><p className="mt-1 text-xs text-muted-foreground">{archivedReport ? `已永久记录 · 顺延${archivedReport.rolloverCount}项` : '归档前仍可继续打钩和修改任务'}</p></div><Button variant="outline" size="sm" onClick={() => void copySummary()}><ClipboardCopy />{copied ? '已复制' : '复制发群'}</Button></div>
@@ -498,9 +523,9 @@ function TodayView({ selectedDate, setSelectedDate, scheduleEnd, items, assetPro
         {reportError && <p className="mt-3 rounded-xl border border-red-400/20 bg-red-400/[.06] px-3 py-2 text-sm text-red-300">{reportError}</p>}
         {isAdmin && !archivedReport && canCloseDay && <div className="mt-4 flex flex-col gap-2 border-t border-white/8 pt-4 sm:flex-row sm:justify-end"><Button variant="outline" disabled={archiving} onClick={() => void previewRollover()}><RefreshCw />预览全计划重排</Button><Button disabled={archiving || !rolloverPreview} onClick={() => void archiveAndRollover()}><Check />{archiving ? '正在归档…' : `归档并自动重排${rolloverPreview ? `（${rolloverPreview.rollovers.length}项）` : ''}`}</Button></div>}
       </div>}
-    </section>
-    {reports.length > 0 && <section className="mt-4 rounded-2xl border border-white/8 bg-card p-4 md:p-5"><div><p className="eyebrow">DAILY LOG ARCHIVE</p><h2 className="mt-1 text-lg font-semibold">历史生产日志</h2><p className="mt-1 text-xs text-muted-foreground">每天归档一次，保留当时谁完成、谁未完成以及顺延了哪些计划。</p></div><div className="mt-4 space-y-2">{reports.slice(0, 12).map((report) => <details key={report.id} className="rounded-xl border border-white/8 bg-white/[.025] px-3 py-2.5"><summary className="cursor-pointer list-none text-sm"><span className="font-medium">{shortDate(report.workDate)}</span><span className="ml-3 text-emerald-300">完成 {report.completedCount}</span><span className="ml-3 text-red-300">未完成 {report.incompleteCount}</span><span className="ml-3 text-amber-300">顺延 {report.rolloverCount}</span></summary><div className="mt-3 grid gap-2 border-t border-white/8 pt-3 md:grid-cols-3"><SummaryGroup title="已完成" tone="green" items={report.summary.completed} empty="无" /><SummaryGroup title="未完成" tone="red" items={report.summary.incomplete} empty="无" /><SummaryGroup title="已顺延" tone="amber" items={report.summary.rollovers} empty="无" /></div>{report.summary.yoyoPending.length > 0 && <p className="mt-2 text-xs text-violet-300">Yoyo微信待回复：{report.summary.yoyoPending.map((item) => item.title).join('、')}</p>}</details>)}</div></section>}
-    <section className="mt-4 rounded-2xl border border-[#ff6240]/20 bg-[#ff6240]/8 p-4 md:p-5"><div className="flex gap-3"><div className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#ff6240] text-black"><ChevronRight className="h-4 w-4" /></div><div><p className="font-medium">怎么推进</p><p className="mt-1 text-sm leading-6 text-muted-foreground">Yoyo没回复时，编剧、美术和白模继续做。第一集的最终意见确认后，再开始生成正式视频。视频素材全部生成后，先粗搭一版交给剪辑师，剪辑师用2—3天完成剪辑。</p></div></div></section>
+    </section>}
+    {isAdmin && reports.length > 0 && <section className="mt-4 rounded-2xl border border-white/8 bg-card p-4 md:p-5"><div><p className="eyebrow">DAILY LOG ARCHIVE</p><h2 className="mt-1 text-lg font-semibold">历史生产日志</h2><p className="mt-1 text-xs text-muted-foreground">每天归档一次，保留当时谁完成、谁未完成以及顺延了哪些计划。</p></div><div className="mt-4 space-y-2">{reports.slice(0, 12).map((report) => <details key={report.id} className="rounded-xl border border-white/8 bg-white/[.025] px-3 py-2.5"><summary className="cursor-pointer list-none text-sm"><span className="font-medium">{shortDate(report.workDate)}</span><span className="ml-3 text-emerald-300">完成 {report.completedCount}</span><span className="ml-3 text-red-300">未完成 {report.incompleteCount}</span><span className="ml-3 text-amber-300">顺延 {report.rolloverCount}</span></summary><div className="mt-3 grid gap-2 border-t border-white/8 pt-3 md:grid-cols-3"><SummaryGroup title="已完成" tone="green" items={report.summary.completed} empty="无" /><SummaryGroup title="未完成" tone="red" items={report.summary.incomplete} empty="无" /><SummaryGroup title="已顺延" tone="amber" items={report.summary.rollovers} empty="无" /></div>{report.summary.yoyoPending.length > 0 && <p className="mt-2 text-xs text-violet-300">Yoyo微信待回复：{report.summary.yoyoPending.map((item) => item.title).join('、')}</p>}</details>)}</div></section>}
+    {isAdmin && <section className="mt-4 rounded-2xl border border-[#ff6240]/20 bg-[#ff6240]/8 p-4 md:p-5"><div className="flex gap-3"><div className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#ff6240] text-black"><ChevronRight className="h-4 w-4" /></div><div><p className="font-medium">怎么推进</p><p className="mt-1 text-sm leading-6 text-muted-foreground">Yoyo没回复时，编剧、美术和白模继续做。第一集的最终意见确认后，再开始生成正式视频。视频素材全部生成后，先粗搭一版交给剪辑师，剪辑师用2—3天完成剪辑。</p></div></div></section>}
   </>;
 }
 
@@ -814,7 +839,7 @@ function TaskCard({ item, onEdit }: { item: ProductionItem; onEdit: () => void }
   return <button onClick={onEdit} className="group flex w-full items-center gap-3 rounded-2xl border border-white/8 bg-card px-3.5 py-4 text-left transition hover:border-white/16 hover:bg-[#202329] md:px-5"><div className="w-12 shrink-0 text-center"><p className="font-mono text-sm text-muted-foreground">{item.dueTime}</p><span className={`mx-auto mt-2 block h-1.5 w-1.5 rounded-full ${categoryColor[item.category] || 'bg-zinc-400'}`} /></div><div className="min-w-0 flex-1 border-l border-white/8 pl-3.5 md:pl-5"><div className="flex items-center gap-2 text-xs text-muted-foreground"><span>{item.owner}</span><span>·</span><span>{item.episode}</span></div><h3 className="mt-1 truncate text-[15px] font-medium md:text-base">{item.title}</h3><div className="mt-2 flex items-center gap-2"><div className="h-1 w-24 overflow-hidden rounded-full bg-white/8"><div className="h-full rounded-full bg-[#ff6240]" style={{ width: `${ratio}%` }} /></div><span className="text-[11px] text-muted-foreground">{item.completedQty}/{item.plannedQty}</span></div></div><div className="flex items-center gap-2"><span className={`hidden rounded-full border px-2.5 py-1 text-xs sm:block ${statusStyle[item.status]}`}>{item.status}</span><Pencil className="h-4 w-4 text-muted-foreground transition group-hover:text-white" /></div></button>;
 }
 
-function RoleTask({ item, assetProgress, editable, onEdit, onOpenList, onUpdate }: { item: ProductionItem; assetProgress?: AssetProgress; editable: boolean; onEdit: () => void; onOpenList?: () => void; onUpdate: (changes: Partial<ProductionItem>) => Promise<void> }) {
+function RoleTask({ item, assetProgress, editable, canUpdateStatus, onEdit, onOpenList, onUpdate }: { item: ProductionItem; assetProgress?: AssetProgress; editable: boolean; canUpdateStatus: boolean; onEdit: () => void; onOpenList?: () => void; onUpdate: (changes: Partial<ProductionItem>) => Promise<void> }) {
   const [note, setNote] = useState(item.note || '');
   const [saving, setSaving] = useState(false);
   useEffect(() => { setNote(item.note || ''); }, [item.note]);
@@ -826,7 +851,7 @@ function RoleTask({ item, assetProgress, editable, onEdit, onOpenList, onUpdate 
   }
   return <div className={`w-full rounded-xl border p-3 text-left ${checked ? 'border-emerald-400/25 bg-emerald-400/[.05]' : delayed ? 'border-amber-400/25 bg-amber-400/[.045]' : 'border-red-400/25 bg-red-400/[.04]'}`}>
     <div className="flex items-start gap-3"><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className={`text-sm ${checked ? 'text-zinc-500 line-through' : ''}`}>{item.title}</p>{assetProgress && <span className="rounded-full border border-cyan-400/20 bg-cyan-400/[.07] px-2 py-0.5 text-[10px] font-medium text-cyan-300">已上传 {assetProgress.uploaded}/{assetProgress.total}</span>}</div><p className="mt-1 text-[11px] text-muted-foreground">{item.episode} · {item.dueTime} · {checked ? '完成' : item.status}</p>{onOpenList && <button type="button" onClick={onOpenList} className="mt-2 rounded-lg border border-cyan-400/20 bg-cyan-400/[.06] px-2.5 py-1.5 text-xs text-cyan-300">查看全部资产清单 <ChevronRight className="ml-1 inline h-3 w-3" /></button>}</div>{editable && <button onClick={onEdit} aria-label={`编辑${item.title}`} className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-white/5 hover:text-white"><Pencil className="h-3.5 w-3.5" /></button>}</div>
-    {editable ? <div className="mt-3 border-t border-white/8 pt-3"><div className="grid grid-cols-3 gap-1.5"><button disabled={saving} onClick={() => void update({ status: '已通过', completedQty: item.plannedQty, note })} className={`rounded-lg border px-2 py-2 text-xs ${checked ? 'border-emerald-400/35 bg-emerald-400/15 text-emerald-300' : 'border-white/10 bg-white/4 text-muted-foreground'}`}>✓ 完成</button><button disabled={saving} onClick={() => void update({ status: '延期', completedQty: 0, note })} className={`rounded-lg border px-2 py-2 text-xs ${delayed ? 'border-amber-400/35 bg-amber-400/15 text-amber-300' : 'border-white/10 bg-white/4 text-muted-foreground'}`}>→ 延期</button><button disabled={saving} onClick={() => void update({ status: '未完成', completedQty: 0, note })} className={`rounded-lg border px-2 py-2 text-xs ${item.status === '未完成' ? 'border-red-400/35 bg-red-400/15 text-red-300' : 'border-white/10 bg-white/4 text-muted-foreground'}`}>× 未完成</button></div><div className="mt-2 flex gap-2"><input value={note} onChange={(event) => setNote(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void update({ note }); }} className="edit-input h-9 min-w-0 flex-1 text-xs" placeholder="备注：原因、下一步或交接情况" /><button disabled={saving || note === item.note} onClick={() => void update({ note })} className="rounded-lg border border-white/10 px-3 text-xs text-muted-foreground disabled:opacity-40">{saving ? '保存中' : '存备注'}</button></div></div> : item.note ? <p className="mt-2 border-t border-white/8 pt-2 text-xs leading-5 text-muted-foreground">备注：{item.note}</p> : null}
+    {canUpdateStatus ? <div className="mt-3 border-t border-white/8 pt-3"><div className="grid grid-cols-3 gap-1.5"><button disabled={saving} onClick={() => void update({ status: '已通过', completedQty: item.plannedQty, note })} className={`rounded-lg border px-2 py-2 text-xs ${checked ? 'border-emerald-400/35 bg-emerald-400/15 text-emerald-300' : 'border-white/10 bg-white/4 text-muted-foreground'}`}>✓ 完成</button><button disabled={saving} onClick={() => void update({ status: '延期', completedQty: 0, note })} className={`rounded-lg border px-2 py-2 text-xs ${delayed ? 'border-amber-400/35 bg-amber-400/15 text-amber-300' : 'border-white/10 bg-white/4 text-muted-foreground'}`}>→ 延期</button><button disabled={saving} onClick={() => void update({ status: '未完成', completedQty: 0, note })} className={`rounded-lg border px-2 py-2 text-xs ${item.status === '未完成' ? 'border-red-400/35 bg-red-400/15 text-red-300' : 'border-white/10 bg-white/4 text-muted-foreground'}`}>× 未完成</button></div><div className="mt-2 flex gap-2"><input value={note} onChange={(event) => setNote(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void update({ note }); }} className="edit-input h-9 min-w-0 flex-1 text-xs" placeholder="备注：原因、下一步或交接情况" /><button disabled={saving || note === item.note} onClick={() => void update({ note })} className="rounded-lg border border-white/10 px-3 text-xs text-muted-foreground disabled:opacity-40">{saving ? '保存中' : '存备注'}</button></div></div> : item.note ? <p className="mt-2 border-t border-white/8 pt-2 text-xs leading-5 text-muted-foreground">备注：{item.note}</p> : null}
   </div>;
 }
 
