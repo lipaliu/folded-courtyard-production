@@ -180,7 +180,6 @@ export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned
   }
 
   async function downloadPdf(episode: string) {
-    const missing = completenessForEpisode(episode);
     setPdfEpisode(episode); setError('');
     try {
       await document.fonts.ready;
@@ -197,9 +196,8 @@ export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned
         pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
       }
       const version = versionForEpisode(episode);
-      const pdfType = missing.length ? '视觉参考预览_DRAFT' : '人服道景正式提报';
-      pdf.save(`折叠庭院的她_${episode}_剧本v${version?.versionNo || 1}_${workDate.replaceAll('-', '')}_${pdfType}.pdf`);
-      setNotice(`${episode}${missing.length ? '视觉参考预览' : '正式提报'}PDF已下载，共${pages.length}页。`);
+      pdf.save(`折叠庭院的她_${episode}_剧本v${version?.versionNo || 1}_${workDate.replaceAll('-', '')}_Yoyo视觉参考简报.pdf`);
+      setNotice(`${episode}Yoyo看图PDF已下载，共${pages.length}页。`);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'PDF生成失败');
     } finally { setPdfEpisode(''); }
@@ -230,11 +228,11 @@ export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned
     {notice && <p className="mt-4 rounded-xl border border-emerald-400/20 bg-emerald-400/[.06] px-4 py-3 text-sm text-emerald-300">{notice}</p>}
     {error && <p className="mt-4 rounded-xl border border-red-400/20 bg-red-400/[.06] px-4 py-3 text-sm text-red-300">{error}</p>}
 
-    <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">DAILY ART PACKAGE</p><h2 className="mt-1 text-xl font-semibold">{formatDate(workDate)} · 人服道景生产与提报</h2><p className="mt-1 text-xs text-muted-foreground">{dailyAnalyses.length}场 · {readyCount}/{dailyItems.length}项齐套 · 默认主美小金18:00交Lipa，可逐项改派</p></div><div className="flex flex-wrap gap-2">{dailyEpisodes.map((episode) => { const missing = completenessForEpisode(episode); return <Button key={episode} variant={missing.length ? 'outline' : 'default'} disabled={pdfEpisode === episode} onClick={() => void downloadPdf(episode)}>{pdfEpisode === episode ? <Loader2 className="animate-spin" /> : <Download />}{missing.length ? `下载${episode}参考预览PDF` : `下载${episode}正式提报PDF`}</Button>; })}</div></div>
+    <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">DAILY ART PACKAGE</p><h2 className="mt-1 text-xl font-semibold">{formatDate(workDate)} · 人服道景生产与提报</h2><p className="mt-1 text-xs text-muted-foreground">{dailyAnalyses.length}场 · {readyCount}/{dailyItems.length}项齐套 · 默认主美小金18:00交Lipa，可逐项改派</p></div><div className="flex flex-wrap gap-2">{dailyEpisodes.map((episode) => <Button key={episode} variant="outline" disabled={pdfEpisode === episode} onClick={() => void downloadPdf(episode)}>{pdfEpisode === episode ? <Loader2 className="animate-spin" /> : <Download />}{`下载${episode}Yoyo看图PDF`}</Button>)}</div></div>
 
     <div className="mt-4 space-y-4">{dailyAnalyses.length ? dailyAnalyses.map((analysis) => { const sceneItems = items.filter((item) => item.analysisId === analysis.id).sort((a, b) => a.sortOrder - b.sortOrder); return <article key={analysis.id} className="control-card p-4 md:p-5"><div className="border-b border-white/8 pb-4"><p className="text-xs text-[#ff8066]">{analysis.episode} · 第{analysis.sceneNo}场</p><h3 className="mt-1 text-lg font-medium">{analysis.sceneTitle}</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">{analysis.location} · {analysis.sceneSummary}</p></div><div className="mt-4 grid gap-3 xl:grid-cols-2">{sceneItems.map((item) => <SubmissionItemCard key={item.id} item={item} detail={detailMap.get(item.id)} files={filesByItem.get(item.id) || []} defaultDueAt={`${workDate}T18:00`} canEdit={canEditArt} isAdmin={me.isAdmin} currentName={me.name} onUpload={uploadImage} onSave={saveDetail} onDeleteFile={deleteFile} />)}</div></article>; }) : <Empty text={`${formatDate(workDate)}还没有具体场次。Lipa上传单集剧本，或在上方选择场次排入当天。`} />}</div>
 
-    <div className="submission-pdf-source" aria-hidden="true">{dailyEpisodes.map((episode) => <SubmissionPdfSource key={episode} id={`submission-pdf-${episode.replace(/\W/g, '')}`} episode={episode} workDate={workDate} version={versionForEpisode(episode)} analyses={dailyAnalyses.filter((analysis) => analysis.episode === episode)} items={items} detailMap={detailMap} filesByItem={filesByItem} missing={completenessForEpisode(episode)} />)}</div>
+    <div className="submission-pdf-source" aria-hidden="true">{dailyEpisodes.map((episode) => <SubmissionPdfSource key={episode} id={`submission-pdf-${episode.replace(/\W/g, '')}`} episode={episode} workDate={workDate} version={versionForEpisode(episode)} analyses={dailyAnalyses.filter((analysis) => analysis.episode === episode)} items={items} filesByItem={filesByItem} />)}</div>
   </section>;
 }
 
@@ -253,38 +251,47 @@ function SubmissionItemCard({ item, detail, files, defaultDueAt, canEdit, isAdmi
     {error && <p className="mt-2 text-xs text-red-300">{error}</p>}{canEdit && <div className="mt-3 flex flex-wrap justify-end gap-2">{isAdmin && <><Button size="sm" variant="destructive" disabled={saving || !draft.reviewNote.trim()} onClick={() => void save('打回')}><X />打回</Button><Button size="sm" variant="outline" disabled={saving || !files.length} onClick={() => void save('已锁定')}><Check />锁定</Button></>}<Button size="sm" disabled={saving} onClick={() => void save()}>{saving ? <Loader2 className="animate-spin" /> : <Check />}{saving ? '保存中' : '保存责任与节点'}</Button></div>}</section>;
 }
 
-function SubmissionPdfSource({ id, episode, workDate, version, analyses, items, detailMap, filesByItem, missing }: { id: string; episode: string; workDate: string; version?: ScriptVersion; analyses: ScriptAnalysis[]; items: ScriptAssetItem[]; detailMap: Map<string, SubmissionDetail>; filesByItem: Map<string, SubmissionFile[]>; missing: string[] }) {
+function SubmissionPdfSource({ id, episode, workDate, version, analyses, items, filesByItem }: { id: string; episode: string; workDate: string; version?: ScriptVersion; analyses: ScriptAnalysis[]; items: ScriptAssetItem[]; filesByItem: Map<string, SubmissionFile[]> }) {
   const episodeIds = new Set(analyses.map((analysis) => analysis.id));
-  const episodeItems = items.filter((item) => episodeIds.has(item.analysisId));
-  const isDraft = missing.length > 0;
+  const episodeItems = items.filter((item) => episodeIds.has(item.analysisId) && ['人物', '服装', '场景'].includes(item.category));
   const referenceCount = episodeItems.reduce((total, item) => total + (filesByItem.get(item.id)?.length || 0), 0);
-  const detailPages: Array<{ analysis: ScriptAnalysis; category: string; rows: ScriptAssetItem[]; pageIndex: number; pageCount: number }> = [];
-  const referencePages: Array<{ analysis: ScriptAnalysis; item: ScriptAssetItem; files: SubmissionFile[]; pageIndex: number; pageCount: number }> = [];
-  for (const analysis of analyses) for (const category of categories) {
-    const rows = episodeItems.filter((item) => item.analysisId === analysis.id && item.category === category);
-    const chunks = chunk(rows, 2);
-    chunks.forEach((chunkRows, index) => detailPages.push({ analysis, category, rows: chunkRows, pageIndex: index + 1, pageCount: chunks.length }));
+  const referencePages: Array<{ analysis: ScriptAnalysis; entries: Array<{ item: ScriptAssetItem; file: SubmissionFile }>; pageIndex: number; pageCount: number; sceneReferenceCount: number }> = [];
+  for (const analysis of analyses) {
+    const entries = episodeItems
+      .filter((item) => item.analysisId === analysis.id)
+      .flatMap((item) => (filesByItem.get(item.id) || []).map((file) => ({ item, file })));
+    const groups = chunk(entries, 6);
+    groups.forEach((pageEntries, index) => referencePages.push({ analysis, entries: pageEntries, pageIndex: index + 1, pageCount: groups.length, sceneReferenceCount: entries.length }));
   }
-  for (const analysis of analyses) for (const item of episodeItems.filter((candidate) => candidate.analysisId === analysis.id)) {
-    const groups = chunk(filesByItem.get(item.id) || [], 6);
-    groups.forEach((files, index) => referencePages.push({ analysis, item, files, pageIndex: index + 1, pageCount: groups.length }));
-  }
-  const archivePage = 3 + detailPages.length + referencePages.length;
-  return <div id={id}><PdfPage><div className="pt-24 text-center"><p className="text-[18px] tracking-[.32em] text-[#ef5c40]">{isDraft ? 'DRAFT · VISUAL REFERENCE' : 'PRODUCTION SUBMISSION'}</p><h1 className="mt-8 text-[48px] font-semibold">折叠庭院的她</h1><h2 className="mt-5 text-[30px] font-medium">{episode} · {isDraft ? 'Yoyo视觉参考预览' : '人服道景正式提报'}</h2>{isDraft && <div className="mx-auto mt-6 w-fit rounded-full bg-[#fff0ec] px-5 py-2 text-[14px] font-medium text-[#d84f34]">DRAFT｜未齐套预览，不代表正式锁定</div>}<div className="mx-auto mt-12 grid w-[620px] grid-cols-2 gap-px overflow-hidden rounded-xl bg-[#d9dce1] text-left"><PdfMeta label="剧本版本" value={`v${version?.versionNo || 1}`} /><PdfMeta label="申报日期" value={workDate} /><PdfMeta label="提报人" value={version?.submittedBy || 'Lipa'} /><PdfMeta label="审核对象" value="Yoyo" /><PdfMeta label="场次／工作项" value={`${analyses.length}场 · ${episodeItems.length}项`} /><PdfMeta label="参考图片" value={`${referenceCount}张`} /></div><div className="mx-auto mt-10 w-[620px] border-t border-[#d9dce1] pt-6 text-left"><p className="text-[15px] font-medium text-[#ef5c40]">本次更新</p><p className="mt-3 text-[16px] leading-7 text-[#454b55]">{version?.changeSummary || '视觉参考首轮整理，供Yoyo预审。'}</p></div></div><PdfFooter episode={episode} page={1} draft={isDraft} /></PdfPage>
-    <PdfPage><PdfHeader eyebrow={`${episode} · STORY OVERVIEW`} title="简略情节与场次总览" subtitle={`${workDate}申报 · 基于剧本v${version?.versionNo || 1}`} /><div className="mt-8 space-y-4">{analyses.map((analysis) => { const rows = episodeItems.filter((item) => item.analysisId === analysis.id); const owners = [...new Set(rows.map((item) => detailMap.get(item.id)?.assignedTo).filter(Boolean))]; const dues = [...new Set(rows.map((item) => detailMap.get(item.id)?.dueAt).filter(Boolean))]; return <div key={analysis.id} className="rounded-xl border border-[#dfe2e7] p-5"><div className="flex justify-between gap-5"><div><p className="text-[14px] font-medium text-[#ef5c40]">第{analysis.sceneNo}场</p><h3 className="mt-1 text-[21px] font-semibold">{analysis.sceneTitle}</h3><p className="mt-1 text-[13px] text-[#747b86]">{analysis.location}</p></div><div className="text-right text-[13px] leading-6 text-[#555c67]"><p>{categories.map((category) => `${category}${rows.filter((item) => item.category === category).length}`).join(' · ')}</p><p>{owners.join('、') || '待分配'} · {dues.join('、') || '待定时'}</p></div></div><p className="mt-4 border-t border-[#eceef1] pt-4 text-[14px] leading-6 text-[#3f4650]">{analysis.sceneSummary}</p></div>; })}</div><PdfFooter episode={episode} page={2} draft={isDraft} /></PdfPage>
-    {detailPages.map((page, index) => <PdfPage key={`${page.analysis.id}-${page.category}-${page.pageIndex}`}><PdfHeader eyebrow={`${episode} · 第${page.analysis.sceneNo}场`} title={page.analysis.sceneTitle} subtitle={`${page.analysis.location} · ${page.category}${page.pageCount > 1 ? ` ${page.pageIndex}/${page.pageCount}` : ''}`} /><p className="mt-5 rounded-lg bg-[#f4f5f7] p-4 text-[13px] leading-6 text-[#555c67]">{page.analysis.sceneSummary}</p><div className="mt-5 space-y-4">{page.rows.map((item) => { const detail = detailMap.get(item.id); return <div key={item.id} className="rounded-xl border border-[#dfe2e7] p-5"><div className="flex items-start justify-between gap-4"><div><span className="rounded bg-[#fff0ec] px-2 py-1 text-[11px] text-[#d84f34]">{item.category}</span><h3 className="mt-2 text-[20px] font-semibold">{item.name}</h3></div><span className="rounded-full border border-[#dfe2e7] px-3 py-1 text-[12px] text-[#555c67]">{detail?.status || '待上传'}</span></div><p className="mt-3 text-[14px] leading-6 text-[#353b44]">{item.detail}</p>{detail?.submissionNote && <p className="mt-2 text-[13px] leading-6 text-[#ef5c40]">采用：{detail.submissionNote}</p>}<div className="mt-4 grid grid-cols-2 gap-x-5 gap-y-1 border-t border-[#eceef1] pt-3 text-[12px] leading-5 text-[#68707c]"><p>参考图：{filesByItem.get(item.id)?.length || 0}张</p><p>责任人：{detail?.assignedTo || '待分配'}</p><p>截止：{formatDateTime(detail?.dueAt || '')}</p><p>交接给：{detail?.handoffTo || '待填写'}</p><p className="col-span-2">完成定义：{detail?.doneDefinition || item.visualBrief}</p>{detail?.reviewNote && <p className="col-span-2 text-[#d84f34]">审核意见：{detail.reviewNote}</p>}</div></div>; })}</div><PdfFooter episode={episode} page={index + 3} draft={isDraft} /></PdfPage>)}
-    {referencePages.map((page, index) => <PdfPage key={`${page.item.id}-refs-${page.pageIndex}`}><PdfHeader eyebrow={`${episode} · 第${page.analysis.sceneNo}场 · ${page.item.category}`} title={page.item.name} subtitle={`参考图 ${page.pageIndex}/${page.pageCount} · 各 Option 独立，待 Yoyo 审核选择`} /><div className="mt-7 grid grid-cols-2 gap-5">{page.files.map((file) => <figure key={file.id} className="rounded-xl border border-[#dfe2e7] bg-[#f7f8f9] p-3"><img src={file.url} alt={file.fileName} className="h-[245px] w-full object-contain" /><figcaption className="mt-2 text-center text-[12px] leading-5 text-[#555c67]">{file.fileName}</figcaption></figure>)}</div><PdfFooter episode={episode} page={detailPages.length + index + 3} draft={isDraft} /></PdfPage>)}
-    <PdfPage><PdfHeader eyebrow={`${episode} · ${isDraft ? 'DRAFT STATUS' : 'ARCHIVE'}`} title={isDraft ? '预览范围与待补项' : '版本与审核记录'} subtitle={`剧本v${version?.versionNo || 1} · ${workDate}`} /><div className="mt-10 rounded-xl border border-[#dfe2e7] p-6"><h3 className="text-[18px] font-semibold">本次汇总</h3><p className="mt-4 text-[15px] leading-7 text-[#3f4650]">共{analyses.length}场、{episodeItems.length}项、{referenceCount}张参考图。{isDraft ? '当前文件用于Yoyo提前审核视觉方向，所有Option仍可调整。' : '人物、服装、道具、场景及生产信息已齐套。'}</p></div>{isDraft && <div className="mt-6 rounded-xl bg-[#fff3ef] p-6"><h3 className="text-[18px] font-semibold text-[#d84f34]">尚未齐套（{missing.length}项）</h3><div className="mt-4 grid grid-cols-2 gap-x-5 gap-y-2 text-[13px] leading-5 text-[#555c67]">{missing.slice(0, 20).map((entry) => <p key={entry}>• {entry}</p>)}</div>{missing.length > 20 && <p className="mt-3 text-[12px] text-[#747b86]">另有{missing.length - 20}项，请以后台状态为准。</p>}</div>}<div className="mt-8 grid grid-cols-2 gap-4"><div className="h-32 rounded-xl border border-[#dfe2e7] p-5"><p className="text-[13px] text-[#747b86]">Lipa提报／检查</p><p className="mt-6 text-[15px]">时间：________________</p></div><div className="h-32 rounded-xl border border-[#dfe2e7] p-5"><p className="text-[13px] text-[#747b86]">Yoyo审核</p><p className="mt-6 text-[15px]">意见：________________</p></div></div><PdfFooter episode={episode} page={archivePage} draft={isDraft} /></PdfPage>
+  return <div id={id}><PdfPage><div className="pt-32 text-center"><p className="text-[16px] tracking-[.24em] text-[#ef5c40]">VISUAL REFERENCE</p><h1 className="mt-8 text-[48px] font-semibold">折叠庭院的她</h1><h2 className="mt-5 text-[30px] font-medium">{episode} · Yoyo视觉参考简报</h2><div className="mx-auto mt-7 w-fit rounded-full bg-[#fff0ec] px-5 py-2 text-[14px] font-medium text-[#d84f34]">看情节 · 看人物 · 看场景</div><div className="mx-auto mt-14 grid w-[620px] grid-cols-2 gap-px overflow-hidden rounded-xl bg-[#d9dce1] text-left"><PdfMeta label="剧本版本" value={`v${version?.versionNo || 1}`} /><PdfMeta label="整理日期" value={workDate} /><PdfMeta label="场次" value={`${analyses.length}场`} /><PdfMeta label="参考图片" value={`${referenceCount}张`} /></div><p className="mx-auto mt-10 w-[620px] text-[15px] leading-7 text-[#555c67]">每场只保留一句情节和已上传的视觉参考。所有 Option 供 Yoyo 快速审核选择，不代表最终锁定。</p></div><PdfFooter episode={episode} page={1} /></PdfPage>
+    <PdfPage><PdfHeader eyebrow={`${episode} · STORY`} title="一页看完本集情节" subtitle={`剧本v${version?.versionNo || 1} · 每场一句话`} /><div className="mt-7 grid grid-cols-2 gap-4">{analyses.map((analysis) => <div key={analysis.id} className="rounded-xl border border-[#dfe2e7] p-5"><p className="text-[14px] font-medium text-[#ef5c40]">第{analysis.sceneNo}场</p><h3 className="mt-1 text-[19px] font-semibold">{analysis.sceneTitle}</h3><p className="mt-3 text-[14px] leading-6 text-[#3f4650]">{simpleSceneSummary(analysis)}</p></div>)}</div><PdfFooter episode={episode} page={2} /></PdfPage>
+    {referencePages.map((page, index) => <PdfPage key={`${page.analysis.id}-refs-${page.pageIndex}`}><PdfHeader eyebrow={`${episode} · 第${page.analysis.sceneNo}场`} title={simpleSceneSummary(page.analysis)} subtitle={`人物／服装／场景参考 · 第${page.pageIndex}/${page.pageCount}页 · 本场${page.sceneReferenceCount}张`} /><div className="mt-7 grid grid-cols-2 gap-5">{page.entries.map(({ item, file }) => <figure key={file.id} className="rounded-xl border border-[#dfe2e7] bg-[#f7f8f9] p-3"><img src={file.url} alt={file.fileName} className="h-[245px] w-full object-contain" /><figcaption className="mt-2 text-center text-[12px] leading-5 text-[#555c67]">{friendlyReferenceLabel(item, file)}</figcaption></figure>)}</div><PdfFooter episode={episode} page={index + 3} /></PdfPage>)}
   </div>;
 }
 
 function PdfPage({ children }: { children: React.ReactNode }) { return <section className="submission-pdf-page relative bg-white px-[58px] py-[54px] text-[#1d2128]">{children}</section>; }
 function PdfHeader({ eyebrow, title, subtitle }: { eyebrow: string; title: string; subtitle: string }) { return <header className="border-b-2 border-[#1f232a] pb-5"><p className="text-[13px] font-medium tracking-[.18em] text-[#ef5c40]">{eyebrow}</p><h2 className="mt-2 text-[30px] font-semibold">{title}</h2><p className="mt-2 text-[13px] text-[#747b86]">{subtitle}</p></header>; }
-function PdfFooter({ episode, page, draft = false }: { episode: string; page: number; draft?: boolean }) { return <footer className="absolute inset-x-[58px] bottom-[35px] flex justify-between border-t border-[#dfe2e7] pt-3 text-[10px] text-[#8b919b]"><span>《折叠庭院的她》 · {episode} · {draft ? '视觉参考预览 DRAFT' : '人服道景正式提报'}</span><span>第 {page} 页</span></footer>; }
+function PdfFooter({ episode, page }: { episode: string; page: number }) { return <footer className="absolute inset-x-[58px] bottom-[35px] flex justify-between border-t border-[#dfe2e7] pt-3 text-[10px] text-[#8b919b]"><span>《折叠庭院的她》 · {episode} · Yoyo视觉参考简报</span><span>第 {page} 页</span></footer>; }
 function PdfMeta({ label, value }: { label: string; value: string }) { return <div className="bg-white p-4"><p className="text-[11px] text-[#8b919b]">{label}</p><p className="mt-1 text-[16px] font-medium">{value}</p></div>; }
 function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block"><span className="mb-1.5 block text-xs text-muted-foreground">{label}</span>{children}</label>; }
 function Empty({ text }: { text: string }) { return <div className="rounded-xl border border-dashed border-white/10 px-5 py-10 text-center text-sm leading-6 text-muted-foreground">{text}</div>; }
 function chunk<T>(values: T[], size: number) { const chunks: T[][] = []; for (let index = 0; index < values.length; index += size) chunks.push(values.slice(index, index + size)); return chunks; }
+function simpleSceneSummary(analysis: ScriptAnalysis) {
+  const summaries: Record<number, string> = {
+    1: '女主穿着替身服装，被群演扮演的丧尸追打。',
+    2: '女主在片场救下一只受伤的白鸽，第一次付出白发的代价。',
+    3: '女主救下陆文川，并预见他今晚会死亡。',
+    4: '火警发生，女主放弃离开，冲进火场救陆文川。',
+    5: '陆文川落水，女主在六十秒内将他救活。',
+    6: '有人删除事故监控，只留下女主救人的视频。',
+    7: '陆文川醒来，开始寻找女主并追查缺失的一分钟。',
+    8: '女主回到姑妈面摊后突然爆红，前夫和神秘人同时盯上她。',
+  };
+  return summaries[analysis.sceneNo] || analysis.sceneSummary;
+}
+function friendlyReferenceLabel(item: ScriptAssetItem, file: SubmissionFile) {
+  return /^[a-f\d]{24,}\.(?:jpe?g|png|webp)$/i.test(file.fileName) ? item.name : file.fileName;
+}
 function formatDate(value: string) { if (!value) return '未定日期'; const [, month, day] = value.split('-'); return `${Number(month)}月${Number(day)}日`; }
 function formatDateTime(value: string) { if (!value) return '未记录'; return value.replace('T', ' ').slice(0, 16); }
 
