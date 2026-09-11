@@ -14,6 +14,7 @@ type TaskRow = {
   completedQty: number;
   dependsOnId: string;
   handoffDeadline: string;
+  note: string;
 };
 
 type BatchRow = {
@@ -44,7 +45,7 @@ type ReportSummary = {
 async function allTasks() {
   const result = await env.DB.prepare(`SELECT id, work_date AS workDate, episode, category, title, owner, status,
     planned_qty AS plannedQty, completed_qty AS completedQty, depends_on_id AS dependsOnId,
-    handoff_deadline AS handoffDeadline FROM production_items ORDER BY work_date, sort_order`).all<TaskRow>();
+    handoff_deadline AS handoffDeadline, note FROM production_items ORDER BY work_date, sort_order`).all<TaskRow>();
   return result.results;
 }
 

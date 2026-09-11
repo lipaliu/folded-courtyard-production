@@ -1,4 +1,4 @@
-export const STATUSES = ['未开始', '进行中', '待审核', '已通过', '打回'] as const;
+export const STATUSES = ['未开始', '进行中', '待审核', '已通过', '延期', '未完成', '打回'] as const;
 export type Status = (typeof STATUSES)[number];
 
 export type ProductionItem = {

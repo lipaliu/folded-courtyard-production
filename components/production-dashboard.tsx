@@ -31,6 +31,8 @@ const statusStyle: Record<Status, string> = {
   进行中: 'border-cyan-400/20 bg-cyan-400/10 text-cyan-300',
   待审核: 'border-violet-400/25 bg-violet-400/12 text-violet-300',
   已通过: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300',
+  延期: 'border-amber-400/25 bg-amber-400/10 text-amber-300',
+  未完成: 'border-red-400/25 bg-red-400/10 text-red-300',
   打回: 'border-red-400/20 bg-red-400/10 text-red-300',
 };
 
@@ -44,7 +46,8 @@ const timeOptions = Array.from({ length: 96 }, (_, index) => {
 
 type ScriptAnalysis = { id: string; episode: string; sceneNo: number; sceneTitle: string; scriptText: string; sceneSummary: string; location: string; createdAt: string; updatedAt: string };
 type ScriptAssetItem = { id: string; analysisId: string; category: string; name: string; detail: string; visualBrief: string; yoyoApproved: boolean; producerApproved: boolean; sortOrder: number; updatedAt: string };
-type DailyReportTask = Pick<ProductionItem, 'id' | 'workDate' | 'episode' | 'category' | 'title' | 'owner' | 'status' | 'plannedQty' | 'completedQty' | 'dependsOnId' | 'handoffDeadline'>;
+type DailyReportTask = Pick<ProductionItem, 'id' | 'workDate' | 'episode' | 'category' | 'title' | 'owner' | 'status' | 'plannedQty' | 'completedQty' | 'dependsOnId' | 'handoffDeadline' | 'note'>;
+type AssetProgress = { uploaded: number; total: number };
 type BatchRollover = Pick<PlanBatch, 'id' | 'production' | 'prep'> & { fromStartDate: string; fromEndDate: string; toStartDate: string; toEndDate: string };
 type DailyReportSummary = { completed: DailyReportTask[]; incomplete: DailyReportTask[]; yoyoPending: DailyReportTask[]; rollovers: Array<DailyReportTask & { fromDate: string; toDate: string }>; batchRollovers: BatchRollover[]; projectedEnd: string };
 type DailyReport = { id: string; workDate: string; completedCount: number; incompleteCount: number; rolloverCount: number; summary: DailyReportSummary; createdAt: string; updatedAt: string };
@@ -77,6 +80,7 @@ export function ProductionDashboard() {
   const [me, setMe] = useState<CurrentUser | null>(null);
   const [loadError, setLoadError] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
+  const [assetProgressByEpisode, setAssetProgressByEpisode] = useState<Record<string, AssetProgress>>({});
 
   async function loadData() {
     setSyncing(true);
@@ -87,13 +91,28 @@ export function ProductionDashboard() {
       if (!meResponse.ok || !meData.user) { setMe(null); setLoadError(''); return; }
       setMe(meData.user);
       if (['主美', '美术'].includes(meData.user.role)) setActiveTab((current) => current === 'today' ? 'breakdown' : current);
-      const [itemResponse, sceneResponse, planResponse] = await Promise.all([fetch('/api/items'), fetch('/api/scenes'), fetch('/api/plan')]);
+      const [itemResponse, sceneResponse, planResponse, analysisResponse, submissionResponse] = await Promise.all([fetch('/api/items'), fetch('/api/scenes'), fetch('/api/plan'), fetch('/api/script-analysis'), fetch('/api/art-submissions')]);
       const itemData = await itemResponse.json() as { items?: ProductionItem[] };
       const sceneData = await sceneResponse.json() as { scenes?: Scene[] };
       const planData = await planResponse.json() as { batches?: PlanBatch[] };
+      const analysisData = await analysisResponse.json() as { analyses?: ScriptAnalysis[]; items?: ScriptAssetItem[] };
+      const submissionData = await submissionResponse.json() as { files?: Array<{ itemId: string }> };
       if (itemData.items?.length) setItems(itemData.items);
       if (sceneData.scenes?.length) setScenes(sceneData.scenes);
       if (planData.batches?.length) setBatches(planData.batches);
+      if (analysisData.analyses && analysisData.items) {
+        const uploadedIds = new Set((submissionData.files || []).map((file) => file.itemId));
+        const episodeByAnalysis = new Map(analysisData.analyses.map((analysis) => [analysis.id, analysis.episode]));
+        const progress: Record<string, AssetProgress> = {};
+        for (const asset of analysisData.items) {
+          const episode = episodeByAnalysis.get(asset.analysisId);
+          if (!episode) continue;
+          progress[episode] ||= { uploaded: 0, total: 0 };
+          progress[episode].total += 1;
+          if (uploadedIds.has(asset.id)) progress[episode].uploaded += 1;
+        }
+        setAssetProgressByEpisode(progress);
+      }
     } catch {
       setLoadError('暂时无法读取项目，请刷新后重试');
     } finally {
@@ -208,7 +227,7 @@ export function ProductionDashboard() {
 
         <div className="px-4 py-5 md:px-8 md:py-8">
           <div className="mx-auto max-w-6xl">
-            <TabsContent value="today" className="mt-0"><TodayView selectedDate={selectedDate} setSelectedDate={setSelectedDate} scheduleEnd={scheduleEnd} items={todayItems} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedItem} onAdd={setCreatingRole} onOpenHandbook={() => setActiveTab('breakdown')} onReload={loadData} onToggle={(item, checked) => void (item.category === '整集资产确认' ? updateEpisodeApproval(item, checked) : updateItem(item.id, { status: checked ? '已通过' : '未开始', completedQty: checked ? item.plannedQty : 0 }))} /></TabsContent>
+            <TabsContent value="today" className="mt-0"><TodayView selectedDate={selectedDate} setSelectedDate={setSelectedDate} scheduleEnd={scheduleEnd} items={todayItems} assetProgressByEpisode={assetProgressByEpisode} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedItem} onAdd={setCreatingRole} onOpenHandbook={() => setActiveTab('breakdown')} onReload={loadData} onUpdateItem={updateItem} onToggle={(item, checked) => void (item.category === '整集资产确认' ? updateEpisodeApproval(item, checked) : updateItem(item.id, { status: checked ? '已通过' : '未开始', completedQty: checked ? item.plannedQty : 0 }))} /></TabsContent>
             <TabsContent value="plan" className="mt-0"><PlanView items={items} batches={batches} scheduleEnd={scheduleEnd} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedBatch} /></TabsContent>
             <TabsContent value="scenes" className="mt-0"><ScenesView scenes={scenes} isAdmin={Boolean(me?.isAdmin)} onChange={updateScene} /></TabsContent>
             <TabsContent value="breakdown" className="mt-0"><SubmissionCenter me={me} selectedDate={selectedDate} productionItems={items} onAssigned={async (workDate) => { setSelectedDate(workDate); await loadData(); }} /></TabsContent>
@@ -286,7 +305,7 @@ function PasswordEditor({ user, open, onClose }: { user: CurrentUser; open: bool
   return <div className="fixed inset-0 z-50 grid place-items-end bg-black/70 backdrop-blur-sm sm:place-items-center sm:p-4" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}><section role="dialog" aria-modal="true" className="w-full max-w-md rounded-t-[24px] border border-white/10 bg-[#1b1d22] p-5 shadow-2xl sm:rounded-[20px]"><div className="flex items-start justify-between gap-4"><div><h2 className="text-lg font-medium">账号与密码</h2><p className="mt-1 text-sm text-muted-foreground">{user.name} · {user.username} · {user.role}</p></div><button onClick={onClose} aria-label="关闭" className="grid h-8 w-8 place-items-center rounded-full bg-white/5"><X className="h-4 w-4" /></button></div><div className="mt-5 space-y-4"><Field label="当前密码"><input type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} className="edit-input" /></Field><Field label="新密码"><input type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} className="edit-input" placeholder="至少8位" /></Field><Field label="再次输入新密码"><input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className="edit-input" /></Field></div>{message && <p className={`mt-4 rounded-xl border px-3 py-2 text-sm ${message === '密码已更新' ? 'border-emerald-400/20 bg-emerald-400/[.06] text-emerald-300' : 'border-red-400/20 bg-red-400/[.06] text-red-300'}`}>{message}</p>}<div className="mt-5 grid grid-cols-2 gap-2"><Button variant="outline" className="h-11" onClick={onClose}>取消</Button><Button className="h-11" disabled={saving || currentPassword.length < 8 || newPassword.length < 8 || confirmPassword.length < 8} onClick={() => void save()}>{saving ? <Loader2 className="animate-spin" /> : <Check />}{saving ? '正在保存…' : '修改密码'}</Button></div></section></div>;
 }
 
-function TodayView({ selectedDate, setSelectedDate, scheduleEnd, items, isAdmin, onEdit, onAdd, onOpenHandbook, onReload, onToggle }: { selectedDate: string; setSelectedDate: (value: string) => void; scheduleEnd: string; items: ProductionItem[]; isAdmin: boolean; onEdit: (item: ProductionItem) => void; onAdd: (role: string) => void; onOpenHandbook: () => void; onReload: () => Promise<void>; onToggle: (item: ProductionItem, checked: boolean) => void }) {
+function TodayView({ selectedDate, setSelectedDate, scheduleEnd, items, assetProgressByEpisode, isAdmin, onEdit, onAdd, onOpenHandbook, onReload, onUpdateItem, onToggle }: { selectedDate: string; setSelectedDate: (value: string) => void; scheduleEnd: string; items: ProductionItem[]; assetProgressByEpisode: Record<string, AssetProgress>; isAdmin: boolean; onEdit: (item: ProductionItem) => void; onAdd: (role: string) => void; onOpenHandbook: () => void; onReload: () => Promise<void>; onUpdateItem: (id: string, changes: Partial<ProductionItem>) => Promise<void>; onToggle: (item: ProductionItem, checked: boolean) => void }) {
   const [showSummary, setShowSummary] = useState(false);
   const [copied, setCopied] = useState(false);
   const [reports, setReports] = useState<DailyReport[]>([]);
@@ -318,9 +337,9 @@ function TodayView({ selectedDate, setSelectedDate, scheduleEnd, items, isAdmin,
   const scheduledStages = stageProgress.filter((stage) => stage.itemCount > 0);
   const completedStages = scheduledStages.filter((stage) => stage.done).length;
   const stageRatio = scheduledStages.length ? Math.round(completedStages / scheduledStages.length * 100) : 0;
-  const artItems = items.filter((item) => item.owner === '主美' || item.category === '美术清单');
-  const artCompleted = artItems.reduce((sum, item) => sum + item.completedQty, 0);
-  const artPlanned = artItems.reduce((sum, item) => sum + item.plannedQty, 0);
+  const artEpisodes = [...new Set(items.filter((item) => item.owner === '主美' || item.category === '美术清单').map((item) => item.episode))];
+  const artCompleted = artEpisodes.reduce((sum, episode) => sum + (assetProgressByEpisode[episode]?.uploaded || 0), 0);
+  const artPlanned = artEpisodes.reduce((sum, episode) => sum + (assetProgressByEpisode[episode]?.total || 0), 0);
   const dayNumber = productionDayNumber(selectedDate);
   const selectedDayType = dayType(selectedDate);
   const selectedMonthDay = `${Number(selectedDate.slice(5, 7))}月${Number(selectedDate.slice(8, 10))}日`;
@@ -373,19 +392,36 @@ function TodayView({ selectedDate, setSelectedDate, scheduleEnd, items, isAdmin,
     } finally { setArchiving(false); }
   }
 
-  async function copySummary() {
+  async function copySummary(summaryOverride?: DailyReportSummary) {
+    const nextFinished = summaryOverride?.completed ?? summaryFinished;
+    const nextIncomplete = summaryOverride?.incomplete ?? summaryIncomplete;
+    const nextYoyoPending = summaryOverride?.yoyoPending ?? summaryYoyoPending;
+    const nextRollovers = summaryOverride?.rollovers ?? summaryRollovers;
+    const taskLine = (item: DailyReportTask) => `${item.status === '已通过' ? '✓ 完成' : item.status === '延期' ? '→ 延期' : '□ 未完成'}｜${item.owner}｜${item.title}${item.note ? `｜备注：${item.note}` : ''}`;
     const lines = [
       `《${dateText}每日生产汇总》`,
-      `完成：${summaryFinished.length}/${summaryFinished.length + summaryIncomplete.length + summaryYoyoPending.length}项`, '',
-      '【已完成】', ...(summaryFinished.length ? summaryFinished.map((item) => `✓ ${item.owner}｜${item.title}`) : ['无']), '',
-      '【未完成】', ...(summaryIncomplete.length ? summaryIncomplete.map((item) => `□ ${item.owner}｜${item.title}`) : ['无']), '',
-      '【全计划重排】', ...(summaryRollovers.length ? summaryRollovers.map((item) => `→ ${item.owner}｜${item.title}｜${shortDate(item.fromDate)}→${shortDate(item.toDate)}`) : ['无']),
-      ...(summaryRollovers.length ? [`预计交付：${shortDate(rolloverPreview?.projectedEnd || archivedReport?.summary.projectedEnd || scheduleEnd)}`] : []), '',
-      '【Yoyo微信待回复】', ...(summaryYoyoPending.length ? summaryYoyoPending.map((item) => `□ ${item.title}`) : ['无']),
+      `完成：${nextFinished.length}/${nextFinished.length + nextIncomplete.length + nextYoyoPending.length}项`, '',
+      '【已完成】', ...(nextFinished.length ? nextFinished.map(taskLine) : ['无']), '',
+      '【延期／未完成】', ...(nextIncomplete.length ? nextIncomplete.map(taskLine) : ['无']), '',
+      '【全计划重排】', ...(nextRollovers.length ? nextRollovers.map((item) => `→ ${item.owner}｜${item.title}｜${shortDate(item.fromDate)}→${shortDate(item.toDate)}${item.note ? `｜备注：${item.note}` : ''}`) : ['无']),
+      ...(nextRollovers.length ? [`预计交付：${shortDate(summaryOverride?.projectedEnd || rolloverPreview?.projectedEnd || archivedReport?.summary.projectedEnd || scheduleEnd)}`] : []), '',
+      '【Yoyo微信待回复】', ...(nextYoyoPending.length ? nextYoyoPending.map(taskLine) : ['无']),
     ];
     await navigator.clipboard.writeText(lines.join('\n'));
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1600);
+  }
+  async function generateAndCopySummary() {
+    if (archivedReport) { setShowSummary(true); await copySummary(archivedReport.summary); return; }
+    setReportError('');
+    const response = await fetch('/api/daily-reports', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'preview', workDate: selectedDate }) });
+    const data = await response.json() as { preview?: DailyReportSummary; report?: DailyReport; error?: string };
+    if (!response.ok) { setReportError(data.error || '生成小结失败'); return; }
+    const summary = data.report?.summary || data.preview;
+    if (!summary) return;
+    if (data.preview) setRolloverPreview(data.preview);
+    setShowSummary(true);
+    await copySummary(summary);
   }
   return <>
     <section className="grid gap-4 md:grid-cols-[1.45fr_.75fr]">
@@ -447,13 +483,13 @@ function TodayView({ selectedDate, setSelectedDate, scheduleEnd, items, isAdmin,
           const roleItems = items.filter((item) => item.owner === role || (role === 'AIGC抽卡师' && item.owner === '抽卡师'));
           return <section key={role} className="rounded-2xl border border-white/8 bg-card p-3 md:p-4">
             <div className="mb-3 flex items-center justify-between"><div className="flex items-center gap-2"><span className="grid h-8 w-8 place-items-center rounded-full bg-white/6 text-sm font-semibold">{role.includes('Lipa') ? 'L' : role.includes('Yoyo') ? 'Y' : role.includes('叶总') ? '叶' : role.slice(0, 1)}</span><div><h3 className="text-sm font-medium">{role === 'AIGC抽卡师' ? '抽卡师' : role}</h3><p className="text-[10px] text-muted-foreground">{roleItems.length ? `${roleItems.length} 项工作` : '今天尚未排活'}</p></div></div>{isAdmin && <button onClick={() => onAdd(role)} className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-white">＋ 添加</button>}</div>
-            <div className="space-y-2">{roleItems.length ? roleItems.map((item) => <RoleTask key={item.id} item={item} editable={isAdmin} onEdit={() => onEdit(item)} onOpenList={role === '主美' && item.category === '美术清单' ? onOpenHandbook : undefined} onToggle={(checked) => onToggle(item, checked)} />) : <div className="rounded-xl border border-dashed border-white/8 px-3 py-4 text-center text-xs leading-5 text-muted-foreground">{role === 'AIGC抽卡师' ? '等待叶总和Yoyo在微信确认整集资产后，再放行抽卡与视频生成。' : isAdmin ? <button onClick={() => onAdd(role)}>为{role}安排今日工作</button> : '今日无任务'}</div>}</div>
+            <div className="space-y-2">{roleItems.length ? roleItems.map((item) => <RoleTask key={item.id} item={item} assetProgress={item.owner === '主美' || item.category === '美术清单' ? assetProgressByEpisode[item.episode] : undefined} editable={isAdmin} onEdit={() => onEdit(item)} onOpenList={role === '主美' && item.category === '美术清单' ? onOpenHandbook : undefined} onUpdate={(changes) => onUpdateItem(item.id, changes)} />) : <div className="rounded-xl border border-dashed border-white/8 px-3 py-4 text-center text-xs leading-5 text-muted-foreground">{role === 'AIGC抽卡师' ? '等待叶总和Yoyo在微信确认整集资产后，再放行抽卡与视频生成。' : isAdmin ? <button onClick={() => onAdd(role)}>为{role}安排今日工作</button> : '今日无任务'}</div>}</div>
           </section>;
         })}
       </div>
     </section>
     <section className="mt-7 rounded-2xl border border-white/8 bg-card p-4 md:p-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><div className="flex items-center gap-2"><p className="eyebrow">DAILY REPORT</p>{archivedReport && <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-0.5 text-[10px] text-emerald-300">已归档</span>}</div><h2 className="mt-1 text-xl font-semibold">每日生产汇总</h2><p className="mt-1 text-sm text-muted-foreground">当天逐项打钩；有任何团队任务没完成，就把未完成项和未来任务整体顺延1个有效生产日，大计划同步更新。</p></div><Button disabled={!canCloseDay} onClick={() => setShowSummary(true)} className="h-11 shrink-0"><ListChecks />{archivedReport ? '查看当日日志' : canCloseDay ? '检查当日完成情况' : '未来日期不可日结'}</Button></div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><div className="flex items-center gap-2"><p className="eyebrow">DAILY REPORT</p>{archivedReport && <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-0.5 text-[10px] text-emerald-300">已归档</span>}</div><h2 className="mt-1 text-xl font-semibold">每日生产汇总</h2><p className="mt-1 text-sm text-muted-foreground">当天逐项标记完成、延期或未完成，并写备注；小结会原样带出，未完成项可整体顺延。</p></div><div className="flex shrink-0 flex-wrap gap-2"><Button variant="outline" disabled={!canCloseDay} onClick={() => setShowSummary(true)}><ListChecks />查看</Button><Button disabled={!canCloseDay} onClick={() => void generateAndCopySummary()}><ClipboardCopy />{copied ? '已生成并复制' : '一键生成并复制'}</Button></div></div>
       {showSummary && <div className="mt-4 border-t border-white/8 pt-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium">{dateText} · 完成 {summaryFinished.length}/{summaryFinished.length + summaryIncomplete.length + summaryYoyoPending.length} 项</p><p className="mt-1 text-xs text-muted-foreground">{archivedReport ? `已永久记录 · 顺延${archivedReport.rolloverCount}项` : '归档前仍可继续打钩和修改任务'}</p></div><Button variant="outline" size="sm" onClick={() => void copySummary()}><ClipboardCopy />{copied ? '已复制' : '复制发群'}</Button></div>
         <div className="mt-4 grid gap-3 md:grid-cols-3"><SummaryGroup title="已完成" tone="green" items={summaryFinished} empty="今天还没有勾选完成项" /><SummaryGroup title="未完成" tone="red" items={summaryIncomplete} empty="团队任务已全部完成" /><SummaryGroup title={rolloverPreview || archivedReport ? '全计划重排' : '待重排'} tone="amber" items={summaryRollovers.length ? summaryRollovers : summaryIncomplete} empty="没有需要重排的团队任务" /></div>
@@ -778,9 +814,20 @@ function TaskCard({ item, onEdit }: { item: ProductionItem; onEdit: () => void }
   return <button onClick={onEdit} className="group flex w-full items-center gap-3 rounded-2xl border border-white/8 bg-card px-3.5 py-4 text-left transition hover:border-white/16 hover:bg-[#202329] md:px-5"><div className="w-12 shrink-0 text-center"><p className="font-mono text-sm text-muted-foreground">{item.dueTime}</p><span className={`mx-auto mt-2 block h-1.5 w-1.5 rounded-full ${categoryColor[item.category] || 'bg-zinc-400'}`} /></div><div className="min-w-0 flex-1 border-l border-white/8 pl-3.5 md:pl-5"><div className="flex items-center gap-2 text-xs text-muted-foreground"><span>{item.owner}</span><span>·</span><span>{item.episode}</span></div><h3 className="mt-1 truncate text-[15px] font-medium md:text-base">{item.title}</h3><div className="mt-2 flex items-center gap-2"><div className="h-1 w-24 overflow-hidden rounded-full bg-white/8"><div className="h-full rounded-full bg-[#ff6240]" style={{ width: `${ratio}%` }} /></div><span className="text-[11px] text-muted-foreground">{item.completedQty}/{item.plannedQty}</span></div></div><div className="flex items-center gap-2"><span className={`hidden rounded-full border px-2.5 py-1 text-xs sm:block ${statusStyle[item.status]}`}>{item.status}</span><Pencil className="h-4 w-4 text-muted-foreground transition group-hover:text-white" /></div></button>;
 }
 
-function RoleTask({ item, editable, onEdit, onOpenList, onToggle }: { item: ProductionItem; editable: boolean; onEdit: () => void; onOpenList?: () => void; onToggle: (checked: boolean) => void }) {
+function RoleTask({ item, assetProgress, editable, onEdit, onOpenList, onUpdate }: { item: ProductionItem; assetProgress?: AssetProgress; editable: boolean; onEdit: () => void; onOpenList?: () => void; onUpdate: (changes: Partial<ProductionItem>) => Promise<void> }) {
+  const [note, setNote] = useState(item.note || '');
+  const [saving, setSaving] = useState(false);
+  useEffect(() => { setNote(item.note || ''); }, [item.note]);
   const checked = item.status === '已通过';
-  return <div className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left ${checked ? 'border-emerald-400/25 bg-emerald-400/[.05]' : 'border-red-400/25 bg-red-400/[.04]'}`}><Checkbox checked={checked} disabled={!editable} onCheckedChange={(nextChecked) => onToggle(Boolean(nextChecked))} aria-label={`${item.title}${checked ? '已完成' : '未完成'}`} className="mt-0.5 size-5 border-red-400/70 text-black data-checked:border-emerald-400 data-checked:bg-emerald-400" /><div className="min-w-0 flex-1"><p className={`text-sm ${checked ? 'text-zinc-500 line-through' : ''}`}>{item.title}</p><p className="mt-1 text-[11px] text-muted-foreground">{item.episode} · {item.dueTime}</p>{onOpenList && <button type="button" onClick={onOpenList} className="mt-2 rounded-lg border border-cyan-400/20 bg-cyan-400/[.06] px-2.5 py-1.5 text-xs text-cyan-300">查看全部资产清单 <ChevronRight className="ml-1 inline h-3 w-3" /></button>}</div>{editable && <button onClick={onEdit} aria-label={`编辑${item.title}`} className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-white/5 hover:text-white"><Pencil className="h-3.5 w-3.5" /></button>}</div>;
+  const delayed = item.status === '延期';
+  async function update(changes: Partial<ProductionItem>) {
+    setSaving(true);
+    try { await onUpdate(changes); } finally { setSaving(false); }
+  }
+  return <div className={`w-full rounded-xl border p-3 text-left ${checked ? 'border-emerald-400/25 bg-emerald-400/[.05]' : delayed ? 'border-amber-400/25 bg-amber-400/[.045]' : 'border-red-400/25 bg-red-400/[.04]'}`}>
+    <div className="flex items-start gap-3"><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className={`text-sm ${checked ? 'text-zinc-500 line-through' : ''}`}>{item.title}</p>{assetProgress && <span className="rounded-full border border-cyan-400/20 bg-cyan-400/[.07] px-2 py-0.5 text-[10px] font-medium text-cyan-300">已上传 {assetProgress.uploaded}/{assetProgress.total}</span>}</div><p className="mt-1 text-[11px] text-muted-foreground">{item.episode} · {item.dueTime} · {checked ? '完成' : item.status}</p>{onOpenList && <button type="button" onClick={onOpenList} className="mt-2 rounded-lg border border-cyan-400/20 bg-cyan-400/[.06] px-2.5 py-1.5 text-xs text-cyan-300">查看全部资产清单 <ChevronRight className="ml-1 inline h-3 w-3" /></button>}</div>{editable && <button onClick={onEdit} aria-label={`编辑${item.title}`} className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-white/5 hover:text-white"><Pencil className="h-3.5 w-3.5" /></button>}</div>
+    {editable ? <div className="mt-3 border-t border-white/8 pt-3"><div className="grid grid-cols-3 gap-1.5"><button disabled={saving} onClick={() => void update({ status: '已通过', completedQty: item.plannedQty, note })} className={`rounded-lg border px-2 py-2 text-xs ${checked ? 'border-emerald-400/35 bg-emerald-400/15 text-emerald-300' : 'border-white/10 bg-white/4 text-muted-foreground'}`}>✓ 完成</button><button disabled={saving} onClick={() => void update({ status: '延期', completedQty: 0, note })} className={`rounded-lg border px-2 py-2 text-xs ${delayed ? 'border-amber-400/35 bg-amber-400/15 text-amber-300' : 'border-white/10 bg-white/4 text-muted-foreground'}`}>→ 延期</button><button disabled={saving} onClick={() => void update({ status: '未完成', completedQty: 0, note })} className={`rounded-lg border px-2 py-2 text-xs ${item.status === '未完成' ? 'border-red-400/35 bg-red-400/15 text-red-300' : 'border-white/10 bg-white/4 text-muted-foreground'}`}>× 未完成</button></div><div className="mt-2 flex gap-2"><input value={note} onChange={(event) => setNote(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void update({ note }); }} className="edit-input h-9 min-w-0 flex-1 text-xs" placeholder="备注：原因、下一步或交接情况" /><button disabled={saving || note === item.note} onClick={() => void update({ note })} className="rounded-lg border border-white/10 px-3 text-xs text-muted-foreground disabled:opacity-40">{saving ? '保存中' : '存备注'}</button></div></div> : item.note ? <p className="mt-2 border-t border-white/8 pt-2 text-xs leading-5 text-muted-foreground">备注：{item.note}</p> : null}
+  </div>;
 }
 
 function TimelineRow({ dates, production, prep, note, highlight = false, editable, onEdit }: { dates: string; production: string; prep: string; note: string; highlight?: boolean; editable: boolean; onEdit: () => void }) {
