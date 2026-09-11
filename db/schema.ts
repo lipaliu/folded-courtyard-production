@@ -119,6 +119,8 @@ export const scriptAnalyses = sqliteTable('script_analyses', {
   scriptText: text('script_text').notNull(),
   sceneSummary: text('scene_summary').notNull().default(''),
   location: text('location').notNull().default(''),
+  scriptVersionId: text('script_version_id').notNull().default(''),
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });
@@ -132,6 +134,7 @@ export const scriptAnalysisItems = sqliteTable('script_analysis_items', {
   visualBrief: text('visual_brief').notNull().default(''),
   yoyoApproved: integer('yoyo_approved', { mode: 'boolean' }).notNull().default(false),
   producerApproved: integer('producer_approved', { mode: 'boolean' }).notNull().default(false),
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
   sortOrder: integer('sort_order').notNull().default(0),
   updatedAt: text('updated_at').notNull(),
 });
@@ -147,6 +150,9 @@ export const scriptVersions = sqliteTable('script_versions', {
   submittedBy: text('submitted_by').notNull(),
   sceneCount: integer('scene_count').notNull().default(0),
   itemCount: integer('item_count').notNull().default(0),
+  isFinal: integer('is_final', { mode: 'boolean' }).notNull().default(false),
+  finalizedAt: text('finalized_at').notNull().default(''),
+  finalizedBy: text('finalized_by').notNull().default(''),
   createdAt: text('created_at').notNull(),
 }, (table) => [
   uniqueIndex('script_versions_episode_version_unique').on(table.episode, table.versionNo),

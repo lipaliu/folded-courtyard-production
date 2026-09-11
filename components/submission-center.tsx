@@ -10,7 +10,7 @@ import type { ProductionItem } from '@/lib/plan-data';
 type CurrentUser = { id: string; username: string; name: string; role: string; isAdmin: boolean };
 type ScriptAnalysis = { id: string; episode: string; sceneNo: number; sceneTitle: string; scriptText: string; sceneSummary: string; location: string; createdAt: string; updatedAt: string };
 type ScriptAssetItem = { id: string; analysisId: string; category: string; name: string; detail: string; visualBrief: string; sortOrder: number };
-type ScriptVersion = { id: string; episode: string; versionNo: number; fileName: string; sourceText: string; changeSummary: string; workDate: string; submittedBy: string; sceneCount: number; itemCount: number; createdAt: string };
+type ScriptVersion = { id: string; episode: string; versionNo: number; fileName: string; sourceText: string; changeSummary: string; workDate: string; submittedBy: string; sceneCount: number; itemCount: number; isFinal: number | boolean; finalizedAt: string; finalizedBy: string; createdAt: string };
 type DailySceneAssignment = { id: string; workDate: string; analysisId: string; scriptVersionId: string; assignedBy: string; createdAt: string };
 type SubmissionDetail = { itemId: string; assignedTo: string; dueAt: string; handoffTo: string; doneDefinition: string; status: string; submissionNote: string; reviewNote: string; submittedAt: string; reviewedAt: string; updatedAt: string };
 type SubmissionFile = { id: string; itemId: string; fileName: string; contentType: string; byteSize: number; uploadedBy: string; sortOrder: number; createdAt: string; url: string };
@@ -32,12 +32,14 @@ export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned
   const [scriptFile, setScriptFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [finalizingVersion, setFinalizingVersion] = useState('');
   const [pdfEpisode, setPdfEpisode] = useState('');
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
   const canEditArt = me.isAdmin || ['主美', '美术'].includes(me.role);
   const canUploadScript = me.isAdmin || me.role === '编剧';
   const canDeleteProps = me.isAdmin || me.role === '执行制片人';
+  const canFinalizeScript = me.isAdmin;
 
   async function loadAll() {
     setLoading(true);
@@ -69,7 +71,9 @@ export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned
 
   const dateAssignments = assignments.filter((assignment) => assignment.workDate === workDate);
   const assignedIds = new Set(dateAssignments.map((assignment) => assignment.analysisId));
-  const legacyEpisodes = new Set(productionItems.filter((item) => item.workDate === workDate && item.category === '美术清单').map((item) => item.episode));
+  const legacyEpisodes = new Set(productionItems
+    .filter((item) => item.workDate === workDate && ['美术清单', '资产修改', '整集资产确认'].includes(item.category))
+    .map((item) => item.episode));
   const dailyAnalyses = analyses.filter((analysis) => assignedIds.size ? assignedIds.has(analysis.id) : legacyEpisodes.has(analysis.episode));
   const dailyAnalysisIds = new Set(dailyAnalyses.map((analysis) => analysis.id));
   const dailyItems = items.filter((item) => dailyAnalysisIds.has(item.analysisId));
@@ -96,25 +100,31 @@ export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned
       }
       if (!sourceText.trim()) throw new Error('剧本文件里没有读取到文字');
       const importResponse = await fetch('/api/script-analysis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'importScript', workDate, fileName: scriptFile.name, text: sourceText, changeSummary }) });
-      const imported = await importResponse.json() as { analysisIds?: string[]; versions?: Array<{ episode: string; versionNo: number }>; sceneCount?: number; itemCount?: number; error?: string };
-      if (!importResponse.ok || !imported.analysisIds?.length) throw new Error(imported.error || '单集剧本拆解失败');
-      if (me.isAdmin) {
-        const assignResponse = await fetch('/api/script-analysis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'assign', workDate, analysisIds: imported.analysisIds }) });
-        const assigned = await assignResponse.json() as { error?: string };
-        if (!assignResponse.ok) throw new Error(assigned.error || '剧本已存档，但当天工作分配失败');
-      }
+      const imported = await importResponse.json() as { versions?: Array<{ episode: string; versionNo: number }>; sceneCount?: number; itemCount?: number; error?: string };
+      if (!importResponse.ok || !imported.versions?.length) throw new Error(imported.error || '剧本候选稿存档失败');
       await loadAll();
-      if (me.isAdmin) await onAssigned(workDate);
       const versionText = (imported.versions || []).map((row) => `${row.episode} v${row.versionNo}`).join('、');
-      setNotice(me.isAdmin
-        ? `已存档${versionText || '新剧本版本'}，识别${imported.sceneCount || 0}场、${imported.itemCount || 0}项人服道景工作，并排入${formatDate(workDate)}。`
-        : `已上传${versionText || '新剧本版本'}，识别${imported.sceneCount || 0}场；公开提报页已自动追加该版本，等待导演与制片人审阅。`);
+      setNotice(`已存档${versionText || '新剧本版本'}候选稿，识别${imported.sceneCount || 0}场、${imported.itemCount || 0}项人服道景。此次上传不会覆盖当前生产数据；请由Lipa在右侧选择定稿。`);
       setScriptFile(null); setScriptFileName(''); setChangeSummary('');
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : '剧本提报失败');
     } finally {
       setSaving(false);
     }
+  }
+
+  async function finalizeScriptVersion(version: ScriptVersion) {
+    if (!window.confirm(`确定将${version.episode}剧本 v${version.versionNo}设为定稿吗？\n\n后续拆场、主美资产、排产和PDF都将以此版为准，旧稿和旧图仍保留在档案。`)) return;
+    setFinalizingVersion(version.id); setError(''); setNotice('');
+    try {
+      const response = await fetch('/api/script-analysis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'finalizeVersion', versionId: version.id }) });
+      const data = await response.json() as { sceneCount?: number; error?: string };
+      if (!response.ok) throw new Error(data.error || '设为定稿失败');
+      await loadAll(); await onAssigned(workDate);
+      setNotice(`已将${version.episode}剧本 v${version.versionNo}设为定稿。现在拆场、主美上传和PDF均按该版本生成，共${data.sceneCount || version.sceneCount}场。`);
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : '设为定稿失败');
+    } finally { setFinalizingVersion(''); }
   }
 
   async function assignExisting() {
@@ -170,8 +180,7 @@ export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned
   }
 
   function versionForEpisode(episode: string) {
-    const versionId = dateAssignments.find((assignment) => analyses.find((analysis) => analysis.id === assignment.analysisId)?.episode === episode)?.scriptVersionId;
-    return versions.find((version) => version.id === versionId) || versions.find((version) => version.episode === episode);
+    return versions.find((version) => version.episode === episode && Boolean(version.isFinal));
   }
 
   function completenessForEpisode(episode: string) {
@@ -199,6 +208,8 @@ export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned
   async function downloadPdf(episode: string) {
     setPdfEpisode(episode); setError('');
     try {
+      const version = versionForEpisode(episode);
+      if (!version) throw new Error(`${episode}还没有选择定稿，请先由Lipa在剧本更新档案中点击“设为定稿”。`);
       await document.fonts.ready;
       const container = document.getElementById(`submission-pdf-${episode.replace(/\W/g, '')}`);
       if (!container) throw new Error('PDF版式没有准备好');
@@ -212,8 +223,7 @@ export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned
         if (index) pdf.addPage('a4', 'landscape');
         pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 297, 210, undefined, 'FAST');
       }
-      const version = versionForEpisode(episode);
-      pdf.save(`折叠庭院的她_${episode}_剧本v${version?.versionNo || 1}_${workDate.replaceAll('-', '')}_Yoyo视觉参考简报.pdf`);
+      pdf.save(`折叠庭院的她_${episode}_剧本v${version.versionNo}_${workDate.replaceAll('-', '')}_Yoyo视觉参考简报.pdf`);
       setNotice(`${episode}Yoyo看图PDF已下载，共${pages.length}页。`);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'PDF生成失败');
@@ -233,13 +243,22 @@ export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned
     {canEditArt && <section className="mb-4 flex flex-col gap-3 rounded-2xl border border-[#ff6240]/30 bg-[#ff6240]/[.07] p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold text-[#ff9a86]">主美上传入口</p><p className="mt-1 text-xs leading-5 text-muted-foreground">先选当天日期，再到下方对应场次的“上传参考图”卡片；上传成功后会立刻出现缩略图。</p></div><Button size="sm" onClick={() => document.getElementById('art-upload-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}><ImagePlus />去上传图片</Button></section>}
 
     <div className="grid gap-4 xl:grid-cols-[1.15fr_.85fr]">
-      <section className="control-card p-4 md:p-6"><div className="flex items-start justify-between gap-4"><div><p className="text-sm font-medium">1 · 编剧上传单集剧本</p><p className="mt-1 text-xs leading-5 text-muted-foreground">每次上传都新增版本，不覆盖旧稿；DOCX/TXT会自动读取并拆场。</p></div><FileText className="h-5 w-5 text-[#ff8066]" /></div>
+      <section className="control-card p-4 md:p-6"><div className="flex items-start justify-between gap-4"><div><p className="text-sm font-medium">1 · 编剧上传单集剧本</p><p className="mt-1 text-xs leading-5 text-muted-foreground">每次上传只新增候选稿，不覆盖旧稿或已上传图片；Lipa选择定稿后，才会用该版生成拆场、主美资产和PDF。</p></div><FileText className="h-5 w-5 text-[#ff8066]" /></div>
         <div className="mt-4 grid gap-3 sm:grid-cols-[160px_1fr]"><Field label="提报日期"><input type="date" value={workDate} disabled={!canUploadScript} onChange={(event) => setWorkDate(event.target.value)} className="edit-input" /></Field><Field label="本次更新说明"><input value={changeSummary} disabled={!canUploadScript} onChange={(event) => setChangeSummary(event.target.value)} className="edit-input" placeholder="改了哪些场、影响哪些人物或剧情" /></Field></div>
         <label aria-label="选择整集TXT或DOCX剧本" className={`mt-3 flex min-h-28 items-center justify-center rounded-xl border-2 border-dashed px-4 py-5 text-center ${canUploadScript ? 'cursor-pointer border-white/15 bg-black/10 hover:border-[#ff6240]/50' : 'border-white/8 bg-black/5 opacity-60'}`}><input aria-label="上传整集剧本文件" type="file" accept=".txt,.docx,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" disabled={!canUploadScript || saving} className="sr-only" onChange={(event) => { const next = event.target.files?.[0] || null; setScriptFile(next); setScriptFileName(next?.name || ''); event.target.value = ''; }} /><div><span className="mx-auto grid h-10 w-10 place-items-center rounded-full bg-[#ff6240]/15 text-[#ff8066]"><Upload className="h-4 w-4" /></span><p className="mt-2 text-sm font-medium">{scriptFileName || '选择整集 TXT / DOCX 剧本'}</p><p className="mt-1 text-xs text-muted-foreground">编剧可上传 · 导演与制片人可登录查看 · 系统按场头自动拆场</p></div></label>
-        <Button className="mt-3 h-11 w-full" disabled={!canUploadScript || !scriptFile || !changeSummary.trim() || saving} onClick={() => void readScriptFile()}>{saving ? <Loader2 className="animate-spin" /> : <Check />}{saving ? '正在存档并拆场…' : '上传并保存新版本'}</Button>
+        <Button className="mt-3 h-11 w-full" disabled={!canUploadScript || !scriptFile || !changeSummary.trim() || saving} onClick={() => void readScriptFile()}>{saving ? <Loader2 className="animate-spin" /> : <Check />}{saving ? '正在存档候选稿…' : '上传并保存候选稿'}</Button>
       </section>
 
-      <section className="control-card p-4 md:p-6"><div className="flex items-start justify-between gap-4"><div><p className="text-sm font-medium">剧本更新档案</p><p className="mt-1 text-xs text-muted-foreground">可展开查看原文、版本更新和提交时间。</p></div><Archive className="h-5 w-5 text-cyan-300" /></div><div className="mt-4 max-h-[330px] space-y-2 overflow-auto pr-1">{versions.length ? versions.map((version) => <details key={version.id} className="rounded-xl border border-white/8 bg-white/[.025] px-3 py-2.5"><summary className="cursor-pointer list-none"><div className="flex items-center justify-between gap-3"><div><p className="text-sm font-medium">{version.episode} · 剧本 v{version.versionNo}</p><p className="mt-1 text-xs text-muted-foreground">{formatDateTime(version.createdAt)} · {version.submittedBy} · {version.sceneCount}场</p></div><span className="rounded-full bg-white/5 px-2 py-1 text-[10px] text-muted-foreground">{version.fileName || '手工录入'}</span></div></summary><div className="mt-3 border-t border-white/8 pt-3"><p className="text-xs leading-5 text-[#ff9a86]">{version.changeSummary || '未填写更新说明'}</p><p className="mt-3 max-h-56 overflow-auto whitespace-pre-wrap rounded-lg bg-black/15 p-3 text-xs leading-5 text-muted-foreground">{version.sourceText}</p></div></details>) : <Empty text="还没有单集剧本版本；由Lipa上传第一版后开始存档。" />}</div></section>
+      <section className="control-card p-4 md:p-6">
+        <div className="flex items-start justify-between gap-4"><div><p className="text-sm font-medium">剧本更新档案 · 选择定稿</p><p className="mt-1 text-xs leading-5 text-muted-foreground">保留所有稿件；每集只有一个“已定稿”版本驱动后续生产。</p></div><Archive className="h-5 w-5 text-cyan-300" /></div>
+        <div className="mt-4 max-h-[360px] space-y-2 overflow-auto pr-1">{versions.length ? versions.map((version) => {
+          const isFinal = Boolean(version.isFinal);
+          return <details key={version.id} className={`rounded-xl border px-3 py-2.5 ${isFinal ? 'border-emerald-400/35 bg-emerald-400/[.07]' : 'border-white/8 bg-white/[.025]'}`}>
+            <summary aria-label={`展开${version.episode}剧本v${version.versionNo}`} className="cursor-pointer list-none"><div className="flex items-start justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-medium">{version.episode} · 剧本 v{version.versionNo}</p><span className={`rounded-full px-2 py-1 text-[10px] font-medium ${isFinal ? 'bg-emerald-400/15 text-emerald-300' : 'bg-white/5 text-muted-foreground'}`}>{isFinal ? '已定稿' : '候选稿'}</span></div><p className="mt-1 text-xs text-muted-foreground">{formatDateTime(version.createdAt)} · {version.submittedBy} · {version.sceneCount}场</p></div><span className="max-w-40 truncate rounded-full bg-white/5 px-2 py-1 text-[10px] text-muted-foreground">{version.fileName || '手工录入'}</span></div></summary>
+            <div className="mt-3 border-t border-white/8 pt-3"><p className="text-xs leading-5 text-[#ff9a86]">{version.changeSummary || '未填写更新说明'}</p>{isFinal && <p className="mt-2 text-[11px] text-emerald-300">由{version.finalizedBy || 'Lipa'}于{formatDateTime(version.finalizedAt)}确认；拆场、主美资产与PDF均以此稿为准。</p>}<p className="mt-3 max-h-48 overflow-auto whitespace-pre-wrap rounded-lg bg-black/15 p-3 text-xs leading-5 text-muted-foreground">{version.sourceText}</p>{canFinalizeScript && !isFinal && <Button className="mt-3 w-full" size="sm" disabled={Boolean(finalizingVersion)} onClick={() => void finalizeScriptVersion(version)}>{finalizingVersion === version.id ? <Loader2 className="animate-spin" /> : <Check />}{finalizingVersion === version.id ? '正在生成定稿生产数据…' : '设为定稿并生成后续'}</Button>}</div>
+          </details>;
+        }) : <Empty text="还没有单集剧本版本；编剧上传后由Lipa选择定稿。" />}</div>
+      </section>
     </div>
 
     <section className="control-card mt-4 p-4 md:p-6"><div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between"><div><p className="text-sm font-medium">2 · 安排当天具体场次</p><p className="mt-1 text-xs text-muted-foreground">每个场次会写入当天排产，不再用整集任务代替具体场次。</p></div><div className="flex flex-wrap items-center gap-2">{analyses.map((analysis) => { const selected = selectedIds.includes(analysis.id); const assigned = assignedIds.has(analysis.id); return <button key={analysis.id} disabled={!me.isAdmin || saving} onClick={() => setSelectedIds((current) => selected ? current.filter((id) => id !== analysis.id) : [...current, analysis.id])} className={`rounded-lg border px-3 py-2 text-xs ${selected ? 'border-[#ff6240] bg-[#ff6240]/15 text-white' : assigned ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300' : 'border-white/10 bg-white/5 text-muted-foreground'}`}>{assigned ? '已排 ' : selected ? '✓ ' : '□ '}{analysis.episode}·{analysis.sceneNo}场</button>; })}<Button size="sm" disabled={!me.isAdmin || !selectedIds.length || saving} onClick={() => void assignExisting()}><Clock3 />排入{formatDate(workDate)}</Button></div></div></section>

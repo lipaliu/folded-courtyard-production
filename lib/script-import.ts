@@ -35,7 +35,10 @@ export function parseScriptDocument(sourceText: string, fileName = ''): Imported
     const sceneLines = lines.slice(start, end).filter((line) => !/^第.+集完$/.test(line));
     const heading = sceneLines[0];
     const match = heading.match(/^(\d{1,3})[.．、]\s*(.+)$/);
-    const sceneNo = Number(match?.[1] || sceneIndex + 1);
+    // Some screenplay drafts repeat a scene number after inserting a new scene.
+    // Production IDs and assignments must still be unique, so the finalized
+    // breakdown follows the actual document order (1..N).
+    const sceneNo = sceneIndex + 1;
     const location = (match?.[2] || heading).trim();
     const peopleLine = sceneLines.find((line) => /^人物[：:]/.test(line));
     const people = peopleLine ? peopleLine.replace(/^人物[：:]/, '').split(/[、，,]/).map((name) => name.trim()).filter(Boolean).slice(0, 16) : [];
