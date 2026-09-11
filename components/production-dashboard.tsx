@@ -44,15 +44,29 @@ const timeOptions = Array.from({ length: 96 }, (_, index) => {
 type ScriptAnalysis = { id: string; episode: string; sceneNo: number; sceneTitle: string; scriptText: string; sceneSummary: string; location: string; createdAt: string; updatedAt: string };
 type ScriptAssetItem = { id: string; analysisId: string; category: string; name: string; detail: string; visualBrief: string; yoyoApproved: boolean; producerApproved: boolean; sortOrder: number; updatedAt: string };
 type DailyReportTask = Pick<ProductionItem, 'id' | 'workDate' | 'episode' | 'category' | 'title' | 'owner' | 'status' | 'plannedQty' | 'completedQty' | 'dependsOnId' | 'handoffDeadline'>;
-type DailyReportSummary = { completed: DailyReportTask[]; incomplete: DailyReportTask[]; yoyoPending: DailyReportTask[]; rollovers: Array<DailyReportTask & { fromDate: string; toDate: string }> };
+type BatchRollover = Pick<PlanBatch, 'id' | 'production' | 'prep'> & { fromStartDate: string; fromEndDate: string; toStartDate: string; toEndDate: string };
+type DailyReportSummary = { completed: DailyReportTask[]; incomplete: DailyReportTask[]; yoyoPending: DailyReportTask[]; rollovers: Array<DailyReportTask & { fromDate: string; toDate: string }>; batchRollovers: BatchRollover[]; projectedEnd: string };
 type DailyReport = { id: string; workDate: string; completedCount: number; incompleteCount: number; rolloverCount: number; summary: DailyReportSummary; createdAt: string; updatedAt: string };
 type CurrentUser = { id: string; username: string; name: string; role: string; isAdmin: boolean };
+
+function shanghaiToday() {
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${value.year}-${value.month}-${value.day}`;
+}
+
+function initialScheduleDate() {
+  const today = shanghaiToday();
+  if (today < PROJECT_START) return PROJECT_START;
+  if (today > PROJECT_END) return PROJECT_END;
+  return today;
+}
 
 export function ProductionDashboard() {
   const [activeTab, setActiveTab] = useState('today');
   const [items, setItems] = useState<ProductionItem[]>(initialItems);
   const [scenes, setScenes] = useState<Scene[]>(initialScenes);
-  const [selectedDate, setSelectedDate] = useState('2026-09-10');
+  const [selectedDate, setSelectedDate] = useState(initialScheduleDate);
   const [selectedItem, setSelectedItem] = useState<ProductionItem | null>(null);
   const [batches, setBatches] = useState<PlanBatch[]>(initialBatches);
   const [selectedBatch, setSelectedBatch] = useState<PlanBatch | null>(null);
@@ -71,6 +85,7 @@ export function ProductionDashboard() {
       const meData = await meResponse.json() as { user?: CurrentUser; error?: string };
       if (!meResponse.ok || !meData.user) { setMe(null); setLoadError(''); return; }
       setMe(meData.user);
+      if (['主美', '美术'].includes(meData.user.role)) setActiveTab((current) => current === 'today' ? 'breakdown' : current);
       const [itemResponse, sceneResponse, planResponse] = await Promise.all([fetch('/api/items'), fetch('/api/scenes'), fetch('/api/plan')]);
       const itemData = await itemResponse.json() as { items?: ProductionItem[] };
       const sceneData = await sceneResponse.json() as { scenes?: Scene[] };
@@ -115,6 +130,7 @@ export function ProductionDashboard() {
   }, []);
 
   const todayItems = useMemo(() => items.filter((item) => item.workDate === selectedDate), [items, selectedDate]);
+  const scheduleEnd = useMemo(() => [PROJECT_END, ...items.map((item) => item.workDate), ...batches.map((batch) => batch.endDate)].sort().at(-1) || PROJECT_END, [items, batches]);
   const pendingReview = useMemo(() => items.filter((item) => item.status === '待审核'), [items]);
   async function updateItem(id: string, changes: Partial<ProductionItem>) {
     setItems((current) => current.map((item) => item.id === id ? { ...item, ...changes } : item));
@@ -191,8 +207,8 @@ export function ProductionDashboard() {
 
         <div className="px-4 py-5 md:px-8 md:py-8">
           <div className="mx-auto max-w-6xl">
-            <TabsContent value="today" className="mt-0"><TodayView selectedDate={selectedDate} setSelectedDate={setSelectedDate} items={todayItems} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedItem} onAdd={setCreatingRole} onOpenHandbook={() => setActiveTab('breakdown')} onReload={loadData} onToggle={(item, checked) => void (item.category === '整集资产确认' ? updateEpisodeApproval(item, checked) : updateItem(item.id, { status: checked ? '已通过' : '未开始', completedQty: checked ? item.plannedQty : 0 }))} /></TabsContent>
-            <TabsContent value="plan" className="mt-0"><PlanView items={items} batches={batches} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedBatch} /></TabsContent>
+            <TabsContent value="today" className="mt-0"><TodayView selectedDate={selectedDate} setSelectedDate={setSelectedDate} scheduleEnd={scheduleEnd} items={todayItems} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedItem} onAdd={setCreatingRole} onOpenHandbook={() => setActiveTab('breakdown')} onReload={loadData} onToggle={(item, checked) => void (item.category === '整集资产确认' ? updateEpisodeApproval(item, checked) : updateItem(item.id, { status: checked ? '已通过' : '未开始', completedQty: checked ? item.plannedQty : 0 }))} /></TabsContent>
+            <TabsContent value="plan" className="mt-0"><PlanView items={items} batches={batches} scheduleEnd={scheduleEnd} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedBatch} /></TabsContent>
             <TabsContent value="scenes" className="mt-0"><ScenesView scenes={scenes} isAdmin={Boolean(me?.isAdmin)} onChange={updateScene} /></TabsContent>
             <TabsContent value="breakdown" className="mt-0"><SubmissionCenter me={me} selectedDate={selectedDate} productionItems={items} onAssigned={async (workDate) => { setSelectedDate(workDate); await loadData(); }} /></TabsContent>
             <TabsContent value="review" className="mt-0"><ReviewView items={pendingReview} scenes={scenes} isAdmin={Boolean(me?.isAdmin)} updateItem={updateItem} updateScene={updateScene} /></TabsContent>
@@ -203,7 +219,7 @@ export function ProductionDashboard() {
           <NavTab value="today" label="今日" icon={<LayoutDashboard />} />
           <NavTab value="plan" label="大计划" icon={<Rows3 />} />
           <NavTab value="scenes" label="场次" icon={<Film />} />
-          <NavTab value="breakdown" label="提报中心" icon={<Sparkles />} />
+          <NavTab value="breakdown" label="主美上传" icon={<Sparkles />} />
           <NavTab value="review" label={`微信确认${pendingReview.length ? ` ${pendingReview.length}` : ''}`} icon={<ListChecks />} />
         </TabsList>
       </Tabs>
@@ -262,13 +278,16 @@ function PasswordEditor({ user, open, onClose }: { user: CurrentUser; open: bool
   return <div className="fixed inset-0 z-50 grid place-items-end bg-black/70 backdrop-blur-sm sm:place-items-center sm:p-4" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}><section role="dialog" aria-modal="true" className="w-full max-w-md rounded-t-[24px] border border-white/10 bg-[#1b1d22] p-5 shadow-2xl sm:rounded-[20px]"><div className="flex items-start justify-between gap-4"><div><h2 className="text-lg font-medium">账号与密码</h2><p className="mt-1 text-sm text-muted-foreground">{user.name} · {user.username} · {user.role}</p></div><button onClick={onClose} aria-label="关闭" className="grid h-8 w-8 place-items-center rounded-full bg-white/5"><X className="h-4 w-4" /></button></div><div className="mt-5 space-y-4"><Field label="当前密码"><input type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} className="edit-input" /></Field><Field label="新密码"><input type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} className="edit-input" placeholder="至少8位" /></Field><Field label="再次输入新密码"><input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className="edit-input" /></Field></div>{message && <p className={`mt-4 rounded-xl border px-3 py-2 text-sm ${message === '密码已更新' ? 'border-emerald-400/20 bg-emerald-400/[.06] text-emerald-300' : 'border-red-400/20 bg-red-400/[.06] text-red-300'}`}>{message}</p>}<div className="mt-5 grid grid-cols-2 gap-2"><Button variant="outline" className="h-11" onClick={onClose}>取消</Button><Button className="h-11" disabled={saving || currentPassword.length < 8 || newPassword.length < 8 || confirmPassword.length < 8} onClick={() => void save()}>{saving ? <Loader2 className="animate-spin" /> : <Check />}{saving ? '正在保存…' : '修改密码'}</Button></div></section></div>;
 }
 
-function TodayView({ selectedDate, setSelectedDate, items, isAdmin, onEdit, onAdd, onOpenHandbook, onReload, onToggle }: { selectedDate: string; setSelectedDate: (value: string) => void; items: ProductionItem[]; isAdmin: boolean; onEdit: (item: ProductionItem) => void; onAdd: (role: string) => void; onOpenHandbook: () => void; onReload: () => Promise<void>; onToggle: (item: ProductionItem, checked: boolean) => void }) {
+function TodayView({ selectedDate, setSelectedDate, scheduleEnd, items, isAdmin, onEdit, onAdd, onOpenHandbook, onReload, onToggle }: { selectedDate: string; setSelectedDate: (value: string) => void; scheduleEnd: string; items: ProductionItem[]; isAdmin: boolean; onEdit: (item: ProductionItem) => void; onAdd: (role: string) => void; onOpenHandbook: () => void; onReload: () => Promise<void>; onToggle: (item: ProductionItem, checked: boolean) => void }) {
   const [showSummary, setShowSummary] = useState(false);
   const [copied, setCopied] = useState(false);
   const [reports, setReports] = useState<DailyReport[]>([]);
   const [rolloverPreview, setRolloverPreview] = useState<DailyReportSummary | null>(null);
   const [archiving, setArchiving] = useState(false);
   const [reportError, setReportError] = useState('');
+  const actualToday = shanghaiToday();
+  const isToday = selectedDate === actualToday;
+  const canCloseDay = selectedDate <= actualToday;
   const dateText = new Intl.DateTimeFormat('zh-CN', { month: 'long', day: 'numeric', weekday: 'short', timeZone: 'UTC' }).format(new Date(`${selectedDate}T00:00:00Z`));
   const workflowLanes = buildWorkflowLanes(items);
   const finishedItems = items.filter((item) => item.status === '已通过');
@@ -316,7 +335,7 @@ function TodayView({ selectedDate, setSelectedDate, items, isAdmin, onEdit, onAd
     const next = new Date(`${selectedDate}T00:00:00Z`);
     next.setUTCDate(next.getUTCDate() + offset);
     const value = next.toISOString().slice(0, 10);
-    if (value >= PROJECT_START && value <= PROJECT_END) setSelectedDate(value);
+    if (value >= PROJECT_START && value <= scheduleEnd) setSelectedDate(value);
   }
 
   async function previewRollover() {
@@ -330,7 +349,7 @@ function TodayView({ selectedDate, setSelectedDate, items, isAdmin, onEdit, onAd
 
   async function archiveAndRollover() {
     const count = rolloverPreview?.rollovers.length ?? unfinishedItems.filter((item) => item.owner !== '红人（Yoyo）').length;
-    if (!window.confirm(`确认归档${selectedMonthDay}生产日志，并顺延${count}项未完成及后续依赖任务吗？归档后当天记录不会再重复顺延。`)) return;
+    if (!window.confirm(`确认归档${selectedMonthDay}生产日志，并自动重排${count}项未完成及未来任务吗？大计划与最终交付日会同步更新；归档后当天不会重复重排。`)) return;
     setArchiving(true);
     setReportError('');
     try {
@@ -352,7 +371,8 @@ function TodayView({ selectedDate, setSelectedDate, items, isAdmin, onEdit, onAd
       `完成：${summaryFinished.length}/${summaryFinished.length + summaryIncomplete.length + summaryYoyoPending.length}项`, '',
       '【已完成】', ...(summaryFinished.length ? summaryFinished.map((item) => `✓ ${item.owner}｜${item.title}`) : ['无']), '',
       '【未完成】', ...(summaryIncomplete.length ? summaryIncomplete.map((item) => `□ ${item.owner}｜${item.title}`) : ['无']), '',
-      '【顺延调整】', ...(summaryRollovers.length ? summaryRollovers.map((item) => `→ ${item.owner}｜${item.title}｜${shortDate(item.fromDate)}→${shortDate(item.toDate)}`) : ['无']), '',
+      '【全计划重排】', ...(summaryRollovers.length ? summaryRollovers.map((item) => `→ ${item.owner}｜${item.title}｜${shortDate(item.fromDate)}→${shortDate(item.toDate)}`) : ['无']),
+      ...(summaryRollovers.length ? [`预计交付：${shortDate(rolloverPreview?.projectedEnd || archivedReport?.summary.projectedEnd || scheduleEnd)}`] : []), '',
       '【Yoyo微信待回复】', ...(summaryYoyoPending.length ? summaryYoyoPending.map((item) => `□ ${item.title}`) : ['无']),
     ];
     await navigator.clipboard.writeText(lines.join('\n'));
@@ -380,10 +400,11 @@ function TodayView({ selectedDate, setSelectedDate, items, isAdmin, onEdit, onAd
         <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-6">{stageProgress.map((stage) => <div key={stage.label} className={`rounded-lg border px-2 py-2 text-center text-xs ${stage.done ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300' : stage.itemCount ? 'border-red-400/25 bg-red-400/[.045] text-red-300' : 'border-white/8 bg-white/[.025] text-zinc-600'}`}><span className="mr-1">{stage.done ? '✓' : stage.itemCount ? '□' : '—'}</span>{stage.label}<span className="mt-1 block text-[9px] opacity-70">{stage.done ? '已完成' : stage.itemCount ? '进行中' : '今日未排'}</span></div>)}</div>
       </div>
       <div className="control-card p-5 md:p-6">
-        <div className="flex items-center justify-between"><p className="eyebrow">选择工作日</p><CalendarDays className="h-4 w-4 text-[#ff6240]" /></div>
-        <input type="date" min={PROJECT_START} max={PROJECT_END} value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} className="mt-4 h-11 w-full rounded-lg border border-white/10 bg-white/5 px-3 text-base outline-none focus:border-[#ff6240]" />
-        <div className="mt-3 grid grid-cols-2 gap-2"><Button variant="outline" disabled={selectedDate === PROJECT_START} onClick={() => moveDay(-1)}><ChevronLeft />前一天</Button><Button variant="outline" disabled={selectedDate === PROJECT_END} onClick={() => moveDay(1)}>后一天<ChevronRight /></Button></div>
-        <p className="mt-5 text-3xl font-semibold tracking-[-.04em]">{selectedMonthDay}</p><p className="mt-1 text-sm text-muted-foreground">{isProductionDay(selectedDate) ? `有效生产 Day ${dayNumber}` : selectedDayType} · 10月21日交付</p>
+        <div className="flex items-center justify-between"><div className="flex items-center gap-2"><p className="eyebrow">选择工作日</p>{isToday && <span className="rounded-full bg-[#ff6240]/15 px-2 py-0.5 text-[10px] text-[#ff8066]">今天</span>}</div><CalendarDays className="h-4 w-4 text-[#ff6240]" /></div>
+        <input type="date" min={PROJECT_START} max={scheduleEnd} value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} className="mt-4 h-11 w-full rounded-lg border border-white/10 bg-white/5 px-3 text-base outline-none focus:border-[#ff6240]" />
+        <div className="mt-3 grid grid-cols-2 gap-2"><Button variant="outline" disabled={selectedDate === PROJECT_START} onClick={() => moveDay(-1)}><ChevronLeft />前一天</Button><Button variant="outline" disabled={selectedDate === scheduleEnd} onClick={() => moveDay(1)}>后一天<ChevronRight /></Button></div>
+        {!isToday && actualToday >= PROJECT_START && actualToday <= scheduleEnd && <Button variant="outline" size="sm" className="mt-3 w-full" onClick={() => setSelectedDate(actualToday)}><CalendarDays />回到今天</Button>}
+        <p className="mt-5 text-3xl font-semibold tracking-[-.04em]">{selectedMonthDay}</p><p className="mt-1 text-sm text-muted-foreground">{isProductionDay(selectedDate) ? `有效生产 Day ${dayNumber}` : selectedDayType} · 当前预计{shortDate(scheduleEnd)}交付</p>
       </div>
     </section>
     <section className="mt-5 overflow-hidden rounded-2xl border border-[#ff6240]/25 bg-card">
@@ -391,7 +412,7 @@ function TodayView({ selectedDate, setSelectedDate, items, isAdmin, onEdit, onAd
         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#ff6240]/15 text-[#ff8066]"><Film className="h-5 w-5" /></span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2"><p className="eyebrow">TODAY&apos;S SCRIPT</p><span className="rounded-full border border-white/8 bg-white/5 px-2 py-0.5 text-[10px] text-muted-foreground">{dailyScripts.length}场</span></div>
-          <h2 className="mt-1 text-lg font-semibold">今日工作剧本</h2>
+          <h2 className="mt-1 text-lg font-semibold">今日工作剧本与主美上传</h2>
           <p className="mt-1 text-sm leading-5 text-muted-foreground">{dailyScripts.length ? dailyScripts.map((item) => item.title.replace(/^锁定/, '').replace(/剧本、动作与台词$/, '')).join(' · ') : '今天还没有放入剧本；进入生产手册添加当天场次。'}</p>
         </div>
         <div className="flex shrink-0 items-center gap-1 text-xs text-[#ff8066]"><span>{isAdmin ? '查看／添加' : '查看剧本'}</span><ChevronRight className="h-4 w-4" /></div>
@@ -424,14 +445,14 @@ function TodayView({ selectedDate, setSelectedDate, items, isAdmin, onEdit, onAd
       </div>
     </section>
     <section className="mt-7 rounded-2xl border border-white/8 bg-card p-4 md:p-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><div className="flex items-center gap-2"><p className="eyebrow">DAILY REPORT</p>{archivedReport && <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-0.5 text-[10px] text-emerald-300">已归档</span>}</div><h2 className="mt-1 text-xl font-semibold">每日生产汇总</h2><p className="mt-1 text-sm text-muted-foreground">当天打钩后生成记录；未完成任务可一键顺延，真正依赖它的后续计划同时调整。</p></div><Button onClick={() => setShowSummary(true)} className="h-11 shrink-0"><ListChecks />{archivedReport ? '查看当日日志' : '生成今日汇总'}</Button></div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><div className="flex items-center gap-2"><p className="eyebrow">DAILY REPORT</p>{archivedReport && <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-0.5 text-[10px] text-emerald-300">已归档</span>}</div><h2 className="mt-1 text-xl font-semibold">每日生产汇总</h2><p className="mt-1 text-sm text-muted-foreground">当天逐项打钩；有任何团队任务没完成，就把未完成项和未来任务整体顺延1个有效生产日，大计划同步更新。</p></div><Button disabled={!canCloseDay} onClick={() => setShowSummary(true)} className="h-11 shrink-0"><ListChecks />{archivedReport ? '查看当日日志' : canCloseDay ? '检查当日完成情况' : '未来日期不可日结'}</Button></div>
       {showSummary && <div className="mt-4 border-t border-white/8 pt-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium">{dateText} · 完成 {summaryFinished.length}/{summaryFinished.length + summaryIncomplete.length + summaryYoyoPending.length} 项</p><p className="mt-1 text-xs text-muted-foreground">{archivedReport ? `已永久记录 · 顺延${archivedReport.rolloverCount}项` : '归档前仍可继续打钩和修改任务'}</p></div><Button variant="outline" size="sm" onClick={() => void copySummary()}><ClipboardCopy />{copied ? '已复制' : '复制发群'}</Button></div>
-        <div className="mt-4 grid gap-3 md:grid-cols-3"><SummaryGroup title="已完成" tone="green" items={summaryFinished} empty="今天还没有勾选完成项" /><SummaryGroup title="未完成" tone="red" items={summaryIncomplete} empty="团队任务已全部完成" /><SummaryGroup title={rolloverPreview || archivedReport ? '顺延调整' : '待顺延'} tone="amber" items={summaryRollovers.length ? summaryRollovers : summaryIncomplete} empty="没有需要顺延的团队任务" /></div>
-        {summaryRollovers.length > 0 && <div className="mt-3 rounded-xl border border-amber-400/20 bg-amber-400/[.045] p-3"><p className="text-sm font-medium text-amber-300">计划调整明细</p><div className="mt-2 space-y-1.5">{summaryRollovers.map((item) => <div key={item.id} className="flex flex-col gap-0.5 border-t border-white/6 pt-2 text-xs sm:flex-row sm:items-center sm:justify-between"><span className="text-zinc-200">{item.owner}｜{item.title}</span><span className="text-amber-300">{shortDate(item.fromDate)} → {shortDate(item.toDate)}{item.fromDate !== selectedDate ? ' · 后续依赖' : ''}</span></div>)}</div></div>}
+        <div className="mt-4 grid gap-3 md:grid-cols-3"><SummaryGroup title="已完成" tone="green" items={summaryFinished} empty="今天还没有勾选完成项" /><SummaryGroup title="未完成" tone="red" items={summaryIncomplete} empty="团队任务已全部完成" /><SummaryGroup title={rolloverPreview || archivedReport ? '全计划重排' : '待重排'} tone="amber" items={summaryRollovers.length ? summaryRollovers : summaryIncomplete} empty="没有需要重排的团队任务" /></div>
+        {summaryRollovers.length > 0 && <div className="mt-3 rounded-xl border border-amber-400/20 bg-amber-400/[.045] p-3"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-medium text-amber-300">全计划调整明细</p><span className="rounded-full bg-amber-400/10 px-2.5 py-1 text-xs text-amber-300">预计交付 {shortDate(rolloverPreview?.projectedEnd || archivedReport?.summary.projectedEnd || scheduleEnd)}</span></div><div className="mt-2 max-h-64 space-y-1.5 overflow-auto pr-1">{summaryRollovers.map((item) => <div key={item.id} className="flex flex-col gap-0.5 border-t border-white/6 pt-2 text-xs sm:flex-row sm:items-center sm:justify-between"><span className="text-zinc-200">{item.owner}｜{item.title}</span><span className="text-amber-300">{shortDate(item.fromDate)} → {shortDate(item.toDate)}{item.fromDate !== selectedDate ? ' · 后续计划' : ' · 当日未完成'}</span></div>)}</div>{(rolloverPreview?.batchRollovers || archivedReport?.summary.batchRollovers || []).length > 0 && <div className="mt-3 border-t border-amber-400/15 pt-3"><p className="text-xs font-medium text-amber-200">大计划阶段同步调整</p><div className="mt-2 grid gap-2 md:grid-cols-2">{(rolloverPreview?.batchRollovers || archivedReport?.summary.batchRollovers || []).map((batch) => <div key={batch.id} className="rounded-lg bg-black/15 p-2 text-xs"><p className="text-zinc-200">{batch.production}</p><p className="mt-1 text-amber-300">{shortDate(batch.fromStartDate)}—{shortDate(batch.fromEndDate)} → {shortDate(batch.toStartDate)}—{shortDate(batch.toEndDate)}</p></div>)}</div></div>}</div>}
         {summaryYoyoPending.length > 0 && <div className="mt-3 rounded-xl border border-violet-400/20 bg-violet-400/[.05] p-3"><p className="text-sm font-medium text-violet-300">Yoyo微信待回复 · {summaryYoyoPending.length}项</p><p className="mt-1 text-xs leading-5 text-muted-foreground">只记为红色未勾，不自动顺延，也不阻断剧本、主美出图和白模。</p></div>}
         {reportError && <p className="mt-3 rounded-xl border border-red-400/20 bg-red-400/[.06] px-3 py-2 text-sm text-red-300">{reportError}</p>}
-        {isAdmin && !archivedReport && <div className="mt-4 flex flex-col gap-2 border-t border-white/8 pt-4 sm:flex-row sm:justify-end"><Button variant="outline" disabled={archiving} onClick={() => void previewRollover()}><RefreshCw />预览顺延</Button><Button disabled={archiving || !rolloverPreview} onClick={() => void archiveAndRollover()}><Check />{archiving ? '正在归档…' : `归档并一键顺延${rolloverPreview ? `（${rolloverPreview.rollovers.length}项）` : ''}`}</Button></div>}
+        {isAdmin && !archivedReport && canCloseDay && <div className="mt-4 flex flex-col gap-2 border-t border-white/8 pt-4 sm:flex-row sm:justify-end"><Button variant="outline" disabled={archiving} onClick={() => void previewRollover()}><RefreshCw />预览全计划重排</Button><Button disabled={archiving || !rolloverPreview} onClick={() => void archiveAndRollover()}><Check />{archiving ? '正在归档…' : `归档并自动重排${rolloverPreview ? `（${rolloverPreview.rollovers.length}项）` : ''}`}</Button></div>}
       </div>}
     </section>
     {reports.length > 0 && <section className="mt-4 rounded-2xl border border-white/8 bg-card p-4 md:p-5"><div><p className="eyebrow">DAILY LOG ARCHIVE</p><h2 className="mt-1 text-lg font-semibold">历史生产日志</h2><p className="mt-1 text-xs text-muted-foreground">每天归档一次，保留当时谁完成、谁未完成以及顺延了哪些计划。</p></div><div className="mt-4 space-y-2">{reports.slice(0, 12).map((report) => <details key={report.id} className="rounded-xl border border-white/8 bg-white/[.025] px-3 py-2.5"><summary className="cursor-pointer list-none text-sm"><span className="font-medium">{shortDate(report.workDate)}</span><span className="ml-3 text-emerald-300">完成 {report.completedCount}</span><span className="ml-3 text-red-300">未完成 {report.incompleteCount}</span><span className="ml-3 text-amber-300">顺延 {report.rolloverCount}</span></summary><div className="mt-3 grid gap-2 border-t border-white/8 pt-3 md:grid-cols-3"><SummaryGroup title="已完成" tone="green" items={report.summary.completed} empty="无" /><SummaryGroup title="未完成" tone="red" items={report.summary.incomplete} empty="无" /><SummaryGroup title="已顺延" tone="amber" items={report.summary.rollovers} empty="无" /></div>{report.summary.yoyoPending.length > 0 && <p className="mt-2 text-xs text-violet-300">Yoyo微信待回复：{report.summary.yoyoPending.map((item) => item.title).join('、')}</p>}</details>)}</div></section>}
@@ -679,9 +700,9 @@ function ApprovalCheck({ label, checked, disabled, onChange }: { label: string; 
   return <label className={`flex items-center gap-2 rounded-lg border px-2.5 py-2 text-xs ${checked ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300' : 'border-red-400/25 bg-red-400/[.04] text-red-300'}`}><Checkbox checked={checked} disabled={disabled} onCheckedChange={(next) => onChange(Boolean(next))} className="size-4 border-current data-checked:border-emerald-400 data-checked:bg-emerald-400 data-checked:text-black" /><span>{label}{checked ? '已确认' : '未确认'}</span></label>;
 }
 
-function PlanView({ items, batches, isAdmin, onEdit }: { items: ProductionItem[]; batches: PlanBatch[]; isAdmin: boolean; onEdit: (batch: PlanBatch) => void }) {
+function PlanView({ items, batches, scheduleEnd, isAdmin, onEdit }: { items: ProductionItem[]; batches: PlanBatch[]; scheduleEnd: string; isAdmin: boolean; onEdit: (batch: PlanBatch) => void }) {
   return <section>
-    <div className="mb-5 flex items-end justify-between"><div><p className="eyebrow">MASTER PLAN · 9.10—10.21</p><h2 className="mt-1 text-2xl font-semibold">六休一滚动大计划</h2></div><span className="hidden text-sm text-muted-foreground sm:block">国庆10.1—10.7放假 · 未完成链路自动顺延</span></div>
+    <div className="mb-5 flex items-end justify-between"><div><p className="eyebrow">MASTER PLAN · {shortDate(PROJECT_START)}—{shortDate(scheduleEnd)}</p><h2 className="mt-1 text-2xl font-semibold">六休一滚动大计划</h2></div><span className="hidden text-sm text-muted-foreground sm:block">国庆10.1—10.7放假 · 未完成时全计划自动重排</span></div>
     <div className="control-card overflow-hidden">
       <div className="grid grid-cols-[76px_1fr_1fr] border-b border-white/8 px-4 py-3 text-xs text-muted-foreground md:grid-cols-[150px_1fr_1fr]"><span>日期</span><span>正式生产</span><span>同步筹备</span></div>
       <div className="divide-y divide-white/8">{batches.map((batch, index) => <TimelineRow key={batch.id} dates={batch.startDate === batch.endDate ? shortDate(batch.startDate) : `${shortDate(batch.startDate)}—${shortDate(batch.endDate)}`} production={batch.production} prep={batch.prep} note={batch.note} highlight={index === 0 || index === batches.length - 1} editable={isAdmin} onEdit={() => onEdit(batch)} />)}</div>
