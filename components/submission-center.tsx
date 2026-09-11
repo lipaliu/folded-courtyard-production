@@ -274,17 +274,42 @@ function SubmissionPdfSource({ id, episode, workDate, version, analyses, items, 
   const episodeIds = new Set(analyses.map((analysis) => analysis.id));
   const episodeItems = items.filter((item) => episodeIds.has(item.analysisId) && ['人物', '服装', '场景'].includes(item.category));
   const referenceCount = episodeItems.reduce((total, item) => total + (filesByItem.get(item.id)?.length || 0), 0);
-  const referencePages: Array<{ analysis: ScriptAnalysis; entries: Array<{ item: ScriptAssetItem; file: SubmissionFile }>; pageIndex: number; pageCount: number; sceneReferenceCount: number }> = [];
+  type PdfContentPage =
+    | { kind: 'scene'; analysis: ScriptAnalysis; entries: Array<{ item: ScriptAssetItem; file: SubmissionFile }>; pageIndex: number; pageCount: number }
+    | { kind: 'item'; analysis: ScriptAnalysis; item: ScriptAssetItem; files: SubmissionFile[]; pageIndex: number; pageCount: number; itemReferenceCount: number };
+  const contentPages: PdfContentPage[] = [];
   for (const analysis of analyses) {
-    const entries = episodeItems
-      .filter((item) => item.analysisId === analysis.id)
+    const sceneEntries = episodeItems
+      .filter((item) => item.analysisId === analysis.id && item.category === '场景')
       .flatMap((item) => (filesByItem.get(item.id) || []).map((file) => ({ item, file })));
-    const groups = chunk(entries, 6);
-    groups.forEach((pageEntries, index) => referencePages.push({ analysis, entries: pageEntries, pageIndex: index + 1, pageCount: groups.length, sceneReferenceCount: entries.length }));
+    const sceneGroups = sceneEntries.length ? chunk(sceneEntries, 4) : [[]];
+    sceneGroups.forEach((entries, index) => contentPages.push({ kind: 'scene', analysis, entries, pageIndex: index + 1, pageCount: sceneGroups.length }));
+
+    const reviewItems = episodeItems
+      .filter((item) => item.analysisId === analysis.id && ['人物', '服装'].includes(item.category))
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+    for (const item of reviewItems) {
+      const itemFiles = filesByItem.get(item.id) || [];
+      if (!itemFiles.length) continue;
+      const fileGroups = chunk(itemFiles, 4);
+      fileGroups.forEach((pageFiles, index) => contentPages.push({ kind: 'item', analysis, item, files: pageFiles, pageIndex: index + 1, pageCount: fileGroups.length, itemReferenceCount: itemFiles.length }));
+    }
   }
-  return <div id={id}><PdfPage><div className="pt-24 text-center"><p className="text-[15px] tracking-[.24em] text-[#ff8066]">VISUAL REFERENCE</p><h1 className="mt-6 text-[50px] font-semibold text-white">折叠庭院的她</h1><h2 className="mt-3 text-[28px] font-medium text-white/90">{episode} · Yoyo视觉参考简报</h2><div className="mx-auto mt-6 w-fit rounded-full border border-white/20 bg-black/35 px-5 py-2 text-[13px] font-medium text-white/85">看情节 · 看人物 · 看场景</div><div className="mx-auto mt-10 grid w-[690px] grid-cols-4 gap-px overflow-hidden rounded-xl bg-white/15 text-left"><PdfMeta label="剧本版本" value={`v${version?.versionNo || 1}`} /><PdfMeta label="整理日期" value={workDate} /><PdfMeta label="场次" value={`${analyses.length}场`} /><PdfMeta label="参考图片" value={`${referenceCount}张`} /></div><p className="mx-auto mt-7 w-[700px] text-[14px] leading-6 text-white/75">每场只保留一句情节和已上传的视觉参考。所有 Option 供 Yoyo 快速审核选择，不代表最终锁定。</p></div><PdfFooter episode={episode} page={1} /></PdfPage>
-    {referencePages.map((page, index) => <PdfPage key={`${page.analysis.id}-refs-${page.pageIndex}`}><PdfHeader eyebrow={`${episode} · 第${page.analysis.sceneNo}场`} title={simpleSceneSummary(page.analysis)} subtitle={`人物／服装／场景参考 · 第${page.pageIndex}/${page.pageCount}页 · 本场${page.sceneReferenceCount}张`} /><div className="mt-4 grid grid-cols-3 gap-4">{page.entries.map(({ item, file }) => <figure key={file.id} className="rounded-xl border border-white/15 bg-black/45 p-2.5 shadow-2xl"><img src={file.url} alt={file.fileName} className="h-[205px] w-full rounded-lg bg-black/30 object-contain" /><figcaption className="mt-1.5 text-center text-[11px] leading-5 text-white/80">{friendlyReferenceLabel(item, file)}</figcaption></figure>)}</div><PdfFooter episode={episode} page={index + 2} /></PdfPage>)}
+  return <div id={id}><PdfPage><div className="pt-24 text-center"><p className="text-[15px] tracking-[.24em] text-[#ff8066]">VISUAL REVIEW</p><h1 className="mt-6 text-[50px] font-semibold text-white">折叠庭院的她</h1><h2 className="mt-3 text-[28px] font-medium text-white/90">{episode} · Yoyo视觉审核简报</h2><div className="mx-auto mt-6 w-fit rounded-full border border-white/20 bg-black/35 px-5 py-2 text-[13px] font-medium text-white/85">先看场景与情节 · 再逐人审核造型服装</div><div className="mx-auto mt-10 grid w-[690px] grid-cols-4 gap-px overflow-hidden rounded-xl bg-white/15 text-left"><PdfMeta label="剧本版本" value={`v${version?.versionNo || 1}`} /><PdfMeta label="整理日期" value={workDate} /><PdfMeta label="场次" value={`${analyses.length}场`} /><PdfMeta label="参考图片" value={`${referenceCount}张`} /></div><p className="mx-auto mt-7 w-[700px] text-[14px] leading-6 text-white/75">每个审核对象单独成组，不再把女主、丧尸、其他人物和服装参考混在同一页。</p></div><PdfFooter episode={episode} page={1} /></PdfPage>
+    {contentPages.map((page, index) => page.kind === 'scene'
+      ? <PdfScenePage key={`${page.analysis.id}-scene-${page.pageIndex}`} episode={episode} page={page} pdfPage={index + 2} />
+      : <PdfItemReviewPage key={`${page.item.id}-${page.pageIndex}`} episode={episode} page={page} pdfPage={index + 2} />)}
   </div>;
+}
+
+function PdfScenePage({ episode, page, pdfPage }: { episode: string; page: { analysis: ScriptAnalysis; entries: Array<{ item: ScriptAssetItem; file: SubmissionFile }>; pageIndex: number; pageCount: number }; pdfPage: number }) {
+  const { analysis, entries, pageIndex, pageCount } = page;
+  return <PdfPage><PdfHeader eyebrow={`${episode} · 第${analysis.sceneNo}场 · 场景与情节`} title={analysis.location || analysis.sceneTitle} subtitle={`先确认场景氛围，再进入人物与服装审核${pageCount > 1 ? ` · 场景参考第${pageIndex}/${pageCount}页` : ''}`} /><div className="mt-5 grid grid-cols-[310px_1fr] gap-5"><section className="rounded-2xl border border-white/15 bg-black/50 p-5"><p className="text-[11px] font-medium tracking-[.16em] text-[#ff8066]">本场情节</p><p className="mt-3 text-[21px] font-semibold leading-8 text-white">{simpleSceneSummary(analysis)}</p><div className="mt-5 border-t border-white/15 pt-4"><p className="text-[10px] text-white/50">场次</p><p className="mt-1 text-[13px] text-white/80">第{analysis.sceneNo}场 · {analysis.sceneTitle}</p></div></section><div className={`grid gap-4 ${entries.length <= 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>{entries.length ? entries.map(({ item, file }) => <figure key={file.id} className="rounded-xl border border-white/15 bg-black/45 p-2.5"><img src={file.url} alt={file.fileName} className={`${entries.length === 1 ? 'h-[475px]' : 'h-[222px]'} w-full rounded-lg bg-black/30 object-contain`} /><figcaption className="mt-1.5 text-center text-[11px] leading-5 text-white/75">{friendlyReferenceLabel(item, file)}</figcaption></figure>) : <div className="grid h-[515px] place-items-center rounded-2xl border border-dashed border-white/25 bg-black/35 text-center"><div><p className="text-[17px] font-medium text-white/75">本场场景参考图待上传</p><p className="mt-2 text-[12px] text-white/45">主美上传后会自动出现在这里</p></div></div>}</div></div><PdfFooter episode={episode} page={pdfPage} /></PdfPage>;
+}
+
+function PdfItemReviewPage({ episode, page, pdfPage }: { episode: string; page: { analysis: ScriptAnalysis; item: ScriptAssetItem; files: SubmissionFile[]; pageIndex: number; pageCount: number; itemReferenceCount: number }; pdfPage: number }) {
+  const { analysis, item, files, pageIndex, pageCount, itemReferenceCount } = page;
+  return <PdfPage><PdfHeader eyebrow={`${episode} · 第${analysis.sceneNo}场 · ${item.category}`} title={reviewItemTitle(item)} subtitle={`单项审核 · 本页只看“${reviewItemTitle(item)}” · Option ${itemReferenceCount}张${pageCount > 1 ? ` · 第${pageIndex}/${pageCount}页` : ''}`} /><div className="mt-3 rounded-xl border border-white/12 bg-black/40 px-4 py-2.5"><p className="line-clamp-2 text-[11px] leading-5 text-white/65">{item.detail}</p></div><div className={`mt-4 grid gap-4 ${files.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>{files.map((file, fileIndex) => <figure key={file.id} className="rounded-xl border border-white/15 bg-black/45 p-2.5"><img src={file.url} alt={file.fileName} className={`${files.length === 1 ? 'h-[455px]' : 'h-[215px]'} w-full rounded-lg bg-black/30 object-contain`} /><figcaption className="mt-1.5 text-center text-[11px] leading-5 text-white/80">Option {((pageIndex - 1) * 4) + fileIndex + 1} · {friendlyReferenceLabel(item, file)}</figcaption></figure>)}</div><PdfFooter episode={episode} page={pdfPage} /></PdfPage>;
 }
 
 function PdfPage({ children }: { children: React.ReactNode }) { return <section className="submission-pdf-page relative overflow-hidden px-[44px] py-[38px] text-white" style={{ backgroundImage: "url('/folded-courtyard-bg.jpg')", backgroundPosition: 'center', backgroundSize: 'cover' }}><div className="absolute inset-0 bg-[#071019]/80" /><div className="relative z-10 h-full">{children}</div></section>; }
@@ -309,6 +334,9 @@ function simpleSceneSummary(analysis: ScriptAnalysis) {
 }
 function friendlyReferenceLabel(item: ScriptAssetItem, file: SubmissionFile) {
   return /^[a-f\d]{24,}\.(?:jpe?g|png|webp)$/i.test(file.fileName) ? item.name : file.fileName;
+}
+function reviewItemTitle(item: ScriptAssetItem) {
+  return item.name.replace(/\s*｜\s*(?:人物造型|场景图)\s*$/, '').trim() || item.name;
 }
 
 function formatDate(value: string) { if (!value) return '未定日期'; const [, month, day] = value.split('-'); return `${Number(month)}月${Number(day)}日`; }
