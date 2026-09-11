@@ -21,7 +21,7 @@ async function handleLogin(request: Request) {
     return Response.json({ error: '登录名或密码不正确' }, { status: 401 });
   }
   if (!account.isAdmin && !TEAM_ROLES.includes(account.role as TeamRole)) {
-    return Response.json({ error: '该账号岗位无权进入；仅限编剧、导演、制片人' }, { status: 403 });
+    return Response.json({ error: '该账号岗位暂未开通项目权限，请联系制片人' }, { status: 403 });
   }
   await env.DB.prepare("UPDATE member_accounts SET failed_attempts = 0, locked_until = '', updated_at = ? WHERE id = ?")
     .bind(now.toISOString(), account.id).run();

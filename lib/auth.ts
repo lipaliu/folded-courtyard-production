@@ -1,6 +1,6 @@
 import { env } from 'cloudflare:workers';
 
-export const TEAM_ROLES = ['编剧', '导演', '制片人', '执行制片人'] as const;
+export const TEAM_ROLES = ['编剧', '导演', '制片人', '执行制片人', '主美', '美术', 'AIGC抽卡师', '剪辑'] as const;
 export type TeamRole = (typeof TEAM_ROLES)[number];
 export type SiteUser = { id: string; username: string; name: string; role: string; isAdmin: boolean };
 

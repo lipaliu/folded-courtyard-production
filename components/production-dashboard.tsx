@@ -35,6 +35,7 @@ const statusStyle: Record<Status, string> = {
 };
 
 const roles = ['编剧', '主美', 'AIGC抽卡师', '剪辑', '制片人（叶总）', '红人（Yoyo）', '执行制片人：Lipa'];
+const registrationRoles = ['编剧', '导演', '制片人', '执行制片人', '主美', '美术', 'AIGC抽卡师', '剪辑'];
 const timeOptions = Array.from({ length: 96 }, (_, index) => {
   const hour = Math.floor(index / 4).toString().padStart(2, '0');
   const minute = ((index % 4) * 15).toString().padStart(2, '0');
@@ -239,6 +240,9 @@ export function ProductionDashboard() {
 }
 
 function AccountAccess({ onAuthenticated, initialError }: { onAuthenticated: () => Promise<void>; initialError?: string }) {
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [name, setName] = useState('');
+  const [role, setRole] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [saving, setSaving] = useState(false);
@@ -246,15 +250,19 @@ function AccountAccess({ onAuthenticated, initialError }: { onAuthenticated: () 
   async function submit() {
     setSaving(true); setError('');
     try {
-      const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
+      const response = await fetch(mode === 'login' ? '/api/auth/login' : '/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(mode === 'login' ? { username, password } : { name, role, username, password }),
+      });
       const data = await response.json() as { error?: string };
-      if (!response.ok) throw new Error(data.error || '登录失败');
+      if (!response.ok) throw new Error(data.error || (mode === 'login' ? '登录失败' : '注册失败'));
       await onAuthenticated();
     } catch (nextError) { setError(nextError instanceof Error ? nextError.message : '操作失败'); }
     finally { setSaving(false); }
   }
-  const ready = username.trim().length >= 3 && password.length >= 8;
-  return <main className="grid min-h-screen place-items-center px-5 py-10"><section className="control-card w-full max-w-md p-6 md:p-8"><p className="eyebrow">TEAM ACCESS</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">折叠庭院的她</h1><p className="mt-2 text-sm leading-6 text-muted-foreground">内部协作入口，仅限编剧、导演、制片人。账号由制片人统一开通。</p><div className="mt-6 space-y-4"><Field label="登录名"><input autoCapitalize="none" autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} className="edit-input" placeholder="请输入项目登录名" /></Field><Field label="密码"><input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && ready) void submit(); }} className="edit-input" placeholder="至少8位" /></Field></div>{error && <p className="mt-4 rounded-xl border border-red-400/20 bg-red-400/[.06] px-3 py-2 text-sm text-red-300">{error}</p>}<Button className="mt-6 h-12 w-full" disabled={saving || !ready} onClick={() => void submit()}>{saving ? <Loader2 className="animate-spin" /> : <Check />}{saving ? '正在登录…' : '登录项目'}</Button><Link href="/pitch.html" className="mt-4 block text-center text-xs leading-5 text-muted-foreground hover:text-white">← 返回公开剧本提报</Link></section></main>;
+  const ready = username.trim().length >= 3 && password.length >= 8 && (mode === 'login' || (name.trim().length >= 2 && Boolean(role)));
+  return <main className="grid min-h-screen place-items-center px-5 py-10"><section className="control-card w-full max-w-md p-6 md:p-8"><p className="eyebrow">TEAM ACCESS</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">折叠庭院的她</h1><p className="mt-2 text-sm leading-6 text-muted-foreground">团队成员可直接注册项目账号，注册后立即进入对应工作区。</p><div className="mt-6 grid grid-cols-2 rounded-xl border border-white/10 bg-black/20 p-1"><button type="button" onClick={() => { setMode('login'); setError(''); }} className={`h-10 rounded-lg text-sm transition ${mode === 'login' ? 'bg-white/10 text-white' : 'text-muted-foreground'}`}>登录</button><button type="button" onClick={() => { setMode('register'); setError(''); }} className={`h-10 rounded-lg text-sm transition ${mode === 'register' ? 'bg-white/10 text-white' : 'text-muted-foreground'}`}>新人注册</button></div><div className="mt-5 space-y-4">{mode === 'register' && <><Field label="姓名"><input autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} className="edit-input" placeholder="请输入真实姓名" /></Field><Field label="岗位"><select value={role} onChange={(event) => setRole(event.target.value)} className="edit-input"><option value="">请选择岗位</option>{registrationRoles.map((item) => <option key={item} value={item}>{item}</option>)}</select></Field></>}<Field label="登录名"><input autoCapitalize="none" autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} className="edit-input" placeholder="3—30位，之后用它登录" /></Field><Field label="密码"><input type="password" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} value={password} onChange={(event) => setPassword(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && ready) void submit(); }} className="edit-input" placeholder="至少8位" /></Field></div>{error && <p className="mt-4 rounded-xl border border-red-400/20 bg-red-400/[.06] px-3 py-2 text-sm text-red-300">{error}</p>}<Button className="mt-6 h-12 w-full" disabled={saving || !ready} onClick={() => void submit()}>{saving ? <Loader2 className="animate-spin" /> : <Check />}{saving ? (mode === 'login' ? '正在登录…' : '正在注册…') : (mode === 'login' ? '登录项目' : '注册并进入项目')}</Button><p className="mt-4 text-center text-xs leading-5 text-muted-foreground">管理员权限不会开放给普通注册账号。</p><Link href="/pitch" className="mt-3 block text-center text-xs leading-5 text-muted-foreground hover:text-white">← 返回公开剧本提报</Link></section></main>;
 }
 
 function PasswordEditor({ user, open, onClose }: { user: CurrentUser; open: boolean; onClose: () => void }) {
