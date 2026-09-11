@@ -230,10 +230,10 @@ export function ProductionDashboard() {
             <div>
               <p className="text-[12px] font-medium tracking-[0.16em] text-muted-foreground">总制片推进台</p>
               <h1 className="mt-0.5 text-lg font-semibold tracking-tight">折叠庭院的她</h1>
-              <p className="mt-1 max-w-[245px] text-[10px] leading-4 text-muted-foreground sm:max-w-none">出品人：叶总　出演：Yoyo　执行制片人：Lipa　编剧：丙丙　主美：小金</p>
+              {me.isAdmin && <p className="mt-1 max-w-[245px] text-[10px] leading-4 text-muted-foreground sm:max-w-none">出品人：叶总　出演：Yoyo　执行制片人：Lipa　编剧：丙丙　主美：小金</p>}
             </div>
             <div className="flex items-center gap-2">
-              <Link href="/pitch-studio" className="hidden rounded-full border border-[#ff6240]/25 bg-[#ff6240]/10 px-3 py-2 text-xs text-[#ff9a86] hover:text-white sm:block">剧本提报</Link>
+              {me.isAdmin && <Link href="/pitch-studio" className="hidden rounded-full border border-[#ff6240]/25 bg-[#ff6240]/10 px-3 py-2 text-xs text-[#ff9a86] hover:text-white sm:block">剧本提报</Link>}
               <button onClick={() => void loadData()} aria-label="刷新全组进度" className="grid h-9 w-9 place-items-center rounded-full border border-white/8 bg-white/4 text-muted-foreground">
                 <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
               </button>
@@ -258,7 +258,7 @@ export function ProductionDashboard() {
         <div className="px-4 py-5 md:px-8 md:py-8">
           <div className="mx-auto max-w-6xl">
             <TabsContent value="today" className="mt-0"><TodayView selectedDate={selectedDate} setSelectedDate={setSelectedDate} scheduleEnd={scheduleEnd} items={visibleTodayItems} assetProgressByEpisode={assetProgressByEpisode} currentRole={me.role} isAdmin={Boolean(me?.isAdmin)} canOpenHandbook={Boolean(me.isAdmin || ['主美', '美术'].includes(me.role))} onEdit={setSelectedItem} onAdd={setCreatingRole} onOpenHandbook={() => setActiveTab('breakdown')} onReload={loadData} onUpdateItem={updateItem} onToggle={(item, checked) => void (item.category === '整集资产确认' ? updateEpisodeApproval(item, checked) : updateItem(item.id, { status: checked ? '已通过' : '未开始', completedQty: checked ? item.plannedQty : 0 }))} /></TabsContent>
-            <TabsContent value="plan" className="mt-0"><PlanView items={items} batches={batches} scheduleEnd={scheduleEnd} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedBatch} /></TabsContent>
+            <TabsContent value="plan" className="mt-0"><PlanView items={items} batches={batches} scheduleEnd={scheduleEnd} currentRole={me.role} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedBatch} /></TabsContent>
             <TabsContent value="scenes" className="mt-0"><ScenesView scenes={scenes} isAdmin={Boolean(me?.isAdmin)} onChange={updateScene} /></TabsContent>
             <TabsContent value="breakdown" className="mt-0"><SubmissionCenter me={me} selectedDate={selectedDate} productionItems={items} onAssigned={async (workDate) => { setSelectedDate(workDate); await loadData(); }} /></TabsContent>
             <TabsContent value="review" className="mt-0"><ReviewView items={pendingReview} scenes={scenes} isAdmin={Boolean(me?.isAdmin)} updateItem={updateItem} updateScene={updateScene} /></TabsContent>
@@ -769,7 +769,8 @@ function ApprovalCheck({ label, checked, disabled, onChange }: { label: string; 
   return <label className={`flex items-center gap-2 rounded-lg border px-2.5 py-2 text-xs ${checked ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300' : 'border-red-400/25 bg-red-400/[.04] text-red-300'}`}><Checkbox checked={checked} disabled={disabled} onCheckedChange={(next) => onChange(Boolean(next))} className="size-4 border-current data-checked:border-emerald-400 data-checked:bg-emerald-400 data-checked:text-black" /><span>{label}{checked ? '已确认' : '未确认'}</span></label>;
 }
 
-function PlanView({ items, batches, scheduleEnd, isAdmin, onEdit }: { items: ProductionItem[]; batches: PlanBatch[]; scheduleEnd: string; isAdmin: boolean; onEdit: (batch: PlanBatch) => void }) {
+function PlanView({ items, batches, scheduleEnd, currentRole, isAdmin, onEdit }: { items: ProductionItem[]; batches: PlanBatch[]; scheduleEnd: string; currentRole: string; isAdmin: boolean; onEdit: (batch: PlanBatch) => void }) {
+  const visibleRoles = isAdmin ? roles : [...new Set(items.map((item) => item.owner))].length ? [...new Set(items.map((item) => item.owner))] : [taskOwnerLabel(currentRole)];
   return <section>
     <div className="mb-5 flex items-end justify-between"><div><p className="eyebrow">MASTER PLAN · {shortDate(PROJECT_START)}—{shortDate(scheduleEnd)}</p><h2 className="mt-1 text-2xl font-semibold">六休一滚动大计划</h2></div><span className="hidden text-sm text-muted-foreground sm:block">国庆10.1—10.7放假 · 未完成时全计划自动重排</span></div>
     <div className="control-card overflow-hidden">
@@ -777,7 +778,7 @@ function PlanView({ items, batches, scheduleEnd, isAdmin, onEdit }: { items: Pro
       <div className="divide-y divide-white/8">{batches.map((batch, index) => <TimelineRow key={batch.id} dates={batch.startDate === batch.endDate ? shortDate(batch.startDate) : `${shortDate(batch.startDate)}—${shortDate(batch.endDate)}`} production={batch.production} prep={batch.prep} note={batch.note} highlight={index === 0 || index === batches.length - 1} editable={isAdmin} onEdit={() => onEdit(batch)} />)}</div>
     </div>
     <div className="mt-5 grid gap-3 md:grid-cols-4">
-      {roles.map((role) => {
+      {visibleRoles.map((role) => {
         const roleItems = items.filter((item) => item.owner === role);
         const passed = roleItems.filter((item) => item.status === '已通过').length;
         const percent = roleItems.length ? Math.round((passed / roleItems.length) * 100) : 0;
