@@ -3,16 +3,16 @@ import { createSession, hashPassword, normalizeUsername, TEAM_ROLES, validatePas
 
 async function handleRegistration(request: Request) {
   const body = await request.json() as { name?: string; role?: string; username?: string; password?: string };
-  const name = (body.name || '').trim().slice(0, 40);
+  const name = (body.name || '').trim();
   const role = (body.role || '').trim();
   const username = normalizeUsername(body.username || '');
   const password = body.password || '';
 
-  if (name.length < 2) return Response.json({ error: '请填写真实姓名' }, { status: 400 });
+  if (!name) return Response.json({ error: '请填写姓名' }, { status: 400 });
   if (!TEAM_ROLES.includes(role as (typeof TEAM_ROLES)[number])) return Response.json({ error: '请选择岗位' }, { status: 400 });
-  if (!validateUsername(username)) return Response.json({ error: '登录名需为3—30位，可使用中文、字母、数字、点、横线或下划线' }, { status: 400 });
+  if (!validateUsername(username)) return Response.json({ error: '请输入登录名' }, { status: 400 });
   if (username === 'lipa') return Response.json({ error: '这个登录名已由管理员保留' }, { status: 409 });
-  if (!validatePassword(password)) return Response.json({ error: '密码需为8—72位' }, { status: 400 });
+  if (!validatePassword(password)) return Response.json({ error: '请设置密码' }, { status: 400 });
 
   const existing = await env.DB.prepare('SELECT id FROM member_accounts WHERE username = ?').bind(username).first();
   if (existing) return Response.json({ error: '这个登录名已经注册，请换一个' }, { status: 409 });

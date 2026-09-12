@@ -5,7 +5,7 @@ export async function PATCH(request: Request) {
   const user = await getSiteUser(request);
   if (!user) return Response.json({ error: '请先登录' }, { status: 401 });
   const body = await request.json() as { currentPassword?: string; newPassword?: string };
-  if (!validatePassword(body.newPassword || '')) return Response.json({ error: '新密码需为8—72位' }, { status: 400 });
+  if (!validatePassword(body.newPassword || '')) return Response.json({ error: '请输入新密码' }, { status: 400 });
   const account = await getAccountByUsername(user.username);
   if (!account || !await verifyPassword(body.currentPassword || '', account)) return Response.json({ error: '当前密码不正确' }, { status: 400 });
   const credentials = await hashPassword(body.newPassword || '');

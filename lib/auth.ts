@@ -2,6 +2,7 @@ import { env } from 'cloudflare:workers';
 
 import { TEAM_ROLES } from './team-roles';
 export { TEAM_ROLES } from './team-roles';
+export { validateUsername, validatePassword } from './account-rules';
 export type TeamRole = (typeof TEAM_ROLES)[number];
 export type SiteUser = { id: string; username: string; name: string; role: string; isAdmin: boolean };
 
@@ -41,14 +42,6 @@ async function sha256(value: string) {
 
 export function normalizeUsername(value: string) {
   return value.normalize('NFKC').trim().toLocaleLowerCase('en-US');
-}
-
-export function validateUsername(value: string) {
-  return /^[\p{L}\p{N}._-]{3,30}$/u.test(value);
-}
-
-export function validatePassword(value: string) {
-  return value.length >= 8 && value.length <= 72;
 }
 
 export async function hashPassword(password: string, salt?: string, iterations = PASSWORD_ITERATIONS) {

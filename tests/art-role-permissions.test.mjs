@@ -17,6 +17,43 @@ function loadTs(path, dependencies = {}, globals = {}) {
 }
 
 const roles = loadTs('../lib/team-roles.ts');
+const accountRules = loadTs('../lib/account-rules.ts');
+const { accountFormError } = loadTs('../lib/account-form.ts', { './team-roles': roles, './account-rules': accountRules });
+test('registration API accepts one-character name, login and password', async () => {
+  let writes = 0;
+  const api = loadTs('../app/api/auth/register/route.ts', {
+    'cloudflare:workers': { env: { DB: {
+      prepare() { return { bind() { return this; }, async first() { return null; } }; },
+      async batch() { writes++; },
+    } } },
+    '@/lib/auth': {
+      ...accountRules, TEAM_ROLES: roles.TEAM_ROLES,
+      normalizeUsername: (value) => value.normalize('NFKC').trim().toLowerCase(),
+      hashPassword: async (password) => { assert.equal(password, '1'); return { hash: 'hash', salt: 'salt', iterations: 100000 }; },
+      createSession: async () => 'session=test',
+    },
+  });
+  const response = await api.POST(new Request('https://test/api/auth/register', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: '张', username: 'x', password: '1', role: '服化道副导演' }),
+  }));
+  assert.equal(response.status, 201);
+  assert.equal(writes, 1);
+  assert.equal((await response.json()).user.isAdmin, false);
+});
+test('registration explains missing fields and accepts the new role', () => {
+  const fields = { name: '测试', role: '服化道副导演', username: 'new_artist', password: '12345678' };
+  assert.equal(accountFormError('register', fields), '');
+  for (const [key, value, message] of [
+    ['name', '', /姓名/], ['role', '', /岗位/], ['username', '', /登录名/], ['password', '', /密码/],
+  ]) assert.match(accountFormError('register', { ...fields, [key]: value }), message);
+  assert.equal(accountFormError('login', { ...fields, name: '', role: '' }), '');
+  assert.match(accountFormError('login', { ...fields, username: '' }), /登录名/);
+  assert.equal(accountFormError('register', { ...fields, name: '张', username: '张', password: '1' }), '');
+  assert.equal(accountFormError('register', { ...fields, username: 'my name', password: '1234' }), '');
+  assert.ok(accountRules.validatePassword('1'));
+  assert.ok(accountRules.validateUsername('张'));
+});
 test('every member role can read final scripts; anonymous requests cannot', async () => {
   for (const role of [...roles.TEAM_ROLES, null]) {
     let queried = false;
