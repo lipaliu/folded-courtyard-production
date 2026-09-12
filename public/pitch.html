@@ -16,7 +16,7 @@
 </style>
 </head>
 <body>
-<header class="topbar"><div class="shell topbar-stack"><div class="topbar-inner"><div class="brand" id="brand"></div><a class="login" href="/pitch-studio">剧本后台登录</a><button class="download" id="downloadButton">下载本集 PDF</button></div><nav class="chapter-nav" aria-label="提报章节"><a href="#story-outline">01 故事大纲</a><a href="#episode-guide">02 分集梗概</a><a href="#characters-chapter">03 人物小传</a><a href="#episodes-chapter">04 单集剧本</a></nav><nav class="nav" id="episodeNav" aria-label="选择集数"></nav></div></header>
+<header class="topbar"><div class="shell topbar-stack"><div class="topbar-inner"><div class="brand" id="brand"></div><a class="login" href="/studio">返回主 SOP</a><button class="login" id="copyButton">复制本集 H5</button><button class="download" id="downloadButton">下载本集 PDF</button></div><nav class="chapter-nav" aria-label="提报章节"><a href="#story-outline">01 故事大纲</a><a href="#episode-guide">02 分集梗概</a><a href="#characters-chapter">03 人物小传</a><a href="#episodes-chapter">04 单集剧本</a></nav><nav class="nav" id="episodeNav" aria-label="选择集数"></nav></div></header>
 <main>
 <section class="hero shell"><p class="kicker">SCREENPLAY PITCH · 提报版</p><h1 id="projectTitle"></h1><p class="logline" id="logline"></p><div class="meta" id="projectMeta"></div></section>
 <section class="section" id="story-outline"><div class="shell"><div class="section-head"><h2>01 · 故事大纲</h2><p class="section-intro" id="seasonEngine"></p></div><div class="overview-grid"><article class="panel long-copy" id="storyOutline"></article><aside class="panel engine"><span class="kicker">SEASON ENGINE</span><strong id="engineCopy"></strong></aside></div><div class="world-wrap" id="worldNaming"></div></div></section>
@@ -29,7 +29,9 @@
 <script>
 const data=window.PITCH_DATA;
 const esc=(value='')=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let selectedEpisode=Math.max(...data.episodes.map(item=>item.episode));
+const query=new URLSearchParams(location.search);
+const requestedEpisode=Number(query.get('episode'))||0;
+let selectedEpisode=requestedEpisode||Math.max(...data.episodes.map(item=>item.episode));
 let selectedVersion='';
 const byId=id=>document.getElementById(id);
 const pill=(text,accent=false)=>'<span class="pill '+(accent?'accent':'')+'">'+esc(text)+'</span>';
@@ -115,7 +117,7 @@ function renderNamingContext(){
   const sources=(naming.researchBasis||[]).map(s=>s.url?'<a href="'+esc(s.url)+'" target="_blank" rel="noreferrer">'+esc(s.title)+'</a>':esc(s.title)).join(' · ');
   byId('nameResearch').innerHTML='<details class="research-samples" open><summary>命名调研样本 · '+naming.samples.length+'部</summary><div class="sample-list">'+naming.samples.map(s=>'<span class="sample-chip">《'+esc(s.title)+'》 '+esc(s.pair)+'</span>').join('')+'</div><p class="research-links">'+esc(naming.note||'')+(sources?'<br>核验来源：'+sources:'')+'</p></details>';
 }
-function episodeNumbers(){return [...new Set(data.episodes.map(item=>item.episode))].sort((a,b)=>a-b)}
+function episodeNumbers(){const values=[...new Set(data.episodes.map(item=>item.episode))].sort((a,b)=>a-b);return requestedEpisode&&values.includes(requestedEpisode)?[requestedEpisode]:values}
 function renderNav(){
   byId('episodeNav').innerHTML=episodeNumbers().map(no=>'<button data-episode="'+no+'" class="'+(no===selectedEpisode?'active':'')+'">第'+no+'集</button>').join('');
   byId('episodeNav').querySelectorAll('button').forEach(btn=>btn.addEventListener('click',()=>{selectedEpisode=Number(btn.dataset.episode);selectedVersion='';renderNav();renderVersions();renderEpisodes()}));
@@ -145,6 +147,10 @@ byId('downloadButton').addEventListener('click',()=>{
   document.title=data.project.title+'_第'+selectedEpisode+'集_'+(item?.version||'v1')+'_剧本提报';
   window.print();
 });
+byId('copyButton').addEventListener('click',async()=>{
+  const url=new URL(location.href);url.searchParams.set('episode',String(selectedEpisode));url.searchParams.delete('print');
+  try{await navigator.clipboard.writeText(url.toString());byId('copyButton').textContent='已复制 H5 链接';setTimeout(()=>byId('copyButton').textContent='复制本集 H5',1600)}catch{prompt('复制本集 H5 链接',url.toString())}
+});
 async function syncPublishedEpisodes(){
   if(location.protocol==='file:')return;
   try{
@@ -155,7 +161,8 @@ async function syncPublishedEpisodes(){
       const key=item.episode+'::'+item.version;
       if(!data.episodes.some(row=>row.episode+'::'+row.version===key))data.episodes.push(item);
     }
-    selectedEpisode=Math.max(...data.episodes.map(item=>item.episode));selectedVersion='';renderNav();renderVersions();renderEpisodes();
+    const available=episodeNumbers();selectedEpisode=requestedEpisode&&available.includes(requestedEpisode)?requestedEpisode:Math.max(...data.episodes.map(item=>item.episode));selectedVersion='';renderNav();renderVersions();renderEpisodes();
+    if(query.get('print')==='1')setTimeout(()=>window.print(),350);
   }catch{}
 }
 renderProject();renderCharacters();renderNamingContext();renderNav();renderVersions();renderEpisodes();renderSources();syncPublishedEpisodes();

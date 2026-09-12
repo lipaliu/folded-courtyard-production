@@ -37,7 +37,7 @@ export async function GET() {
     rows = await env.DB.prepare(`SELECT id, episode, version_no AS versionNo, file_name AS fileName,
       source_text AS sourceText, change_summary AS changeSummary, work_date AS workDate,
       submitted_by AS submittedBy, created_at AS createdAt
-      FROM script_versions ORDER BY created_at ASC LIMIT 100`).all<VersionRow>();
+      FROM script_versions WHERE is_final = 1 ORDER BY created_at ASC LIMIT 100`).all<VersionRow>();
   } catch (error) {
     console.error('Public episode feed unavailable', error);
     return Response.json({ episodes: [] }, { headers: { 'Cache-Control': 'no-store' } });
@@ -75,7 +75,7 @@ export async function GET() {
       scenes,
       continuity: [],
       issues: [],
-      status: '团队上传',
+      status: 'Lipa已定稿',
     }];
   });
   return Response.json({ episodes }, { headers: { 'Cache-Control': 'no-store' } });

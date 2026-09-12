@@ -82,7 +82,7 @@ export function ScriptPitchStudio() {
       const data = await response.json() as { versions?: Array<{ episode: string; versionNo: number }>; sceneCount?: number; error?: string };
       if (!response.ok) throw new Error(data.error || '剧本上传失败');
       const versionText = (data.versions || []).map((item) => `${item.episode} v${item.versionNo}`).join('、') || '新版本';
-      setNotice(`${versionText} 已保存，共识别 ${data.sceneCount || 0} 场；公开提报页已同步。`);
+      setNotice(`${versionText} 已保存，共识别 ${data.sceneCount || 0} 场；当前只是候选稿，需由Lipa定稿后才进入公开提报。`);
       setFile(null); setChangeSummary('');
       await loadVersions();
     } catch (nextError) {
@@ -127,7 +127,7 @@ export function ScriptPitchStudio() {
           </div>
           <label className={`mt-4 flex min-h-36 items-center justify-center rounded-2xl border-2 border-dashed px-5 text-center ${canUpload ? 'cursor-pointer border-white/15 bg-black/10 hover:border-[#ff6240]/60' : 'border-white/8 opacity-55'}`}>
             <input type="file" accept=".docx,.txt,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" disabled={!canUpload || saving} className="sr-only" onChange={(event) => { setFile(event.target.files?.[0] || null); event.target.value = ''; }} />
-            <div><span className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-[#ff6240]/15 text-[#ff8066]"><Upload className="h-5 w-5" /></span><p className="mt-3 text-sm font-medium">{file?.name || '选择 DOCX / TXT 单集剧本'}</p><p className="mt-1 text-xs text-muted-foreground">{canUpload ? '上传后自动拆场，并同步到公开提报页' : '当前身份可审阅版本，但不能上传剧本'}</p></div>
+            <div><span className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-[#ff6240]/15 text-[#ff8066]"><Upload className="h-5 w-5" /></span><p className="mt-3 text-sm font-medium">{file?.name || '选择 DOCX / TXT 单集剧本'}</p><p className="mt-1 text-xs text-muted-foreground">{canUpload ? '上传后仅存为候选稿，等待Lipa定稿' : '当前身份可审阅版本，但不能上传剧本'}</p></div>
           </label>
           <Button className="mt-4 h-11 w-full" disabled={!canUpload || !file || !changeSummary.trim() || saving} onClick={() => void uploadScript()}>{saving ? <Loader2 className="animate-spin" /> : <Check />}{saving ? '正在保存版本…' : '上传并保存新版本'}</Button>
           {notice && <p className="mt-4 rounded-xl border border-emerald-400/20 bg-emerald-400/[.06] px-4 py-3 text-sm text-emerald-300">{notice}</p>}

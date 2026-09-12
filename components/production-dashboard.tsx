@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, CircleDashed,
-  ClipboardCopy, Clock3, Download, Film, LayoutDashboard, ListChecks, Loader2, Pencil, RefreshCw, Rows3, Sparkles, Trash2, Upload, X,
+  ClipboardCopy, Clock3, Download, FileText, Film, LayoutDashboard, ListChecks, Loader2, Pencil, RefreshCw, Rows3, Sparkles, Trash2, Upload, X,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -82,6 +82,14 @@ function taskOwnerLabel(role: string) {
   return role;
 }
 
+function roleCanSeeScript(role: string) {
+  return ['编剧', '导演', '制片人', '执行制片人'].includes(role);
+}
+
+function roleCanSeeArt(role: string) {
+  return ['主美', '美术'].includes(role);
+}
+
 export function ProductionDashboard() {
   const [activeTab, setActiveTab] = useState('today');
   const [items, setItems] = useState<ProductionItem[]>(initialItems);
@@ -106,7 +114,10 @@ export function ProductionDashboard() {
       const meData = await meResponse.json() as { user?: CurrentUser; error?: string };
       if (!meResponse.ok || !meData.user) { setMe(null); setLoadError(''); return; }
       setMe(meData.user);
-      if (!meData.user.isAdmin) setActiveTab((current) => ['today', 'plan'].includes(current) ? current : 'today');
+      if (!meData.user.isAdmin) setActiveTab((current) => {
+        const allowed = ['today', 'plan', ...(roleCanSeeScript(meData.user!.role) ? ['script'] : []), ...(roleCanSeeArt(meData.user!.role) ? ['breakdown'] : [])];
+        return allowed.includes(current) ? current : 'today';
+      });
       const [itemResponse, sceneResponse, planResponse, analysisResponse, submissionResponse] = await Promise.all([fetch('/api/items'), fetch('/api/scenes'), fetch('/api/plan'), fetch('/api/script-analysis'), fetch('/api/art-submissions')]);
       const itemData = await itemResponse.json() as { items?: ProductionItem[] };
       const sceneData = await sceneResponse.json() as { scenes?: Scene[] };
@@ -137,6 +148,13 @@ export function ProductionDashboard() {
   }
 
   useEffect(() => { void loadData(); }, []);
+
+  useEffect(() => {
+    if (!me) return;
+    const requested = new URLSearchParams(window.location.search).get('tab');
+    if (requested === 'script' && (me.isAdmin || roleCanSeeScript(me.role))) setActiveTab('script');
+    if (requested === 'breakdown' && (me.isAdmin || roleCanSeeArt(me.role))) setActiveTab('breakdown');
+  }, [me]);
 
   useEffect(() => {
     const context = (document as Document & { modelContext?: { registerTool?: Function } }).modelContext;
@@ -221,6 +239,11 @@ export function ProductionDashboard() {
   if (syncing && !me) return <main className="grid min-h-screen place-items-center"><div className="control-card flex items-center gap-3 px-5 py-4 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin text-[#ff6240]" />正在确认项目身份…</div></main>;
   if (!me) return <AccountAccess onAuthenticated={loadData} initialError={loadError} />;
 
+  const canSeeScript = me.isAdmin || roleCanSeeScript(me.role);
+  const canSeeArt = me.isAdmin || roleCanSeeArt(me.role);
+  const tabCount = 2 + (canSeeScript ? 1 : 0) + (canSeeArt ? 1 : 0) + (me.isAdmin ? 2 : 0);
+  const tabGridClass = tabCount >= 6 ? 'max-w-4xl grid-cols-6' : tabCount === 4 ? 'max-w-2xl grid-cols-4' : tabCount === 3 ? 'max-w-lg grid-cols-3' : 'max-w-sm grid-cols-2';
+
   return (
     <main className="min-h-screen bg-transparent text-foreground">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mx-auto min-h-screen w-full max-w-6xl pb-9">
@@ -233,7 +256,7 @@ export function ProductionDashboard() {
               {me.isAdmin && <p className="mt-1 max-w-[245px] text-[10px] leading-4 text-muted-foreground sm:max-w-none">出品人：叶总　出演：Yoyo　执行制片人：Lipa　编剧：丙丙　主美：小金</p>}
             </div>
             <div className="flex items-center gap-2">
-              {me.isAdmin && <Link href="/pitch-studio" className="hidden rounded-full border border-[#ff6240]/25 bg-[#ff6240]/10 px-3 py-2 text-xs text-[#ff9a86] hover:text-white sm:block">剧本提报</Link>}
+              {canSeeScript && <Link href="/pitch?episode=1" target="_blank" className="hidden rounded-full border border-[#ff6240]/25 bg-[#ff6240]/10 px-3 py-2 text-xs text-[#ff9a86] hover:text-white sm:block">剧本提报H5</Link>}
               <button onClick={() => void loadData()} aria-label="刷新全组进度" className="grid h-9 w-9 place-items-center rounded-full border border-white/8 bg-white/4 text-muted-foreground">
                 <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
               </button>
@@ -243,12 +266,13 @@ export function ProductionDashboard() {
           </div>
         </header>
         <div className="border-b border-white/8 px-3 py-2 md:px-8">
-          <TabsList className={`mx-auto grid h-12 w-full rounded-xl border border-white/10 bg-[#17191d]/96 p-1 ${me.isAdmin ? 'max-w-2xl grid-cols-5' : 'max-w-sm grid-cols-2'}`}>
+          <TabsList className={`mx-auto grid h-12 w-full rounded-xl border border-white/10 bg-[#17191d]/96 p-1 ${tabGridClass}`}>
             <NavTab value="today" label="今日" icon={<LayoutDashboard />} />
             <NavTab value="plan" label="大计划" icon={<Rows3 />} />
+            {me.isAdmin && <NavTab value="scenes" label="场次" icon={<Film />} />}
+            {canSeeScript && <NavTab value="script" label={me.isAdmin ? '剧本定稿' : me.role === '编剧' ? '剧本上传' : '剧本查看'} icon={<FileText />} />}
+            {canSeeArt && <NavTab value="breakdown" label={me.isAdmin ? '美术审图' : '美术上传'} icon={<Sparkles />} />}
             {me.isAdmin && <>
-              <NavTab value="scenes" label="场次" icon={<Film />} />
-              <NavTab value="breakdown" label="主美上传" icon={<Sparkles />} />
               <NavTab value="review" label={`微信确认${pendingReview.length ? ` ${pendingReview.length}` : ''}`} icon={<ListChecks />} />
             </>}
           </TabsList>
@@ -260,7 +284,8 @@ export function ProductionDashboard() {
             <TabsContent value="today" className="mt-0"><TodayView selectedDate={selectedDate} setSelectedDate={setSelectedDate} scheduleEnd={scheduleEnd} items={visibleTodayItems} assetProgressByEpisode={assetProgressByEpisode} currentRole={me.role} isAdmin={Boolean(me?.isAdmin)} canOpenHandbook={Boolean(me.isAdmin || ['主美', '美术'].includes(me.role))} onEdit={setSelectedItem} onAdd={setCreatingRole} onOpenHandbook={() => setActiveTab('breakdown')} onReload={loadData} onUpdateItem={updateItem} onToggle={(item, checked) => void (item.category === '整集资产确认' ? updateEpisodeApproval(item, checked) : updateItem(item.id, { status: checked ? '已通过' : '未开始', completedQty: checked ? item.plannedQty : 0 }))} /></TabsContent>
             <TabsContent value="plan" className="mt-0"><PlanView items={items} batches={batches} scheduleEnd={scheduleEnd} currentRole={me.role} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedBatch} /></TabsContent>
             <TabsContent value="scenes" className="mt-0"><ScenesView scenes={scenes} isAdmin={Boolean(me?.isAdmin)} onChange={updateScene} /></TabsContent>
-            <TabsContent value="breakdown" className="mt-0"><SubmissionCenter me={me} selectedDate={selectedDate} productionItems={items} onAssigned={async (workDate) => { setSelectedDate(workDate); await loadData(); }} /></TabsContent>
+            {canSeeScript && <TabsContent value="script" className="mt-0"><SubmissionCenter mode="script" me={me} selectedDate={selectedDate} productionItems={items} onAssigned={async (workDate) => { setSelectedDate(workDate); await loadData(); }} /></TabsContent>}
+            {canSeeArt && <TabsContent value="breakdown" className="mt-0"><SubmissionCenter mode="art" me={me} selectedDate={selectedDate} productionItems={items} onAssigned={async (workDate) => { setSelectedDate(workDate); await loadData(); }} /></TabsContent>}
             <TabsContent value="review" className="mt-0"><ReviewView items={pendingReview} scenes={scenes} isAdmin={Boolean(me?.isAdmin)} updateItem={updateItem} updateScene={updateScene} /></TabsContent>
           </div>
         </div>

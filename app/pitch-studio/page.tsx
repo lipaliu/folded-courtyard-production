@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { ScriptPitchStudio } from '@/components/script-pitch-studio';
+import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,5 +10,5 @@ export const metadata: Metadata = {
 };
 
 export default function PitchStudioPage() {
-  return <ScriptPitchStudio />;
+  redirect('/studio?tab=script');
 }

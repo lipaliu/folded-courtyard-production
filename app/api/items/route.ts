@@ -114,7 +114,7 @@ export async function GET(request: Request) {
         const base = index * 10;
         const rows = [
           rollupRow(`${prefix}-script`, row.workDate, row.episode, '剧本', `交付${row.episode}完整剧本`, '编剧', 1, '12:00', '', '执行制片人：Lipa', '交付后继续下一集', '整集一次交付，不按单场与资产审核绑定。', base + 1, updatedAt),
-          rollupRow(`${prefix}-art`, row.workDate, row.episode, '美术清单', `完成${row.episode}全部主美资产清单与出图`, '主美', count, '18:00', `${prefix}-script`, '执行制片人：Lipa', '18:15', `点开查看全部人物造型、服装、道具、场景图，共${count}项。`, base + 2, updatedAt),
+          rollupRow(`${prefix}-art`, row.workDate, row.episode, '美术清单', `生成并上传${row.episode}全部主美资产`, '主美', count, '18:00', `${prefix}-script`, '执行制片人：Lipa', '18:15', `点开查看全部人物造型、服装、道具、场景图，共${count}项。`, base + 2, updatedAt),
           rollupRow(`${prefix}-send`, row.workDate, row.episode, '资产提报', `整理${row.episode}完整资产包并发微信`, '执行制片人：Lipa', 1, '18:30', `${prefix}-art`, '制片人（叶总）＋红人（Yoyo）', '发出后等待微信确认', '只负责整集资产包提报，不逐项确认。', base + 3, updatedAt),
           rollupRow(`${prefix}-producer`, row.workDate, row.episode, '整集资产确认', `记录叶总是否已确认${row.episode}全部资产`, '制片人（叶总）', 1, '收到后', `${prefix}-send`, '执行制片人：Lipa', '收到微信后录入', '叶总在微信确认；本平台仅由Lipa记录最终结果。', base + 4, updatedAt, Number(totals?.producerCount) === count),
           rollupRow(`${prefix}-yoyo`, row.workDate, row.episode, '整集资产确认', `记录Yoyo是否已确认${row.episode}全部资产`, '红人（Yoyo）', 1, '微信待回复', `${prefix}-send`, '执行制片人：Lipa', '收到微信后录入', 'Yoyo在微信确认；本平台仅由Lipa记录最终结果。', base + 5, updatedAt, Number(totals?.yoyoCount) === count),
@@ -140,6 +140,20 @@ export async function GET(request: Request) {
       }
       await env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_calendar_six_on_one_off_v1', 'done', ?)").bind(updatedAt).run();
     }
+    const duplicateArtTaskVersion = await env.DB.prepare("SELECT value FROM app_settings WHERE key = 'workflow_dedupe_ep1_art_v1'").first<{ value: string }>();
+    if (!duplicateArtTaskVersion) {
+      const updatedAt = new Date().toISOString();
+      await env.DB.batch([
+        env.DB.prepare(`UPDATE production_items SET title = '生成并上传第1集全部主美资产', due_time = '20:00',
+          note = '完成人物造型、服装、道具和场景图全部资产并上传；点开资产清单查看7场共40项。', updated_at = ?
+          WHERE id = 'rollup-2026-09-12-ep1-art'`).bind(updatedAt),
+        env.DB.prepare("DELETE FROM production_items WHERE id = 'priority-0912-ep1-assets'"),
+        env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_dedupe_ep1_art_v1', 'done', ?)").bind(updatedAt),
+      ]);
+    }
+    // Keep the 9/12 art delivery as one roll-up task even if an older deployment
+    // or cached migration recreates the obsolete priority row.
+    await env.DB.prepare("DELETE FROM production_items WHERE id = 'priority-0912-ep1-assets'").run();
     const result = await env.DB.prepare(`
       SELECT id, work_date AS workDate, episode, category, title, owner, reviewer, status,
              planned_qty AS plannedQty, completed_qty AS completedQty, due_time AS dueTime,

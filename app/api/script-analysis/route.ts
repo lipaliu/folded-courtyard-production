@@ -432,7 +432,7 @@ function episodeRollupTasks(workDate: string, episode: string, count: number, sc
   const base = index * 10;
   return [
     task(`${prefix}-script`, workDate, episode, '剧本', `交付${episode}完整剧本`, '编剧', 1, '12:00', '', '执行制片人：Lipa', '交付后继续下一集', `整集一次交付，不再按${sceneCount}个场次分别确认，也不参与美术资产审核。`, base + 1, updatedAt),
-    task(`${prefix}-art`, workDate, episode, '美术清单', `完成${episode}全部主美资产清单与出图`, '主美', count, '18:00', `${prefix}-script`, '执行制片人：Lipa', '18:15', `点开生产手册查看${sceneCount}场、共${count}项人物造型/服装/道具/场景图清单；不逐项做审核勾选。`, base + 2, updatedAt),
+    task(`${prefix}-art`, workDate, episode, '美术清单', `生成并上传${episode}全部主美资产`, '主美', count, '18:00', `${prefix}-script`, '执行制片人：Lipa', '18:15', `点开生产手册查看${sceneCount}场、共${count}项人物造型/服装/道具/场景图清单；不逐项做审核勾选。`, base + 2, updatedAt),
     task(`${prefix}-send`, workDate, episode, '资产提报', `整理${episode}完整资产包并发微信`, '执行制片人：Lipa', 1, '18:30', `${prefix}-art`, '制片人（叶总）＋红人（Yoyo）', '发出后等待微信确认', '只负责整集资产包提报，不逐项确认。', base + 3, updatedAt),
     task(`${prefix}-producer`, workDate, episode, '整集资产确认', `记录叶总是否已确认${episode}全部资产`, '制片人（叶总）', 1, '收到后', `${prefix}-send`, '执行制片人：Lipa', '收到微信后录入', '叶总在微信确认；本平台仅由Lipa记录最终结果。', base + 4, updatedAt),
     task(`${prefix}-yoyo`, workDate, episode, '整集资产确认', `记录Yoyo是否已确认${episode}全部资产`, '红人（Yoyo）', 1, '微信待回复', `${prefix}-send`, '执行制片人：Lipa', '收到微信后录入', 'Yoyo在微信确认；本平台仅由Lipa记录最终结果。', base + 5, updatedAt),
