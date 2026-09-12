@@ -16,6 +16,7 @@ import { dayType, isProductionDay, productionDayNumber, PROJECT_END, PROJECT_STA
 import { isLockedScheduleDate, isLockedScheduleTask } from '@/lib/locked-schedule';
 import { TEAM_ROLES, roleCanSeeArt } from '@/lib/team-roles';
 import { SubmissionCenter } from '@/components/submission-center';
+import { FinalScriptReader } from '@/components/final-script-reader';
 
 const stageLabels: Array<{ key: keyof Scene; label: string }> = [
   { key: 'scriptStatus', label: '剧本' },
@@ -272,6 +273,7 @@ export function ProductionDashboard() {
               <NavTab value="review" label={`微信确认${pendingReview.length ? ` ${pendingReview.length}` : ''}`} icon={<ListChecks />} />
             </>}
           </TabsList>
+          <FinalScriptReader />
         </div>
         </div>
 

@@ -17,6 +17,26 @@ function loadTs(path, dependencies = {}, globals = {}) {
 }
 
 const roles = loadTs('../lib/team-roles.ts');
+test('every member role can read final scripts; anonymous requests cannot', async () => {
+  for (const role of [...roles.TEAM_ROLES, null]) {
+    let queried = false;
+    const api = loadTs('../app/api/final-scripts/route.ts', {
+      'cloudflare:workers': { env: { DB: { prepare(sql) {
+        queried = true;
+        assert.match(sql, /WHERE is_final = 1/);
+        return { async all() { return { results: [{ id: 'final', episode: '第1集', sourceText: '完整正文' }] }; } };
+      } } } },
+      '@/lib/auth': { requireMember: async () => role ? { role, isAdmin: false } : null },
+    });
+    const response = await api.GET(new Request('https://test/api/final-scripts'));
+    assert.equal(response.status, role ? 200 : 401);
+    assert.equal(queried, Boolean(role));
+    if (role) {
+      assert.equal(response.headers.get('cache-control'), 'private, no-store');
+      assert.equal((await response.json()).scripts[0].sourceText, '完整正文');
+    }
+  }
+});
 test('registration includes new role; art access preserves main artist rights', () => {
   assert.ok(roles.TEAM_ROLES.includes('服化道副导演'));
   assert.ok(roles.roleCanSeeArt('服化道副导演'));
