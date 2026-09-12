@@ -1,6 +1,7 @@
 import { env } from 'cloudflare:workers';
 import { requireAdmin, requireMember } from '@/lib/auth';
 import { nextProductionDay } from '@/lib/work-calendar';
+import { isLockedScheduleDate } from '@/lib/locked-schedule';
 
 type TaskRow = {
   id: string;
@@ -56,7 +57,7 @@ async function allBatches() {
 }
 
 function isFixedCalendarBatch(batch: BatchRow) {
-  return batch.production.includes('休息') || batch.production.includes('放假');
+  return batch.id === 'priority-0912-0914' || batch.production.includes('休息') || batch.production.includes('放假');
 }
 
 function buildSummary(tasks: TaskRow[], batches: BatchRow[], workDate: string): ReportSummary {
@@ -66,7 +67,7 @@ function buildSummary(tasks: TaskRow[], batches: BatchRow[], workDate: string): 
   const incomplete = today.filter((item) => item.owner !== '红人（Yoyo）' && item.status !== '已通过');
   const shouldReflow = incomplete.length > 0;
   const rollovers = shouldReflow ? tasks
-    .filter((item) => item.workDate >= workDate && item.status !== '已通过' && item.owner !== '红人（Yoyo）')
+    .filter((item) => item.workDate >= workDate && !isLockedScheduleDate(item.workDate) && item.status !== '已通过' && item.owner !== '红人（Yoyo）')
     .map((item) => ({ ...item, fromDate: item.workDate, toDate: nextProductionDay(item.workDate) }))
   : [];
   const batchRollovers = shouldReflow ? batches

@@ -1,3 +1,5 @@
+import { nextProductionDay } from '@/lib/work-calendar';
+
 export const STATUSES = ['未开始', '进行中', '待审核', '已通过', '延期', '未完成', '打回'] as const;
 export type Status = (typeof STATUSES)[number];
 
@@ -67,6 +69,17 @@ const special: ProductionItem[] = [
   item('0911-review', '2026-09-11', '第1集', '审核汇总', '汇总Yoyo与叶总对主美图的意见', '执行制片人：Lipa', '未开始', 1, 0, '20:00', '按已收到的意见逐项更新；最终视觉锁定后释放正式镜头', 11, '0910-send-yoyo', 'AIGC抽卡师', '2026-09-12 09:00'),
 ];
 
+export const lockedScheduleItems: ProductionItem[] = [
+  item('rollup-2026-09-12-ep1-art', '2026-09-12', '第1集', '美术清单', '生成并上传第1集全部主美资产', '主美', '未开始', 1, 0, '20:00', '完成人物造型、服装、道具和场景全部资产并上传；共40项。', 1, '', '执行制片人：Lipa', '2026-09-13 10:00'),
+  item('priority-0912-ep2-script', '2026-09-12', '第2集', '剧本', '开始撰写第2集完整剧本', '编剧', '未开始', 1, 0, '20:00', '完成结构、核心冲突与前半集，上传为候选稿。', 2, '', '执行制片人：Lipa', '当天收工前'),
+  item('priority-0913-art-rest', '2026-09-13', '全组', '休息', '主美休息，不排主美硬交付', '主美', '已通过', 1, 1, '全天', '主美当日休息；修改统一放到9月14日。', 1),
+  item('priority-0913-ep1-confirm', '2026-09-13', '第1集', '资产复核', 'Lipa确认第1集全部资产', '执行制片人：Lipa', '未开始', 1, 0, '18:00', '逐项检查场景、人物、服装和道具，写清通过项与打回修改项。', 2, 'rollup-2026-09-12-ep1-art', '主美', '2026-09-14 10:00'),
+  item('priority-0913-ep2-script', '2026-09-13', '第2集', '剧本', '继续撰写第2集完整剧本', '编剧', '未开始', 1, 0, '20:00', '完成后半集、结尾钩子与前后场连续性。', 3, 'priority-0912-ep2-script', '执行制片人：Lipa', '当天收工前'),
+  item('priority-0914-ep1-revise', '2026-09-14', '第1集', '资产修改', '按Lipa意见修改第1集资产', '主美', '未开始', 1, 0, '18:00', '只修改9月13日打回项；已通过资产不重复返工。', 1, 'priority-0913-ep1-confirm', '执行制片人：Lipa', '修改后立即复核'),
+  item('priority-0914-ep1-board', '2026-09-14', '第1集', '分镜', '第1集资产全部通过后开始分镜', '主美', '未开始', 1, 0, '全部通过后', '条件任务：资产全部通过才启动；未通过则继续修改资产。', 2, 'priority-0914-ep1-revise', '执行制片人：Lipa', '当天同步'),
+  item('priority-0914-ep2-final', '2026-09-14', '第2集', '剧本', '提交第2集完整剧本', '编剧', '未开始', 1, 0, '20:00', '上传完整稿为候选版本；由Lipa选择定稿后再生成拆场和主美资产。', 3, 'priority-0913-ep2-script', '执行制片人：Lipa', '提交后定稿'),
+];
+
 const batches = [
   { start: '2026-09-12', end: '2026-09-15', production: '第1集', prep: '第2—3集' },
   { start: '2026-09-17', end: '2026-09-22', production: '第2—3集', prep: '第4—5集' },
@@ -87,8 +100,15 @@ function datesBetween(start: string, end: string) {
   return dates;
 }
 
+function advanceProductionDays(value: string, amount: number) {
+  let result = value;
+  for (let index = 0; index < amount; index += 1) result = nextProductionDay(result);
+  return result;
+}
+
 const rolling = batches.flatMap((batch, batchIndex) =>
   datesBetween(batch.start, batch.end).flatMap((date, dayIndex) => {
+    const shiftedWorkDate = advanceProductionDays(date, 3);
     const day = dayIndex + 1;
     const base = 100 + batchIndex * 30 + dayIndex * 4;
     const days = datesBetween(batch.start, batch.end);
@@ -97,26 +117,26 @@ const rolling = batches.flatMap((batch, batchIndex) =>
     const previousDate = days[Math.max(0, dayIndex - 1)];
     const rows: ProductionItem[] = [];
     if (!isRoughCutDay && !isFinalCutDay) {
-      rows.push(item(`${date}-gen`, date, batch.production, '正式镜头', `生成${batch.production}正式镜头 · 第${day}天`, 'AIGC抽卡师', '未开始', batch.production === '第1集' ? 1 : 2, 0, '19:00', dayIndex === days.length - 3 ? '本集全部素材齐套，当晚同步剪辑' : '只统计审核可用镜头', base, '', dayIndex === days.length - 3 ? '剪辑' : '执行制片人：Lipa', dayIndex === days.length - 3 ? '20:00' : '19:15'));
+      rows.push(item(`${date}-gen`, shiftedWorkDate, batch.production, '正式镜头', `生成${batch.production}正式镜头 · 第${day}天`, 'AIGC抽卡师', '未开始', batch.production === '第1集' ? 1 : 2, 0, '19:00', dayIndex === days.length - 3 ? '本集全部素材齐套，当晚同步剪辑' : '只统计审核可用镜头', base, '', dayIndex === days.length - 3 ? '剪辑' : '执行制片人：Lipa', dayIndex === days.length - 3 ? '20:00' : '19:15'));
     }
     if (isRoughCutDay) {
-      rows.push(item(`${date}-rough`, date, batch.production, '初剪', `接收${batch.production}全部素材并完成初剪`, '剪辑', '未开始', 1, 0, '21:00', '素材齐套后预留1天完成初剪', base, `${previousDate}-gen`, '执行制片人：Lipa', '21:15'));
+      rows.push(item(`${date}-rough`, shiftedWorkDate, batch.production, '初剪', `接收${batch.production}全部素材并完成初剪`, '剪辑', '未开始', 1, 0, '21:00', '素材齐套后预留1天完成初剪', base, `${previousDate}-gen`, '执行制片人：Lipa', '21:15'));
     }
     if (isFinalCutDay) {
-      rows.push(item(`${date}-final`, date, batch.production, '成片', `完成${batch.production}修改版与成片`, '剪辑', '未开始', 1, 0, '21:00', '初剪反馈后预留1天修改与交片', base, `${previousDate}-rough`, '执行制片人：Lipa', '21:15'));
+      rows.push(item(`${date}-final`, shiftedWorkDate, batch.production, '成片', `完成${batch.production}修改版与成片`, '剪辑', '未开始', 1, 0, '21:00', '初剪反馈后预留1天修改与交片', base, `${previousDate}-rough`, '执行制片人：Lipa', '21:15'));
     }
     if (batch.prep !== '全片') {
       rows.push(
-        item(`${date}-script`, date, batch.prep, '剧本', day === days.length ? `锁定${batch.prep}全部剧本` : `编写${batch.prep} · 第${day}天`, '编剧', '未开始', 6, 0, '18:00', '单集最多3天，双集5天锁定', base + 2, '', '执行制片人：Lipa', '18:15'),
-        item(`${date}-prep`, date, batch.prep, '场景图', `提报${batch.prep}场景、服装、配角与白模`, '主美', '未开始', 2, 0, '17:00', '每天提报2场；发给Yoyo后继续下一场，不等待回复', base + 3, '', '红人（Yoyo）', '完成后即提报'),
+        item(`${date}-script`, shiftedWorkDate, batch.prep, '剧本', day === days.length ? `锁定${batch.prep}全部剧本` : `编写${batch.prep} · 第${day}天`, '编剧', '未开始', 6, 0, '18:00', '单集最多3天，双集5天锁定', base + 2, '', '执行制片人：Lipa', '18:15'),
+        item(`${date}-prep`, shiftedWorkDate, batch.prep, '场景图', `提报${batch.prep}场景、服装、配角与白模`, '主美', '未开始', 2, 0, '17:00', '每天提报2场；发给Yoyo后继续下一场，不等待回复', base + 3, '', '红人（Yoyo）', '完成后即提报'),
       );
     } else {
-      rows.push(item(`${date}-finish`, date, '全片', '精剪', '全片精剪、声音与视觉统一', '剪辑', '未开始', 1, 0, '22:00', '成片前总检查', base + 2, '', '执行制片人：Lipa', '22:15'));
+      rows.push(item(`${date}-finish`, shiftedWorkDate, '全片', '精剪', '全片精剪、声音与视觉统一', '剪辑', '未开始', 1, 0, '22:00', '成片前总检查', base + 2, '', '执行制片人：Lipa', '22:15'));
     }
     rows.push(
-      item(`${date}-producer`, date, `${batch.production} / ${batch.prep}`, '制片审核', '确认方向与关键制作决策', '制片人（叶总）', '未开始', 1, 0, '17:00', '叶总确认关键决策', base + 4, '', '执行制片人：Lipa', '17:15'),
-      item(`${date}-review`, date, `${batch.production} / ${batch.prep}`, '红人审核', '在微信反馈当日视觉与成片意见', '红人（Yoyo）', '未开始', 1, 0, '微信待回复', 'Yoyo不登录系统、不设硬deadline；未回复不阻断剧本、场景图和白模，只影响最终锁定', base + 5, batch.prep === '全片' ? '' : `${date}-prep`, '执行制片人：Lipa', '收到回复后更新'),
-      item(`${date}-lipa`, date, `${batch.production} / ${batch.prep}`, '推进统筹', '更新已收到的微信意见并调整次日Rundown', '执行制片人：Lipa', '未开始', 1, 0, '21:00', '不等待Yoyo回复；Lipa按已收到的信息更新进度与次日安排', base + 6, '', '全组', '21:15'),
+      item(`${date}-producer`, shiftedWorkDate, `${batch.production} / ${batch.prep}`, '制片审核', '确认方向与关键制作决策', '制片人（叶总）', '未开始', 1, 0, '17:00', '叶总确认关键决策', base + 4, '', '执行制片人：Lipa', '17:15'),
+      item(`${date}-review`, shiftedWorkDate, `${batch.production} / ${batch.prep}`, '红人审核', '在微信反馈当日视觉与成片意见', '红人（Yoyo）', '未开始', 1, 0, '微信待回复', 'Yoyo不登录系统、不设硬deadline；未回复不阻断剧本、场景图和白模，只影响最终锁定', base + 5, batch.prep === '全片' ? '' : `${date}-prep`, '执行制片人：Lipa', '收到回复后更新'),
+      item(`${date}-lipa`, shiftedWorkDate, `${batch.production} / ${batch.prep}`, '推进统筹', '更新已收到的微信意见并调整次日Rundown', '执行制片人：Lipa', '未开始', 1, 0, '21:00', '不等待Yoyo回复；Lipa按已收到的信息更新进度与次日安排', base + 6, '', '全组', '21:15'),
     );
     return rows;
   }),
@@ -124,8 +144,9 @@ const rolling = batches.flatMap((batch, batchIndex) =>
 
 export const initialItems: ProductionItem[] = [
   ...special,
+  ...lockedScheduleItems,
   ...rolling,
-  item('1021-delivery', '2026-10-21', '全片', '成片', '全片总审、修正与最终交付', '执行制片人：Lipa', '未开始', 10, 0, '20:00', '按六休一与国庆假期重排，给第10集保留生成、初剪、修改成片三天', 999, '', '制片人（叶总）', '20:00'),
+  item('1021-delivery', '2026-10-24', '全片', '成片', '全片总审、修正与最终交付', '执行制片人：Lipa', '未开始', 10, 0, '20:00', '三天锁定排期插入后，最终交付顺延至10月24日。', 999, '', '制片人（叶总）', '20:00'),
 ];
 
 function item(id: string, workDate: string, episode: string, category: string, title: string, owner: string, status: Status, plannedQty: number, completedQty: number, dueTime: string, note: string, sortOrder: number, dependsOnId = '', handoffTo = '', handoffDeadline = ''): ProductionItem {
@@ -153,16 +174,17 @@ function scene(id: string, sceneNo: number, title: string, location: string, own
 
 export const initialBatches: PlanBatch[] = [
   { id: 'prep-ep1', startDate: '2026-09-10', endDate: '2026-09-11', production: '第1集正式筹备', prep: '场景 / 服装 / 配角 / 白模', note: '9月10日Day 1；视觉通过一场，白模启动一场', sortOrder: 1, updatedAt: now },
-  { id: 'batch-1', startDate: '2026-09-12', endDate: '2026-09-15', production: '第1集 生成＋初剪＋成片', prep: '第2—3集 筹备', note: '连续生产至第6个工作日；批末固定留初剪与修改', sortOrder: 2, updatedAt: now },
-  { id: 'rest-0916', startDate: '2026-09-16', endDate: '2026-09-16', production: '全组休息', prep: '不排硬交付', note: '六休一', sortOrder: 3, updatedAt: now },
-  { id: 'batch-2', startDate: '2026-09-17', endDate: '2026-09-22', production: '第2—3集 生成＋初剪＋成片', prep: '第4—5集 筹备', note: '工作流滚动推进；未完成项一键顺延并带动依赖任务', sortOrder: 4, updatedAt: now },
-  { id: 'rest-0923', startDate: '2026-09-23', endDate: '2026-09-23', production: '全组休息', prep: '不排硬交付', note: '六休一', sortOrder: 5, updatedAt: now },
-  { id: 'batch-3', startDate: '2026-09-24', endDate: '2026-09-29', production: '第4—5集 生成＋初剪＋成片', prep: '第6—7集 筹备', note: '批末固定留初剪与修改', sortOrder: 6, updatedAt: now },
-  { id: 'rest-0930', startDate: '2026-09-30', endDate: '2026-09-30', production: '全组休息', prep: '不排硬交付', note: '六休一', sortOrder: 7, updatedAt: now },
-  { id: 'holiday-national-day', startDate: '2026-10-01', endDate: '2026-10-07', production: '国庆放假', prep: '全组不排工作', note: '按2026年国庆节法定安排休息7天', sortOrder: 8, updatedAt: now },
-  { id: 'batch-4', startDate: '2026-10-08', endDate: '2026-10-13', production: '第6—7集 生成＋初剪＋成片', prep: '第8—9集 筹备', note: '节后恢复六休一生产周期', sortOrder: 9, updatedAt: now },
-  { id: 'rest-1014', startDate: '2026-10-14', endDate: '2026-10-14', production: '全组休息', prep: '不排硬交付', note: '六休一', sortOrder: 10, updatedAt: now },
-  { id: 'batch-5', startDate: '2026-10-15', endDate: '2026-10-18', production: '第8—9集 生成＋初剪＋成片', prep: '第10集 筹备', note: '每集素材齐套后固定1天初剪、1天修改成片', sortOrder: 11, updatedAt: now },
-  { id: 'batch-6', startDate: '2026-10-19', endDate: '2026-10-21', production: '第10集生成＋初剪＋成片', prep: '全片精剪与统一', note: '给第10集保留生成、初剪、修改成片三天', sortOrder: 12, updatedAt: now },
-  { id: 'delivery', startDate: '2026-10-21', endDate: '2026-10-21', production: '全片最终交付', prep: '机动修正', note: '按六休一和国庆假期重排后的交付日', sortOrder: 99, updatedAt: now },
+  { id: 'priority-0912-0914', startDate: '2026-09-12', endDate: '2026-09-14', production: '第1集资产完成、确认、修改；通过后启动分镜', prep: '第2集完整剧本写作与提交', note: '固定执行期：9.12—9.14不能修改、不能被自动顺延；原大计划从9.15继续。', sortOrder: 2, updatedAt: now },
+  { id: 'batch-1', startDate: '2026-09-15', endDate: '2026-09-19', production: '第1集 生成＋初剪＋成片', prep: '第2—3集 筹备', note: '原9.12起任务整体顺延3个生产日；9.16全组休息。', sortOrder: 3, updatedAt: now },
+  { id: 'rest-0916', startDate: '2026-09-16', endDate: '2026-09-16', production: '全组休息', prep: '不排硬交付', note: '六休一', sortOrder: 4, updatedAt: now },
+  { id: 'batch-2', startDate: '2026-09-20', endDate: '2026-09-26', production: '第2—3集 生成＋初剪＋成片', prep: '第4—5集 筹备', note: '原计划整体顺延3个生产日；9.23全组休息。', sortOrder: 5, updatedAt: now },
+  { id: 'rest-0923', startDate: '2026-09-23', endDate: '2026-09-23', production: '全组休息', prep: '不排硬交付', note: '六休一', sortOrder: 6, updatedAt: now },
+  { id: 'batch-3', startDate: '2026-09-27', endDate: '2026-10-10', production: '第4—5集 生成＋初剪＋成片', prep: '第6—7集 筹备', note: '原计划顺延；9.30休息，10.1—10.7国庆放假。', sortOrder: 7, updatedAt: now },
+  { id: 'rest-0930', startDate: '2026-09-30', endDate: '2026-09-30', production: '全组休息', prep: '不排硬交付', note: '六休一', sortOrder: 8, updatedAt: now },
+  { id: 'holiday-national-day', startDate: '2026-10-01', endDate: '2026-10-07', production: '国庆放假', prep: '全组不排工作', note: '按2026年国庆节法定安排休息7天', sortOrder: 9, updatedAt: now },
+  { id: 'batch-4', startDate: '2026-10-11', endDate: '2026-10-17', production: '第6—7集 生成＋初剪＋成片', prep: '第8—9集 筹备', note: '节后继续顺延后计划；10.14全组休息。', sortOrder: 10, updatedAt: now },
+  { id: 'rest-1014', startDate: '2026-10-14', endDate: '2026-10-14', production: '全组休息', prep: '不排硬交付', note: '六休一', sortOrder: 11, updatedAt: now },
+  { id: 'batch-5', startDate: '2026-10-18', endDate: '2026-10-21', production: '第8—9集 生成＋初剪＋成片', prep: '第10集 筹备', note: '原计划整体顺延3个生产日。', sortOrder: 12, updatedAt: now },
+  { id: 'batch-6', startDate: '2026-10-22', endDate: '2026-10-24', production: '第10集生成＋初剪＋成片', prep: '全片精剪与统一', note: '第10集保留生成、初剪、修改成片三天。', sortOrder: 13, updatedAt: now },
+  { id: 'delivery', startDate: '2026-10-24', endDate: '2026-10-24', production: '全片最终交付', prep: '机动修正', note: '插入9.12—9.14固定执行期后，交付日顺延至10月24日。', sortOrder: 99, updatedAt: now },
 ];

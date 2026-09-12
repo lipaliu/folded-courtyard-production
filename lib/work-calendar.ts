@@ -1,5 +1,5 @@
 export const PROJECT_START = '2026-09-10';
-export const PROJECT_END = '2026-10-21';
+export const PROJECT_END = '2026-10-24';
 export const NATIONAL_DAY_START = '2026-10-01';
 export const NATIONAL_DAY_END = '2026-10-07';
 

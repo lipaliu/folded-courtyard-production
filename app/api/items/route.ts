@@ -1,6 +1,7 @@
 import { env } from 'cloudflare:workers';
-import { initialItems, STATUSES } from '@/lib/plan-data';
+import { initialItems, lockedScheduleItems, STATUSES } from '@/lib/plan-data';
 import { requireAdmin, requireMember } from '@/lib/auth';
+import { isLockedScheduleDate, isLockedScheduleTask } from '@/lib/locked-schedule';
 
 export async function GET(request: Request) {
   const member = await requireMember(request);
@@ -151,9 +152,20 @@ export async function GET(request: Request) {
         env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_dedupe_ep1_art_v1', 'done', ?)").bind(updatedAt),
       ]);
     }
-    // Keep the 9/12 art delivery as one roll-up task even if an older deployment
-    // or cached migration recreates the obsolete priority row.
-    await env.DB.prepare("DELETE FROM production_items WHERE id = 'priority-0912-ep1-assets'").run();
+    const lockedScheduleVersion = await env.DB.prepare("SELECT value FROM app_settings WHERE key = 'workflow_locked_0912_0914_v2'").first<{ value: string }>();
+    if (!lockedScheduleVersion) {
+      const updatedAt = new Date().toISOString();
+      const rows = lockedScheduleItems.map((row) => ({ ...row, updatedAt }));
+      const statements = [
+        env.DB.prepare("DELETE FROM production_items WHERE work_date BETWEEN '2026-09-12' AND '2026-09-14'"),
+        ...rows.map((row) => env.DB.prepare(`INSERT INTO production_items
+          (id, work_date, episode, category, title, owner, reviewer, status, planned_qty, completed_qty, due_time, depends_on_id, handoff_to, handoff_deadline, note, sort_order, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+          .bind(row.id, row.workDate, row.episode, row.category, row.title, row.owner, row.reviewer, row.status, row.plannedQty, row.completedQty, row.dueTime, row.dependsOnId, row.handoffTo, row.handoffDeadline, row.note, row.sortOrder, row.updatedAt)),
+        env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_locked_0912_0914_v2', 'done', ?)").bind(updatedAt),
+      ];
+      await env.DB.batch(statements);
+    }
     const result = await env.DB.prepare(`
       SELECT id, work_date AS workDate, episode, category, title, owner, reviewer, status,
              planned_qty AS plannedQty, completed_qty AS completedQty, due_time AS dueTime,
@@ -199,7 +211,8 @@ export async function PATCH(request: Request) {
     if (!existing) return Response.json({ error: '任务不存在' }, { status: 404 });
     if (!member.isAdmin && !roleOwnsTask(member.role, String(existing.owner))) return Response.json({ error: '只能更新分配给自己的任务' }, { status: 403 });
     if (!member.isAdmin && body.status && !['已通过', '延期', '未完成', '未开始'].includes(body.status)) return Response.json({ error: '只能标记完成、延期或未完成' }, { status: 403 });
-    const fullEdit = member.isAdmin;
+    const locked = isLockedScheduleDate(String(existing.workDate)) || isLockedScheduleTask(body.id);
+    const fullEdit = member.isAdmin && !locked;
     const plannedQty = fullEdit && Number.isFinite(body.plannedQty) ? Math.max(0, Number(body.plannedQty)) : Number(existing.plannedQty);
     const updated = {
       workDate: fullEdit && body.workDate !== undefined ? body.workDate : String(existing.workDate), episode: fullEdit && body.episode !== undefined ? body.episode : String(existing.episode),
@@ -238,6 +251,7 @@ export async function POST(request: Request) {
   if (!admin) return Response.json({ error: '只有Lipa可以新增任务' }, { status: 403 });
   const body = await request.json() as Partial<{ workDate: string; episode: string; category: string; title: string; owner: string; reviewer: string; plannedQty: number; dueTime: string; dependsOnId: string; handoffTo: string; handoffDeadline: string; note: string }>;
   if (!body.workDate || !body.title || !body.owner) return Response.json({ error: '日期、任务和负责人不能为空' }, { status: 400 });
+  if (isLockedScheduleDate(body.workDate)) return Response.json({ error: '9月12日至14日为锁定排期，不能增加或挪入其他任务' }, { status: 409 });
   const row = {
     id: crypto.randomUUID(), workDate: body.workDate, episode: body.episode || '全片', category: body.category || '统筹',
     title: body.title, owner: body.owner, reviewer: body.reviewer || 'Yoyo', status: '未开始',
@@ -262,6 +276,10 @@ export async function DELETE(request: Request) {
   if (!admin) return Response.json({ error: '只有Lipa可以删除任务' }, { status: 403 });
   const { id } = await request.json() as { id?: string };
   if (!id) return Response.json({ error: '缺少任务ID' }, { status: 400 });
+  const existing = await env.DB.prepare('SELECT work_date AS workDate FROM production_items WHERE id = ?').bind(id).first<{ workDate: string }>();
+  if (isLockedScheduleTask(id) || (existing && isLockedScheduleDate(existing.workDate))) {
+    return Response.json({ error: '9月12日至14日为锁定排期，只能更新完成状态和备注' }, { status: 409 });
+  }
   const now = new Date().toISOString();
   await env.DB.batch([
     env.DB.prepare('DELETE FROM production_items WHERE id = ?').bind(id),
