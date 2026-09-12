@@ -1,12 +1,12 @@
 import { env } from 'cloudflare:workers';
 import { requireMember } from '@/lib/auth';
+import { canEditArtCategory, roleCanSeeArt } from '@/lib/team-roles';
 
 const allowedImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const submissionStatuses = ['待上传', '已上传', '待审核', '打回', '已锁定', '需复核'] as const;
-const artRoles = new Set(['主美', '美术']);
 
 function canEditArt(user: { isAdmin: boolean; role: string }) {
-  return user.isAdmin || artRoles.has(user.role);
+  return user.isAdmin || roleCanSeeArt(user.role);
 }
 
 function safePart(value: string) {
@@ -40,7 +40,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const user = await requireMember(request);
   if (!user) return Response.json({ error: '请先登录并注册岗位' }, { status: 401 });
-  if (!canEditArt(user)) return Response.json({ error: '只有Lipa、主美或美术可以上传参考图' }, { status: 403 });
+  if (!canEditArt(user)) return Response.json({ error: '只有Lipa、主美、美术或服化道副导演可以上传参考图' }, { status: 403 });
 
   const form = await request.formData();
   const itemIdValue = form.get('itemId');
@@ -50,9 +50,10 @@ export async function POST(request: Request) {
   if (!allowedImageTypes.has(file.type)) return Response.json({ error: '只支持 JPG、PNG 或 WebP 图片' }, { status: 400 });
   if (file.size <= 0 || file.size > 12 * 1024 * 1024) return Response.json({ error: '单张图片必须小于12MB' }, { status: 400 });
 
-  const item = await env.DB.prepare(`SELECT i.id, a.episode, a.scene_no AS sceneNo
-    FROM script_analysis_items i JOIN script_analyses a ON a.id = i.analysis_id WHERE i.id = ?`).bind(itemId).first<{ id: string; episode: string; sceneNo: number }>();
+  const item = await env.DB.prepare(`SELECT i.id, i.category, a.episode, a.scene_no AS sceneNo
+    FROM script_analysis_items i JOIN script_analyses a ON a.id = i.analysis_id WHERE i.id = ?`).bind(itemId).first<{ id: string; category: string; episode: string; sceneNo: number }>();
   if (!item) return Response.json({ error: '工作项不存在或已经更新' }, { status: 404 });
+  if (!canEditArtCategory(user, item.category)) return Response.json({ error: '服化道副导演只可上传场景和角色服装' }, { status: 403 });
 
   const extension = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
   const id = crypto.randomUUID();
@@ -93,14 +94,15 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   const user = await requireMember(request);
   if (!user) return Response.json({ error: '请先登录并注册岗位' }, { status: 401 });
-  if (!canEditArt(user)) return Response.json({ error: '只有Lipa、主美或美术可以更新提报项' }, { status: 403 });
+  if (!canEditArt(user)) return Response.json({ error: '只有Lipa、主美、美术或服化道副导演可以更新提报项' }, { status: 403 });
   const body = await request.json() as Partial<{
     itemId: string; assignedTo: string; dueAt: string; handoffTo: string; doneDefinition: string;
     status: typeof submissionStatuses[number]; submissionNote: string; reviewNote: string;
   }>;
   if (!body.itemId) return Response.json({ error: '缺少工作项ID' }, { status: 400 });
-  const itemExists = await env.DB.prepare('SELECT id FROM script_analysis_items WHERE id = ?').bind(body.itemId).first();
+  const itemExists = await env.DB.prepare('SELECT id, category FROM script_analysis_items WHERE id = ?').bind(body.itemId).first<{ id: string; category: string }>();
   if (!itemExists) return Response.json({ error: '工作项不存在' }, { status: 404 });
+  if (!canEditArtCategory(user, itemExists.category)) return Response.json({ error: '服化道副导演只可更新场景和角色服装' }, { status: 403 });
   const current = await env.DB.prepare(`SELECT assigned_to AS assignedTo, due_at AS dueAt, handoff_to AS handoffTo,
     done_definition AS doneDefinition, status, submission_note AS submissionNote, review_note AS reviewNote,
     submitted_at AS submittedAt, reviewed_at AS reviewedAt FROM art_submission_details WHERE item_id = ?`).bind(body.itemId).first<Record<string, string>>();
@@ -138,12 +140,12 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   const user = await requireMember(request);
   if (!user) return Response.json({ error: '请先登录并注册岗位' }, { status: 401 });
-  if (!canEditArt(user)) return Response.json({ error: '只有Lipa、主美或美术可以删除上传错误的图片' }, { status: 403 });
+  if (!canEditArt(user)) return Response.json({ error: '只有Lipa、主美、美术或服化道副导演可以删除上传错误的图片' }, { status: 403 });
   const body = await request.json() as { fileId?: string };
   if (!body.fileId) return Response.json({ error: '缺少图片ID' }, { status: 400 });
-  const file = await env.DB.prepare('SELECT id, item_id AS itemId, object_key AS objectKey, uploaded_by AS uploadedBy FROM art_submission_files WHERE id = ?').bind(body.fileId).first<{ id: string; itemId: string; objectKey: string; uploadedBy: string }>();
+  const file = await env.DB.prepare('SELECT f.id, f.item_id AS itemId, f.object_key AS objectKey, f.uploaded_by AS uploadedBy, i.category FROM art_submission_files f JOIN script_analysis_items i ON i.id = f.item_id WHERE f.id = ?').bind(body.fileId).first<{ id: string; itemId: string; objectKey: string; uploadedBy: string; category: string }>();
   if (!file) return Response.json({ error: '图片不存在' }, { status: 404 });
-  if (!user.isAdmin && !artRoles.has(user.role)) return Response.json({ error: '没有删除权限' }, { status: 403 });
+  if (!canEditArtCategory(user, file.category)) return Response.json({ error: '只能管理有权限的场景和角色服装图片' }, { status: 403 });
   const artAssets = (env as unknown as { ART_ASSETS?: R2Bucket }).ART_ASSETS;
   if (!file.objectKey.startsWith('static:') && !file.objectKey.startsWith('d1:')) await artAssets?.delete(file.objectKey);
   await env.DB.batch([

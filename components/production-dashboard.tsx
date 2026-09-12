@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { initialBatches, initialItems, initialScenes, PlanBatch, ProductionItem, Scene, STATUSES, Status } from '@/lib/plan-data';
 import { dayType, isProductionDay, productionDayNumber, PROJECT_END, PROJECT_START } from '@/lib/work-calendar';
 import { isLockedScheduleDate, isLockedScheduleTask } from '@/lib/locked-schedule';
+import { TEAM_ROLES, roleCanSeeArt } from '@/lib/team-roles';
 import { SubmissionCenter } from '@/components/submission-center';
 
 const stageLabels: Array<{ key: keyof Scene; label: string }> = [
@@ -37,8 +38,8 @@ const statusStyle: Record<Status, string> = {
   打回: 'border-red-400/20 bg-red-400/10 text-red-300',
 };
 
-const roles = ['编剧', '主美', 'AIGC抽卡师', '剪辑', '制片人（叶总）', '红人（Yoyo）', '执行制片人：Lipa'];
-const registrationRoles = ['编剧', '导演', '制片人', '执行制片人', '主美', '美术', 'AIGC抽卡师', '剪辑'];
+const roles = ['编剧', '主美', '服化道副导演', 'AIGC抽卡师', '剪辑', '制片人（叶总）', '红人（Yoyo）', '执行制片人：Lipa'];
+const registrationRoles = TEAM_ROLES;
 const timeOptions = Array.from({ length: 96 }, (_, index) => {
   const hour = Math.floor(index / 4).toString().padStart(2, '0');
   const minute = ((index % 4) * 15).toString().padStart(2, '0');
@@ -87,9 +88,6 @@ function roleCanSeeScript(role: string) {
   return ['编剧', '导演', '制片人', '执行制片人'].includes(role);
 }
 
-function roleCanSeeArt(role: string) {
-  return ['主美', '美术'].includes(role);
-}
 
 export function ProductionDashboard() {
   const [activeTab, setActiveTab] = useState('today');
@@ -279,7 +277,7 @@ export function ProductionDashboard() {
 
         <div className="px-4 py-5 md:px-8 md:py-8">
           <div className="mx-auto max-w-6xl">
-            <TabsContent value="today" className="mt-0"><TodayView selectedDate={selectedDate} setSelectedDate={setSelectedDate} scheduleEnd={scheduleEnd} items={visibleTodayItems} assetProgressByEpisode={assetProgressByEpisode} currentRole={me.role} isAdmin={Boolean(me?.isAdmin)} canOpenHandbook={Boolean(me.isAdmin || ['主美', '美术'].includes(me.role))} onEdit={setSelectedItem} onAdd={setCreatingRole} onOpenHandbook={() => setActiveTab('breakdown')} onReload={loadData} onUpdateItem={updateItem} onToggle={(item, checked) => void (item.category === '整集资产确认' ? updateEpisodeApproval(item, checked) : updateItem(item.id, { status: checked ? '已通过' : '未开始', completedQty: checked ? item.plannedQty : 0 }))} /></TabsContent>
+            <TabsContent value="today" className="mt-0"><TodayView selectedDate={selectedDate} setSelectedDate={setSelectedDate} scheduleEnd={scheduleEnd} items={visibleTodayItems} assetProgressByEpisode={assetProgressByEpisode} currentRole={me.role} isAdmin={Boolean(me?.isAdmin)} canOpenHandbook={Boolean(me.isAdmin || roleCanSeeArt(me.role))} onEdit={setSelectedItem} onAdd={setCreatingRole} onOpenHandbook={() => setActiveTab('breakdown')} onReload={loadData} onUpdateItem={updateItem} onToggle={(item, checked) => void (item.category === '整集资产确认' ? updateEpisodeApproval(item, checked) : updateItem(item.id, { status: checked ? '已通过' : '未开始', completedQty: checked ? item.plannedQty : 0 }))} /></TabsContent>
             <TabsContent value="plan" className="mt-0"><PlanView items={items} batches={batches} scheduleEnd={scheduleEnd} currentRole={me.role} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedBatch} /></TabsContent>
             <TabsContent value="scenes" className="mt-0"><ScenesView scenes={scenes} isAdmin={Boolean(me?.isAdmin)} onChange={updateScene} /></TabsContent>
             {canSeeScript && <TabsContent value="script" className="mt-0"><SubmissionCenter mode="script" me={me} selectedDate={selectedDate} productionItems={items} onAssigned={async (workDate) => { setSelectedDate(workDate); await loadData(); }} /></TabsContent>}
@@ -372,6 +370,7 @@ function TodayView({ selectedDate, setSelectedDate, scheduleEnd, items, assetPro
   const stageDefinitions = [
     { label: '编剧', match: (item: ProductionItem) => item.owner === '编剧' },
     { label: '主美', match: (item: ProductionItem) => item.owner === '主美' },
+    { label: '服化道', match: (item: ProductionItem) => item.owner === '服化道副导演' },
     { label: 'Lipa', match: (item: ProductionItem) => item.owner.includes('Lipa') },
     { label: '叶总', match: (item: ProductionItem) => item.owner.includes('叶总') },
     { label: '抽卡', match: (item: ProductionItem) => item.owner === 'AIGC抽卡师' || item.owner === '抽卡师' },
@@ -505,13 +504,13 @@ function TodayView({ selectedDate, setSelectedDate, scheduleEnd, items, assetPro
         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#ff6240]/15 text-[#ff8066]"><Film className="h-5 w-5" /></span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2"><p className="eyebrow">TODAY&apos;S SCRIPT</p><span className="rounded-full border border-white/8 bg-white/5 px-2 py-0.5 text-[10px] text-muted-foreground">{dailyScripts.length}场</span></div>
-          <h2 className="mt-1 text-lg font-semibold">今日工作剧本与主美上传</h2>
-          <p className="mt-1 text-sm leading-5 text-muted-foreground">{dailyScripts.length ? dailyScripts.map((item) => item.title.replace(/^锁定/, '').replace(/剧本、动作与台词$/, '')).join(' · ') : '今天还没有放入剧本；进入生产手册添加当天场次。'}</p>
+          <h2 className="mt-1 text-lg font-semibold">今日美术资产上传</h2>
+          <p className="mt-1 text-sm leading-5 text-muted-foreground">{dailyScripts.length ? dailyScripts.map((item) => item.title.replace(/^锁定/, '').replace(/剧本、动作与台词$/, '')).join(' · ') : '打开资产清单，按场次上传图片；场景由主美与服化道副导演共同上传。'}</p>
         </div>
-        <div className="flex shrink-0 items-center gap-1 text-xs text-[#ff8066]"><span>{isAdmin ? '查看／添加' : '查看剧本'}</span><ChevronRight className="h-4 w-4" /></div>
+        <div className="flex shrink-0 items-center gap-1 text-xs text-[#ff8066]"><span>{isAdmin ? '查看／添加' : '上传图片'}</span><ChevronRight className="h-4 w-4" /></div>
       </button>
       <div className="grid grid-cols-2 border-t border-white/8 text-xs text-muted-foreground md:grid-cols-4">
-        {['人物造型', '服装', '道具', '场景图'].map((label) => <div key={label} className="border-r border-white/8 px-3 py-2.5 last:border-r-0"><span className="mr-1 text-[#ff8066]">□</span>主美·{label}</div>)}
+        {(currentRole === '服化道副导演' ? ['服装', '场景图'] : ['人物造型', '服装', '道具', '场景图']).map((label) => <div key={label} className="border-r border-white/8 px-3 py-2.5 last:border-r-0"><span className="mr-1 text-[#ff8066]">□</span>{label}</div>)}
       </div>
     </section>}
     {items.length > 0 && <section className="mt-7">
@@ -532,7 +531,7 @@ function TodayView({ selectedDate, setSelectedDate, scheduleEnd, items, assetPro
           const roleItems = items.filter((item) => item.owner === role || (role === 'AIGC抽卡师' && item.owner === '抽卡师'));
           return <section key={role} className="rounded-2xl border border-white/8 bg-card p-3 md:p-4">
             <div className="mb-3 flex items-center justify-between"><div className="flex items-center gap-2"><span className="grid h-8 w-8 place-items-center rounded-full bg-white/6 text-sm font-semibold">{role.includes('Lipa') ? 'L' : role.includes('Yoyo') ? 'Y' : role.includes('叶总') ? '叶' : role.slice(0, 1)}</span><div><h3 className="text-sm font-medium">{role === 'AIGC抽卡师' ? '抽卡师' : role}</h3><p className="text-[10px] text-muted-foreground">{roleItems.length ? `${roleItems.length} 项工作` : '今天尚未排活'}</p></div></div>{isAdmin && !lockedDay && <button onClick={() => onAdd(role)} className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-white">＋ 添加</button>}</div>
-            <div className="space-y-2">{roleItems.length ? roleItems.map((item) => <RoleTask key={item.id} item={item} assetProgress={item.owner === '主美' || item.category === '美术清单' ? assetProgressByEpisode[item.episode] : undefined} editable={isAdmin && !isLockedScheduleTask(item.id)} canUpdateStatus onEdit={() => onEdit(item)} onOpenList={canOpenHandbook && (role === '主美' || role === '美术') && item.category === '美术清单' ? onOpenHandbook : undefined} onUpdate={(changes) => onUpdateItem(item.id, changes)} />) : <div className="rounded-xl border border-dashed border-white/8 px-3 py-4 text-center text-xs leading-5 text-muted-foreground">{role === 'AIGC抽卡师' ? '等待叶总和Yoyo在微信确认整集资产后，再放行抽卡与视频生成。' : isAdmin && !lockedDay ? <button onClick={() => onAdd(role)}>为{role}安排今日工作</button> : '今日无任务'}</div>}</div>
+            <div className="space-y-2">{roleItems.length ? roleItems.map((item) => <RoleTask key={item.id} item={item} assetProgress={item.owner === '主美' || item.category === '美术清单' ? assetProgressByEpisode[item.episode] : undefined} editable={isAdmin && !isLockedScheduleTask(item.id)} canUpdateStatus onEdit={() => onEdit(item)} onOpenList={canOpenHandbook && roleCanSeeArt(role) && item.category === '美术清单' ? onOpenHandbook : undefined} onUpdate={(changes) => onUpdateItem(item.id, changes)} />) : <div className="rounded-xl border border-dashed border-white/8 px-3 py-4 text-center text-xs leading-5 text-muted-foreground">{role === 'AIGC抽卡师' ? '等待叶总和Yoyo在微信确认整集资产后，再放行抽卡与视频生成。' : isAdmin && !lockedDay ? <button onClick={() => onAdd(role)}>为{role}安排今日工作</button> : '今日无任务'}</div>}</div>
           </section>;
         })}
       </div>
@@ -895,7 +894,7 @@ function NewTaskEditor({ role, workDate, allItems, open, onClose, onSave }: { ro
   const [dependsOnId, setDependsOnId] = useState('');
   const [handoffTo, setHandoffTo] = useState('');
   const [handoffDeadline, setHandoffDeadline] = useState('');
-  useEffect(() => { if (open) { setTitle(''); setDate(workDate); setTime('18:00'); setNote(''); setDependsOnId(''); setHandoffTo(''); setHandoffDeadline(''); setCategory(role === '编剧' ? '剧本' : role === '主美' ? '场景图' : role === 'AIGC抽卡师' ? '正式镜头' : role === '剪辑' ? '初剪' : role?.includes('Yoyo') ? '审核' : '统筹'); } }, [open, role, workDate]);
+  useEffect(() => { if (open) { setTitle(''); setDate(workDate); setTime('18:00'); setNote(''); setDependsOnId(''); setHandoffTo(''); setHandoffDeadline(''); setCategory(role === '编剧' ? '剧本' : role && roleCanSeeArt(role) ? '场景图' : role === 'AIGC抽卡师' ? '正式镜头' : role === '剪辑' ? '初剪' : role?.includes('Yoyo') ? '审核' : '统筹'); } }, [open, role, workDate]);
   if (!open || !role) return null;
   return <div className="fixed inset-0 z-50 grid place-items-end bg-black/70 backdrop-blur-sm sm:place-items-center sm:p-4"><section role="dialog" aria-modal="true" className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-[24px] border border-white/10 bg-[#1b1d22] p-5 sm:rounded-[20px]"><div className="flex items-center justify-between"><div><h2 className="text-lg font-medium">给{role === 'AIGC抽卡师' ? '抽卡师' : role}安排工作</h2><p className="mt-1 text-sm text-muted-foreground">新增后全组同步可见</p></div><button onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full bg-white/5"><X className="h-4 w-4" /></button></div><div className="mt-5 space-y-4"><Field label="任务名称"><input autoFocus value={title} onChange={(event) => setTitle(event.target.value)} className="edit-input" placeholder="今天必须完成什么" /></Field><div className="grid grid-cols-2 gap-3"><Field label="日期"><input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="edit-input" /></Field><Field label="本人 deadline"><TimeSelect value={time} onChange={setTime} /></Field></div><Field label="必须先收到的任务 / 材料"><select value={dependsOnId} onChange={(event) => setDependsOnId(event.target.value)} className="edit-input"><option value="">不需要等材料，可直接开始</option>{allItems.map((candidate) => <option key={candidate.id} value={candidate.id}>{shortDate(candidate.workDate)} · {candidate.owner} · {candidate.title}</option>)}</select></Field><div className="grid grid-cols-2 gap-3"><Field label="完成后交给谁"><input value={handoffTo} onChange={(event) => setHandoffTo(event.target.value)} className="edit-input" /></Field><Field label="交接 deadline"><input value={handoffDeadline} onChange={(event) => setHandoffDeadline(event.target.value)} className="edit-input" /></Field></div><div className="grid grid-cols-3 gap-3"><Field label="集数"><input value={episode} onChange={(event) => setEpisode(event.target.value)} className="edit-input" /></Field><Field label="类型"><input value={category} onChange={(event) => setCategory(event.target.value)} className="edit-input" /></Field><Field label="计划量"><input type="number" min="0" value={qty} onChange={(event) => setQty(Number(event.target.value))} className="edit-input" /></Field></div><Field label="同步统筹备注"><Textarea value={note} onChange={(event) => setNote(event.target.value)} rows={3} placeholder="交接条件、风险、需要等待的材料……" /></Field></div><div className="mt-5 grid grid-cols-2 gap-2"><Button variant="outline" className="h-11" onClick={onClose}>取消</Button><Button className="h-11" disabled={!title.trim()} onClick={() => void onSave({ title, workDate: date, dueTime: time, episode, category, plannedQty: qty, owner: role, reviewer: 'Yoyo', dependsOnId, handoffTo, handoffDeadline, note })}><Check />添加并同步</Button></div></section></div>;
 }
