@@ -14,7 +14,7 @@ export async function GET(request: Request) {
         WHERE a.episode = ? AND a.is_active = 1 AND i.is_active = 1
         ORDER BY a.scene_no, i.sort_order`).bind(episode).all(),
       env.DB.prepare(`SELECT d.item_id AS itemId, d.status, d.submission_note AS submissionNote,
-        d.review_note AS reviewNote FROM art_submission_details d
+        d.review_note AS reviewNote, d.selected_file_id AS selectedFileId FROM art_submission_details d
         JOIN script_analysis_items i ON i.id = d.item_id
         JOIN script_analyses a ON a.id = i.analysis_id
         WHERE a.episode = ? AND a.is_active = 1 AND i.is_active = 1`).bind(episode).all(),

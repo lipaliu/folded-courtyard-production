@@ -21,6 +21,7 @@ export async function GET(request: Request) {
       env.DB.prepare(`SELECT item_id AS itemId, assigned_to AS assignedTo, due_at AS dueAt,
         handoff_to AS handoffTo, done_definition AS doneDefinition, status,
         submission_note AS submissionNote, review_note AS reviewNote,
+        selected_file_id AS selectedFileId,
         submitted_at AS submittedAt, reviewed_at AS reviewedAt, updated_at AS updatedAt
         FROM art_submission_details ORDER BY updated_at DESC`).all(),
       env.DB.prepare(`SELECT id, item_id AS itemId, file_name AS fileName, content_type AS contentType,
@@ -83,11 +84,12 @@ export async function POST(request: Request) {
     await artAssets?.delete(objectKey).catch(() => undefined);
     return Response.json({ error: error instanceof Error ? error.message : '图片上传失败' }, { status: 500 });
   }
+  const savedDetail = await env.DB.prepare('SELECT status, selected_file_id AS selectedFileId FROM art_submission_details WHERE item_id = ?').bind(itemId).first<{ status: string; selectedFileId: string }>();
 
   return Response.json({
     ok: true,
     file: { id, itemId, fileName: file.name, contentType: file.type, byteSize: file.size, uploadedBy: user.name, sortOrder: Number(sortRow?.maxSort || 0) + 1, createdAt: now, url: `/api/art-submissions/file/${id}` },
-    detail: { itemId, status: '已上传', submittedAt: now, updatedAt: now },
+    detail: { itemId, status: savedDetail?.status || '已上传', selectedFileId: savedDetail?.selectedFileId || '', submittedAt: now, updatedAt: now },
   });
 }
 
@@ -97,7 +99,7 @@ export async function PATCH(request: Request) {
   if (!canEditArt(user)) return Response.json({ error: '只有Lipa、主美、美术或服化道副导演可以更新提报项' }, { status: 403 });
   const body = await request.json() as Partial<{
     itemId: string; assignedTo: string; dueAt: string; handoffTo: string; doneDefinition: string;
-    status: typeof submissionStatuses[number]; submissionNote: string; reviewNote: string;
+    status: typeof submissionStatuses[number]; submissionNote: string; reviewNote: string; selectedFileId: string;
   }>;
   if (!body.itemId) return Response.json({ error: '缺少工作项ID' }, { status: 400 });
   const itemExists = await env.DB.prepare('SELECT id, category FROM script_analysis_items WHERE id = ?').bind(body.itemId).first<{ id: string; category: string }>();
@@ -105,8 +107,16 @@ export async function PATCH(request: Request) {
   if (!canEditArtCategory(user, itemExists.category)) return Response.json({ error: '服化道副导演只可更新场景和角色服装' }, { status: 403 });
   const current = await env.DB.prepare(`SELECT assigned_to AS assignedTo, due_at AS dueAt, handoff_to AS handoffTo,
     done_definition AS doneDefinition, status, submission_note AS submissionNote, review_note AS reviewNote,
+    selected_file_id AS selectedFileId,
     submitted_at AS submittedAt, reviewed_at AS reviewedAt FROM art_submission_details WHERE item_id = ?`).bind(body.itemId).first<Record<string, string>>();
-  const requestedStatus = body.status && submissionStatuses.includes(body.status) ? body.status : (current?.status || '待上传');
+  const selectionChanged = Object.prototype.hasOwnProperty.call(body, 'selectedFileId');
+  if (selectionChanged && !user.isAdmin) return Response.json({ error: '只有Lipa可以选择定稿图' }, { status: 403 });
+  const selectedFileId = selectionChanged ? String(body.selectedFileId || '').trim().slice(0, 100) : (current?.selectedFileId || '');
+  if (selectedFileId) {
+    const selectedFile = await env.DB.prepare('SELECT id FROM art_submission_files WHERE id = ? AND item_id = ?').bind(selectedFileId, body.itemId).first<{ id: string }>();
+    if (!selectedFile) return Response.json({ error: '所选图片不属于当前资产项' }, { status: 400 });
+  }
+  const requestedStatus = selectedFileId ? '已锁定' : body.status && submissionStatuses.includes(body.status) ? body.status : (current?.status || '待上传');
   if (!user.isAdmin && ['打回', '已锁定'].includes(requestedStatus)) return Response.json({ error: '只有Lipa可以打回或锁定提报项' }, { status: 403 });
   const now = new Date().toISOString();
   const detail = {
@@ -118,21 +128,22 @@ export async function PATCH(request: Request) {
     status: requestedStatus,
     submissionNote: String(body.submissionNote ?? current?.submissionNote ?? '').trim().slice(0, 1000),
     reviewNote: String(body.reviewNote ?? current?.reviewNote ?? '').trim().slice(0, 1000),
+    selectedFileId,
     submittedAt: current?.submittedAt || '',
     reviewedAt: user.isAdmin && ['打回', '已锁定'].includes(requestedStatus) ? now : (current?.reviewedAt || ''),
     updatedAt: now,
   };
-  if (!detail.assignedTo || !detail.dueAt || !detail.handoffTo || !detail.doneDefinition) return Response.json({ error: '责任人、截止时间、下一交接人和完成定义都必须填写' }, { status: 400 });
+  if (!selectionChanged && (!detail.assignedTo || !detail.dueAt || !detail.handoffTo || !detail.doneDefinition)) return Response.json({ error: '责任人、截止时间、下一交接人和完成定义都必须填写' }, { status: 400 });
   await env.DB.batch([
     env.DB.prepare(`INSERT INTO art_submission_details
-      (item_id, assigned_to, due_at, handoff_to, done_definition, status, submission_note, review_note, submitted_at, reviewed_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (item_id, assigned_to, due_at, handoff_to, done_definition, status, submission_note, review_note, selected_file_id, submitted_at, reviewed_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(item_id) DO UPDATE SET assigned_to = excluded.assigned_to, due_at = excluded.due_at,
         handoff_to = excluded.handoff_to, done_definition = excluded.done_definition, status = excluded.status,
         submission_note = excluded.submission_note, review_note = excluded.review_note,
-        reviewed_at = excluded.reviewed_at, updated_at = excluded.updated_at`)
-      .bind(detail.itemId, detail.assignedTo, detail.dueAt, detail.handoffTo, detail.doneDefinition, detail.status, detail.submissionNote, detail.reviewNote, detail.submittedAt, detail.reviewedAt, detail.updatedAt),
-    env.DB.prepare('INSERT INTO activity_log (item_type, item_id, action, operator, created_at) VALUES (?, ?, ?, ?, ?)').bind('art_submission_detail', detail.itemId, `提报状态更新为${detail.status}，责任人${detail.assignedTo}，截止${detail.dueAt}`, user.name, now),
+        selected_file_id = excluded.selected_file_id, reviewed_at = excluded.reviewed_at, updated_at = excluded.updated_at`)
+      .bind(detail.itemId, detail.assignedTo, detail.dueAt, detail.handoffTo, detail.doneDefinition, detail.status, detail.submissionNote, detail.reviewNote, detail.selectedFileId, detail.submittedAt, detail.reviewedAt, detail.updatedAt),
+    env.DB.prepare('INSERT INTO activity_log (item_type, item_id, action, operator, created_at) VALUES (?, ?, ?, ?, ?)').bind('art_submission_detail', detail.itemId, selectionChanged ? (detail.selectedFileId ? `选择定稿图：${detail.selectedFileId}` : '取消定稿图') : `提报状态更新为${detail.status}，责任人${detail.assignedTo}，截止${detail.dueAt}`, user.name, now),
   ]);
   return Response.json({ ok: true, detail });
 }
@@ -150,8 +161,9 @@ export async function DELETE(request: Request) {
   if (!file.objectKey.startsWith('static:') && !file.objectKey.startsWith('d1:')) await artAssets?.delete(file.objectKey);
   await env.DB.batch([
     env.DB.prepare('DELETE FROM art_submission_files WHERE id = ?').bind(file.id),
-    env.DB.prepare(`UPDATE art_submission_details SET status = CASE WHEN (SELECT COUNT(*) FROM art_submission_files WHERE item_id = ?) = 0 THEN '待上传' ELSE status END,
-      updated_at = ? WHERE item_id = ?`).bind(file.itemId, new Date().toISOString(), file.itemId),
+    env.DB.prepare(`UPDATE art_submission_details SET status = CASE WHEN (SELECT COUNT(*) FROM art_submission_files WHERE item_id = ?) = 0 THEN '待上传' WHEN selected_file_id = ? THEN '已上传' ELSE status END,
+      selected_file_id = CASE WHEN selected_file_id = ? THEN '' ELSE selected_file_id END,
+      updated_at = ? WHERE item_id = ?`).bind(file.itemId, file.id, file.id, new Date().toISOString(), file.itemId),
     env.DB.prepare('INSERT INTO activity_log (item_type, item_id, action, operator, created_at) VALUES (?, ?, ?, ?, ?)').bind('art_submission_file', file.id, '删除错误参考图', user.name, new Date().toISOString()),
   ]);
   return Response.json({ ok: true, fileId: file.id, itemId: file.itemId });

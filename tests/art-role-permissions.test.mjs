@@ -47,6 +47,18 @@ test('upload attribution uses account name and labels legacy images clearly', ()
   assert.equal(uploadAttribution.uploadAuthorLabel('服化道小王'), '上传人：服化道小王');
   assert.equal(uploadAttribution.uploadAuthorLabel(''), '上传人：历史图·未记录');
 });
+test('art upload UI allows unlimited multi-select and keeps uploader attribution visible', () => {
+  const source = readFileSync(new URL('../components/submission-center.tsx', import.meta.url), 'utf8');
+  const route = readFileSync(new URL('../app/api/art-submissions/route.ts', import.meta.url), 'utf8');
+  const publicReview = readFileSync(new URL('../components/art-review-page.tsx', import.meta.url), 'utf8');
+  assert.match(source, /type="file"[^>]+multiple/);
+  assert.match(source, /数量不限/);
+  assert.match(source, /uploadAuthorLabel\(file\.uploadedBy\)/);
+  assert.match(source, /选为定稿图/);
+  assert.match(route, /只有Lipa可以选择定稿图/);
+  assert.match(publicReview, /定稿图/);
+  assert.doesNotMatch(route, /COUNT\(\*\).*art_submission_files.*(?:limit|quota|上限)/is);
+});
 test('registration API accepts one-character name, login and password', async () => {
   let writes = 0;
   const api = loadTs('../app/api/auth/register/route.ts', {
@@ -114,13 +126,14 @@ test('registration includes new role; art access preserves main artist rights', 
   }
 });
 
-function apiFor(role, category) {
+function apiFor(role, category, isAdmin = false) {
   const writes = [];
   const db = {
     prepare(sql) {
       return { bind() { return this; }, async first() {
         if (sql.includes('FROM script_analysis_items')) return { id: 'asset-1', category, episode: '第1集', sceneNo: 1 };
         if (sql.includes('FROM art_submission_files f')) return { id: 'image-1', itemId: 'asset-1', objectKey: 'd1:image-1', category };
+        if (sql.includes('FROM art_submission_files WHERE id')) return { id: 'image-1' };
         return null;
       }, async run() { writes.push(sql); return { success: true }; } };
     },
@@ -128,11 +141,30 @@ function apiFor(role, category) {
   };
   const api = loadTs('../app/api/art-submissions/route.ts', {
     'cloudflare:workers': { env: { DB: db } },
-    '@/lib/auth': { requireMember: async () => ({ role, isAdmin: false, name: 'test' }) },
+    '@/lib/auth': { requireMember: async () => ({ role, isAdmin, name: isAdmin ? 'Lipa' : 'test' }) },
     '@/lib/team-roles': roles,
   });
   return { api, writes };
 }
+
+test('only Lipa can persist one final image choice per asset item', async () => {
+  const denied = apiFor('服化道副导演', '服装');
+  const deniedResponse = await denied.api.PATCH(new Request('https://test/api/art-submissions', {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ itemId: 'asset-1', selectedFileId: 'image-1' }),
+  }));
+  assert.equal(deniedResponse.status, 403);
+  assert.equal(denied.writes.length, 0);
+
+  const allowed = apiFor('执行制片人', '服装', true);
+  const allowedResponse = await allowed.api.PATCH(new Request('https://test/api/art-submissions', {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ itemId: 'asset-1', selectedFileId: 'image-1' }),
+  }));
+  assert.equal(allowedResponse.status, 200);
+  const payload = await allowedResponse.json();
+  assert.equal(payload.detail.selectedFileId, 'image-1');
+  assert.equal(payload.detail.status, '已锁定');
+  assert.ok(allowed.writes.length > 0);
+});
 
 for (const category of ['人物', '服装', '道具', '场景']) {
   test(`upload authorization enforced by stored category: ${category}`, async () => {

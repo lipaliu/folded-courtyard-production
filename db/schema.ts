@@ -168,6 +168,7 @@ export const artSubmissionDetails = sqliteTable('art_submission_details', {
   status: text('status').notNull().default('待上传'),
   submissionNote: text('submission_note').notNull().default(''),
   reviewNote: text('review_note').notNull().default(''),
+  selectedFileId: text('selected_file_id').notNull().default(''),
   submittedAt: text('submitted_at').notNull().default(''),
   reviewedAt: text('reviewed_at').notNull().default(''),
   updatedAt: text('updated_at').notNull(),
