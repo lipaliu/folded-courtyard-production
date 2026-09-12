@@ -19,11 +19,11 @@ export async function GET(request: Request) {
         JOIN script_analyses a ON a.id = i.analysis_id
         WHERE a.episode = ? AND a.is_active = 1 AND i.is_active = 1`).bind(episode).all(),
       env.DB.prepare(`SELECT f.id, f.item_id AS itemId, f.file_name AS fileName,
-        f.sort_order AS sortOrder FROM art_submission_files f
+        f.uploaded_by AS uploadedBy, f.created_at AS createdAt, f.sort_order AS sortOrder FROM art_submission_files f
         JOIN script_analysis_items i ON i.id = f.item_id
         JOIN script_analyses a ON a.id = i.analysis_id
         WHERE a.episode = ? AND a.is_active = 1 AND i.is_active = 1
-        ORDER BY a.scene_no, i.sort_order, f.sort_order`).bind(episode).all<{ id: string; itemId: string; fileName: string; sortOrder: number }>(),
+        ORDER BY a.scene_no, i.sort_order, f.sort_order`).bind(episode).all<{ id: string; itemId: string; fileName: string; uploadedBy: string; createdAt: string; sortOrder: number }>(),
       env.DB.prepare(`SELECT version_no AS versionNo, finalized_at AS finalizedAt
         FROM script_versions WHERE episode = ? AND is_final = 1 LIMIT 1`).bind(episode).first(),
     ]);

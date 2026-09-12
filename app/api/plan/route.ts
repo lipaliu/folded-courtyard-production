@@ -34,7 +34,7 @@ export async function GET(request: Request) {
         env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_plan_calendar_v1', 'done', ?)").bind(updatedAt),
       ]);
     }
-    const lockedScheduleVersion = await env.DB.prepare("SELECT value FROM app_settings WHERE key = 'workflow_locked_plan_0912_0914_v1'").first<{ value: string }>();
+    const lockedScheduleVersion = await env.DB.prepare("SELECT value FROM app_settings WHERE key = 'workflow_kickoff_plan_0914_v1'").first<{ value: string }>();
     if (!lockedScheduleVersion) {
       const updatedAt = new Date().toISOString();
       await env.DB.batch([
@@ -43,7 +43,7 @@ export async function GET(request: Request) {
           (id, start_date, end_date, production, prep, note, sort_order, updated_at)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
           .bind(row.id, row.startDate, row.endDate, row.production, row.prep, row.note, row.sortOrder, updatedAt)),
-        env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_locked_plan_0912_0914_v1', 'done', ?)").bind(updatedAt),
+        env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_kickoff_plan_0914_v1', 'done', ?)").bind(updatedAt),
       ]);
     }
     const result = await env.DB.prepare(`
@@ -62,7 +62,7 @@ export async function PATCH(request: Request) {
   if (!admin) return Response.json({ error: '只有Lipa可以修改大计划' }, { status: 403 });
   const body = await request.json() as Partial<{ id: string; startDate: string; endDate: string; production: string; prep: string; note: string }>;
   if (!body.id || !body.startDate || !body.endDate || !body.production || !body.prep) return Response.json({ error: '大计划信息不完整' }, { status: 400 });
-  if (body.id === 'priority-0912-0914') return Response.json({ error: '9月12日至14日为锁定排期，不能修改' }, { status: 409 });
+  if (body.id === 'kickoff-0914') return Response.json({ error: '9月14日为固定开工日，不能修改' }, { status: 409 });
   const updatedAt = new Date().toISOString();
   try {
     await env.DB.prepare('UPDATE plan_batches SET start_date = ?, end_date = ?, production = ?, prep = ?, note = ?, updated_at = ? WHERE id = ?')

@@ -57,17 +57,21 @@ async function allBatches() {
 }
 
 function isFixedCalendarBatch(batch: BatchRow) {
-  return batch.id === 'priority-0912-0914' || batch.production.includes('休息') || batch.production.includes('放假');
+  return batch.id === 'kickoff-0914' || batch.production.includes('休息') || batch.production.includes('放假');
+}
+
+function isExternalReview(item: TaskRow) {
+  return item.owner === '叶总／Yoyo' || item.owner === '红人（Yoyo）';
 }
 
 function buildSummary(tasks: TaskRow[], batches: BatchRow[], workDate: string): ReportSummary {
   const today = tasks.filter((item) => item.workDate === workDate);
   const completed = today.filter((item) => item.status === '已通过');
-  const yoyoPending = today.filter((item) => item.owner === '红人（Yoyo）' && item.status !== '已通过');
-  const incomplete = today.filter((item) => item.owner !== '红人（Yoyo）' && item.status !== '已通过');
+  const yoyoPending = today.filter((item) => isExternalReview(item) && item.status !== '已通过');
+  const incomplete = today.filter((item) => !isExternalReview(item) && item.status !== '已通过');
   const shouldReflow = incomplete.length > 0;
   const rollovers = shouldReflow ? tasks
-    .filter((item) => item.workDate >= workDate && !isLockedScheduleDate(item.workDate) && item.status !== '已通过' && item.owner !== '红人（Yoyo）')
+    .filter((item) => item.workDate >= workDate && !isLockedScheduleDate(item.workDate) && item.status !== '已通过' && !isExternalReview(item))
     .map((item) => ({ ...item, fromDate: item.workDate, toDate: nextProductionDay(item.workDate) }))
   : [];
   const batchRollovers = shouldReflow ? batches

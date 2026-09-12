@@ -131,7 +131,7 @@ export async function GET(request: Request) {
     const calendarVersion = await env.DB.prepare("SELECT value FROM app_settings WHERE key = 'workflow_calendar_six_on_one_off_v1'").first<{ value: string }>();
     if (!calendarVersion) {
       const updatedAt = new Date().toISOString();
-      const scheduleRows = initialItems.filter((row) => /^2026-/.test(row.id) || row.id === '1021-delivery');
+      const scheduleRows = initialItems.filter((row) => row.id.startsWith('2026-') || row.id === '1021-delivery');
       await env.DB.prepare("DELETE FROM production_items WHERE id LIKE '2026-%' OR id IN ('1009-delivery', '1020-delivery', '1021-delivery')").run();
       for (let index = 0; index < scheduleRows.length; index += 50) {
         await env.DB.batch(scheduleRows.slice(index, index + 50).map((row) => env.DB.prepare(`INSERT INTO production_items
@@ -152,19 +152,32 @@ export async function GET(request: Request) {
         env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_dedupe_ep1_art_v1', 'done', ?)").bind(updatedAt),
       ]);
     }
-    const lockedScheduleVersion = await env.DB.prepare("SELECT value FROM app_settings WHERE key = 'workflow_locked_0912_0914_v2'").first<{ value: string }>();
+    const lockedScheduleVersion = await env.DB.prepare("SELECT value FROM app_settings WHERE key = 'workflow_kickoff_0914_v1'").first<{ value: string }>();
     if (!lockedScheduleVersion) {
       const updatedAt = new Date().toISOString();
       const rows = lockedScheduleItems.map((row) => ({ ...row, updatedAt }));
-      const statements = [
-        env.DB.prepare("DELETE FROM production_items WHERE work_date BETWEEN '2026-09-12' AND '2026-09-14'"),
+      const rollingRows = initialItems.filter((row) => row.id.startsWith('2026-') || row.id === '1021-delivery').map((row) => ({ ...row, updatedAt }));
+      await env.DB.batch([
+        env.DB.prepare("DELETE FROM production_items WHERE work_date < '2026-09-14' OR work_date = '2026-09-14' OR id LIKE '2026-%' OR id IN ('1009-delivery', '1020-delivery', '1021-delivery')"),
         ...rows.map((row) => env.DB.prepare(`INSERT INTO production_items
           (id, work_date, episode, category, title, owner, reviewer, status, planned_qty, completed_qty, due_time, depends_on_id, handoff_to, handoff_deadline, note, sort_order, updated_at)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
           .bind(row.id, row.workDate, row.episode, row.category, row.title, row.owner, row.reviewer, row.status, row.plannedQty, row.completedQty, row.dueTime, row.dependsOnId, row.handoffTo, row.handoffDeadline, row.note, row.sortOrder, row.updatedAt)),
-        env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_locked_0912_0914_v2', 'done', ?)").bind(updatedAt),
-      ];
-      await env.DB.batch(statements);
+      ]);
+      for (let index = 0; index < rollingRows.length; index += 50) {
+        await env.DB.batch(rollingRows.slice(index, index + 50).map((row) => env.DB.prepare(`INSERT INTO production_items
+          (id, work_date, episode, category, title, owner, reviewer, status, planned_qty, completed_qty, due_time, depends_on_id, handoff_to, handoff_deadline, note, sort_order, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+          .bind(row.id, row.workDate, row.episode, row.category, row.title, row.owner, row.reviewer, row.status, row.plannedQty, row.completedQty, row.dueTime, row.dependsOnId, row.handoffTo, row.handoffDeadline, row.note, row.sortOrder, row.updatedAt)));
+      }
+      await env.DB.batch([
+        env.DB.prepare("DELETE FROM production_items WHERE id LIKE 'rollup-%-producer'"),
+        env.DB.prepare("UPDATE production_items SET id = REPLACE(id, '-yoyo', '-review'), owner = '叶总／Yoyo', reviewer = '叶总／Yoyo', category = '整集资产确认', title = REPLACE(title, '记录Yoyo是否已确认', '记录叶总／Yoyo是否已确认'), note = '审核统一记录为叶总／Yoyo一项；本平台由Lipa录入最终结果。', updated_at = ? WHERE id LIKE 'rollup-%-yoyo'").bind(updatedAt),
+        env.DB.prepare("UPDATE production_items SET depends_on_id = REPLACE(depends_on_id, '-producer', '-review'), updated_at = ? WHERE depends_on_id LIKE 'rollup-%-producer'").bind(updatedAt),
+        env.DB.prepare("UPDATE production_items SET owner = '叶总／Yoyo', reviewer = '叶总／Yoyo', updated_at = ? WHERE owner IN ('制片人（叶总）', '红人（Yoyo）')").bind(updatedAt),
+        env.DB.prepare("UPDATE production_items SET handoff_to = REPLACE(REPLACE(REPLACE(handoff_to, '制片人（叶总）＋红人（Yoyo）', '叶总／Yoyo'), '红人（Yoyo）＋制片人（叶总）', '叶总／Yoyo'), '红人（Yoyo）', '叶总／Yoyo'), reviewer = '叶总／Yoyo', updated_at = ? WHERE handoff_to LIKE '%Yoyo%' OR reviewer = 'Yoyo'").bind(updatedAt),
+        env.DB.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('workflow_kickoff_0914_v1', 'done', ?)").bind(updatedAt),
+      ]);
     }
     const result = await env.DB.prepare(`
       SELECT id, work_date AS workDate, episode, category, title, owner, reviewer, status,
@@ -251,10 +264,10 @@ export async function POST(request: Request) {
   if (!admin) return Response.json({ error: '只有Lipa可以新增任务' }, { status: 403 });
   const body = await request.json() as Partial<{ workDate: string; episode: string; category: string; title: string; owner: string; reviewer: string; plannedQty: number; dueTime: string; dependsOnId: string; handoffTo: string; handoffDeadline: string; note: string }>;
   if (!body.workDate || !body.title || !body.owner) return Response.json({ error: '日期、任务和负责人不能为空' }, { status: 400 });
-  if (isLockedScheduleDate(body.workDate)) return Response.json({ error: '9月12日至14日为锁定排期，不能增加或挪入其他任务' }, { status: 409 });
+  if (isLockedScheduleDate(body.workDate)) return Response.json({ error: '9月14日为固定开工日，不能增加或挪入其他任务' }, { status: 409 });
   const row = {
     id: crypto.randomUUID(), workDate: body.workDate, episode: body.episode || '全片', category: body.category || '统筹',
-    title: body.title, owner: body.owner, reviewer: body.reviewer || 'Yoyo', status: '未开始',
+    title: body.title, owner: body.owner, reviewer: body.reviewer || '叶总／Yoyo', status: '未开始',
     plannedQty: Math.max(0, Number(body.plannedQty || 1)), completedQty: 0, dueTime: body.dueTime || '18:00',
     dependsOnId: body.dependsOnId || '', handoffTo: body.handoffTo || '', handoffDeadline: body.handoffDeadline || '',
     note: body.note || '', sortOrder: Date.now(), updatedAt: new Date().toISOString(),
@@ -278,7 +291,7 @@ export async function DELETE(request: Request) {
   if (!id) return Response.json({ error: '缺少任务ID' }, { status: 400 });
   const existing = await env.DB.prepare('SELECT work_date AS workDate FROM production_items WHERE id = ?').bind(id).first<{ workDate: string }>();
   if (isLockedScheduleTask(id) || (existing && isLockedScheduleDate(existing.workDate))) {
-    return Response.json({ error: '9月12日至14日为锁定排期，只能更新完成状态和备注' }, { status: 409 });
+    return Response.json({ error: '9月14日为固定开工日，只能更新完成状态和备注' }, { status: 409 });
   }
   const now = new Date().toISOString();
   await env.DB.batch([

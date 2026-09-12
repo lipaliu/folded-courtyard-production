@@ -1,15 +1,17 @@
-export const LOCKED_SCHEDULE_START = '2026-09-12';
+export const LOCKED_SCHEDULE_START = '2026-09-14';
 export const LOCKED_SCHEDULE_END = '2026-09-14';
 
 export const LOCKED_SCHEDULE_TASK_IDS = [
-  'rollup-2026-09-12-ep1-art',
-  'priority-0912-ep2-script',
-  'priority-0913-art-rest',
-  'priority-0913-ep1-confirm',
-  'priority-0913-ep2-script',
-  'priority-0914-ep1-revise',
-  'priority-0914-ep1-board',
-  'priority-0914-ep2-final',
+  'rollup-2026-09-14-ep1-script',
+  'rollup-2026-09-14-ep1-art',
+  'rollup-2026-09-14-ep1-wardrobe',
+  'rollup-2026-09-14-ep1-send',
+  'rollup-2026-09-14-ep1-review',
+  'rollup-2026-09-14-ep2-script',
+  'rollup-2026-09-14-ep2-art',
+  'rollup-2026-09-14-ep2-wardrobe',
+  'rollup-2026-09-14-ep2-send',
+  'rollup-2026-09-14-ep2-review',
 ] as const;
 
 const lockedTaskIds = new Set<string>(LOCKED_SCHEDULE_TASK_IDS);

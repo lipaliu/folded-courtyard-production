@@ -18,7 +18,35 @@ function loadTs(path, dependencies = {}, globals = {}) {
 
 const roles = loadTs('../lib/team-roles.ts');
 const accountRules = loadTs('../lib/account-rules.ts');
+const workCalendar = loadTs('../lib/work-calendar.ts');
+const lockedSchedule = loadTs('../lib/locked-schedule.ts');
+const planData = loadTs('../lib/plan-data.ts', { '@/lib/work-calendar': workCalendar });
+const uploadAttribution = loadTs('../lib/upload-attribution.ts');
 const { accountFormError } = loadTs('../lib/account-form.ts', { './team-roles': roles, './account-rules': accountRules });
+test('September 14 is production Day 1 and the following plan starts September 15', () => {
+  assert.equal(workCalendar.PROJECT_START, '2026-09-14');
+  assert.equal(workCalendar.productionDayNumber('2026-09-14'), 1);
+  assert.equal(workCalendar.productionDayNumber('2026-09-15'), 2);
+  assert.equal(workCalendar.isSixOnOneOffRestDay('2026-09-20'), true);
+  assert.equal(workCalendar.nextProductionDay('2026-09-19'), '2026-09-21');
+  assert.equal(lockedSchedule.LOCKED_SCHEDULE_START, '2026-09-14');
+  assert.equal(lockedSchedule.LOCKED_SCHEDULE_END, '2026-09-14');
+  assert.ok(planData.initialItems.every((item) => item.workDate >= '2026-09-14'));
+  assert.equal(planData.initialBatches[0].id, 'kickoff-0914');
+  assert.equal(planData.initialBatches[1].startDate, '2026-09-15');
+});
+test('kickoff tasks merge approval and assign both art upload roles', () => {
+  const kickoff = planData.initialItems.filter((item) => item.workDate === '2026-09-14');
+  assert.equal(kickoff.filter((item) => item.owner === '编剧').length, 2);
+  assert.equal(kickoff.filter((item) => item.owner === '主美').length, 2);
+  assert.equal(kickoff.filter((item) => item.owner === '服化道副导演').length, 2);
+  assert.equal(kickoff.filter((item) => item.owner === '叶总／Yoyo').length, 2);
+  assert.equal(kickoff.some((item) => ['制片人（叶总）', '红人（Yoyo）'].includes(item.owner)), false);
+});
+test('upload attribution uses account name and labels legacy images clearly', () => {
+  assert.equal(uploadAttribution.uploadAuthorLabel('服化道小王'), '上传人：服化道小王');
+  assert.equal(uploadAttribution.uploadAuthorLabel(''), '上传人：历史图·未记录');
+});
 test('registration API accepts one-character name, login and password', async () => {
   let writes = 0;
   const api = loadTs('../app/api/auth/register/route.ts', {
@@ -116,6 +144,7 @@ for (const category of ['人物', '服装', '道具', '场景']) {
     const allowed = ['服装', '场景'].includes(category);
     assert.equal(response.status, allowed ? 200 : 403);
     assert.equal(writes.length > 0, allowed);
+    if (allowed) assert.equal((await response.json()).file.uploadedBy, 'test');
   });
 }
 
