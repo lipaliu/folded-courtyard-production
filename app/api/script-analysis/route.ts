@@ -182,7 +182,7 @@ export async function POST(request: Request) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(body.workDate || '') || !body.text?.trim()) return Response.json({ error: '没有读取到剧本文字' }, { status: 400 });
     await ensureFirstEpisodeBreakdown();
     const scenes = parseScriptDocument(body.text.slice(0, 300000), body.fileName || '');
-    if (!scenes.length) return Response.json({ error: '没有识别到场次。请检查剧本是否有“1. 地点 时间 内/外”这样的场头。' }, { status: 400 });
+    if (!scenes.length) return Response.json({ error: '没有识别到场次。支持“1. 地点 时间 内/外”“第1场：地点 时间 内/外”，也支持场号与场头分成两行。' }, { status: 400 });
     const now = new Date().toISOString();
     const statements = [];
     const versionRows: Array<{ id: string; episode: string; versionNo: number }> = [];

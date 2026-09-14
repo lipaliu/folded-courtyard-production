@@ -12,33 +12,48 @@ export function parseScriptDocument(sourceText: string, fileName = ''): Imported
   const text = sourceText.replace(/\r/g, '').replace(/\u00a0/g, ' ').trim();
   const lines = text.split('\n').map((line) => line.trim()).filter(Boolean);
   const episode = findEpisode(lines, fileName);
-  const headingIndexes: number[] = [];
+  const headings: Array<{ index: number; location: string; headerLineCount: number }> = [];
 
   lines.forEach((line, index) => {
-    const match = line.match(/^(\d{1,3})[.．、]\s*(.+)$/);
-    if (!match) return;
-    const nearby = lines.slice(index + 1, index + 3);
-    if (/(?:夜|日|晨|晚|黄昏|清晨|深夜|内|外)(?:\s|$)/.test(match[2]) || nearby.some((row) => /^人物[：:]/.test(row))) headingIndexes.push(index);
+    const inline = matchInlineSceneHeading(line);
+    if (inline) {
+      const nearby = lines.slice(index + 1, index + 3);
+      if (looksLikeSceneHeading(inline) || nearby.some((row) => /^人物[：:]/.test(row))) headings.push({ index, location: inline, headerLineCount: 1 });
+      return;
+    }
+    if (!isSceneNumberOnly(line) || !lines[index + 1]) return;
+    const location = lines[index + 1];
+    if (looksLikeSceneHeading(location) || /^人物[：:]/.test(lines[index + 2] || '')) headings.push({ index, location, headerLineCount: 2 });
   });
 
-  return headingIndexes.map((start, sceneIndex) => {
-    const end = headingIndexes[sceneIndex + 1] ?? lines.length;
+  return headings.map(({ index: start, location, headerLineCount }, sceneIndex) => {
+    const end = headings[sceneIndex + 1]?.index ?? lines.length;
     const sceneLines = lines.slice(start, end).filter((line) => !/^第.+集完$/.test(line));
-    const heading = sceneLines[0];
-    const match = heading.match(/^(\d{1,3})[.．、]\s*(.+)$/);
     // Some screenplay drafts repeat a scene number after inserting a new scene.
     // Production IDs and assignments must still be unique, so the finalized
     // breakdown follows the actual document order (1..N).
     const sceneNo = sceneIndex + 1;
-    const location = (match?.[2] || heading).trim();
     const peopleLine = sceneLines.find((line) => /^人物[：:]/.test(line));
     const people = peopleLine ? peopleLine.replace(/^人物[：:]/, '').split(/[、，,]/).map((name) => name.trim()).filter(Boolean).slice(0, 16) : [];
-    const bodyLines = sceneLines.slice(1).filter((line) => line !== peopleLine);
+    const bodyLines = sceneLines.slice(headerLineCount).filter((line) => line !== peopleLine);
     const actionLines = bodyLines.filter((line) => !/^[^：:]{1,18}[：:]/.test(line));
     const sceneSummary = actionLines.slice(0, 3).join(' ').slice(0, 360) || `${location}的本场剧情与调度。`;
     const items = buildArtItems(location, people, bodyLines);
     return { episode, sceneNo, sceneTitle: location, location, scriptText: sceneLines.join('\n'), sceneSummary, items };
   });
+}
+
+function matchInlineSceneHeading(line: string) {
+  const match = line.match(/^(?:(?:场次|场景)\s*)?(?:第\s*)?(?:\d{1,3}(?:[-—]\d{1,3})?|[一二三四五六七八九十百]+)(?:\s*场)?(?:\s*[.．、:：\-—]\s*|\s+)(.+)$/);
+  return match?.[1]?.trim() || '';
+}
+
+function isSceneNumberOnly(line: string) {
+  return /^(?:(?:场次|场景)\s*)?(?:第\s*)?(?:\d{1,3}(?:[-—]\d{1,3})?|[一二三四五六七八九十百]+)(?:\s*场)?\s*[.．、:：\-—]?\s*$/.test(line);
+}
+
+function looksLikeSceneHeading(line: string) {
+  return /(?:深夜|清晨|凌晨|黄昏|傍晚|早晨|上午|中午|下午|日|夜|晨|晚|内|外)/.test(line);
 }
 
 function findEpisode(lines: string[], fileName: string) {

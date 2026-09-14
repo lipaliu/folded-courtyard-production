@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { ImagePlus, Loader2 } from 'lucide-react';
 import { ImageUploadQueue, type UploadEntry } from '@/lib/image-upload-queue';
 
-export function ArtUploadDropzone({ name, currentName, reuse, onUpload, onIdle }: {
-  name: string; currentName: string; reuse: boolean;
+export function ArtUploadDropzone({ name, reuse, onUpload, onIdle }: {
+  name: string; reuse: boolean;
   onUpload: (file: File) => Promise<unknown>; onIdle: () => Promise<unknown>;
 }) {
   const [entries, setEntries] = useState<UploadEntry[]>([]);
@@ -45,7 +45,6 @@ export function ArtUploadDropzone({ name, currentName, reuse, onUpload, onIdle }
       <span className="mt-1 text-[10px]">可一次多选 · 数量不限</span>
       <span className="mt-1 text-[10px] text-cyan-300">上传中也可继续拖入追加</span>
       {reuse && <span className="mt-1 text-[10px]">本场变化时另传</span>}
-      <span className="mt-1 text-[10px] text-[#ff9a86]/70">每张自动署名：{currentName}</span>
     </label>
     {!!entries.length && <div className="mt-2 text-[11px] leading-5" aria-live="polite">
       <p className="text-cyan-300">{pending.length ? '上传中' : '上传结束'} · 成功 {done}/{entries.length}{failed.length ? ` · 失败 ${failed.length}` : ''}</p>

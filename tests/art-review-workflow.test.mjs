@@ -34,6 +34,14 @@ test('script creates a single scene slot, two slots per lead and one ensemble sl
   assert.equal(items.filter((item) => item.category === '道具').length, 0);
   assert.equal(items.filter((item) => item.name.includes('整体参考')).length, 1);
 });
+test('script accepts common writer scene-heading formats', () => {
+  const scenes = script.parseScriptDocument(`第2集\n第1场：酒店标间 深夜 内\n人物：顾丽乔、群演\n顾丽乔推门。\n\n2\n医院走廊 日 外\n人物：陆文川\n陆文川赶来。\n\n场次3 监控室 夜 内\n人物：助理\n助理查看监控。`, '第二集.docx');
+  assert.equal(scenes.length, 3);
+  assert.equal(scenes.map((scene) => scene.location).join('|'), '酒店标间 深夜 内|医院走廊 日 外|监控室 夜 内');
+  assert.equal(scenes[0].episode, '第2集');
+  assert.ok(scenes[0].items.some((item) => item.name === '顾丽乔｜服装'));
+  assert.ok(scenes[1].items.some((item) => item.name === '陆文川｜服装'));
+});
 test('removing a reused image persists an exclusion and never deletes the source', async () => {
   const statements = [];
   const roles = load('../lib/team-roles.ts');
@@ -129,8 +137,42 @@ test('final-script scene alignment moves hospital and hotel files without losing
   assert.equal(db.prepare('SELECT COUNT(*) AS n FROM art_scene_alignment_files_backup_0914').get().n, 4);
   db.close();
 });
+test('first-scene historical wardrobe is assigned to Gu Liqiao without losing attribution', () => {
+  const db = new DatabaseSync(':memory:');
+  db.exec(`
+    CREATE TABLE script_analyses(id TEXT PRIMARY KEY,episode TEXT,is_active INTEGER);
+    CREATE TABLE script_analysis_items(id TEXT PRIMARY KEY,analysis_id TEXT,category TEXT,name TEXT,detail TEXT,visual_brief TEXT,yoyo_approved INTEGER,producer_approved INTEGER,sort_order INTEGER,updated_at TEXT,is_active INTEGER);
+    CREATE TABLE art_submission_details(item_id TEXT PRIMARY KEY,status TEXT,review_note TEXT,selected_file_id TEXT,updated_at TEXT);
+    CREATE TABLE art_submission_files(id TEXT PRIMARY KEY,item_id TEXT,object_key TEXT,file_name TEXT,content_type TEXT,byte_size INTEGER,uploaded_by TEXT,sort_order INTEGER,created_at TEXT);
+    CREATE TABLE art_reference_exclusions(item_id TEXT,file_id TEXT,removed_by TEXT,created_at TEXT,PRIMARY KEY(item_id,file_id));
+    CREATE TABLE production_items(episode TEXT,category TEXT,planned_qty INTEGER,updated_at TEXT);
+    CREATE TABLE activity_log(id INTEGER PRIMARY KEY AUTOINCREMENT,item_type TEXT,item_id TEXT,action TEXT,operator TEXT,created_at TEXT);
+    INSERT INTO script_analyses VALUES('ep1-v3-s1','第1集',1);
+    INSERT INTO script_analysis_items VALUES
+      ('ep1-v3-s1-auto-10','ep1-v3-s1','服装','历史服装备选（待确认角色）','','',1,0,850,'',1),
+      ('ep1-v3-s1-heroine-wardrobe','ep1-v3-s1','服装','顾丽乔｜服装','','',0,0,11,'',1);
+    INSERT INTO art_submission_details VALUES
+      ('ep1-v3-s1-auto-10','已上传','','old-selected',''),
+      ('ep1-v3-s1-heroine-wardrobe','待上传','','','');
+    INSERT INTO art_submission_files VALUES
+      ('old-selected','ep1-v3-s1-auto-10','a','a.jpg','image/jpeg',1,'玉冰',1,'2026-09-14 09:00'),
+      ('other','ep1-v3-s1-auto-10','b','b.jpg','image/jpeg',1,'罗新姗',2,'2026-09-14 10:00');
+    INSERT INTO production_items VALUES('第1集','美术清单',2,'');
+  `);
+  db.exec(readFileSync(new URL('../drizzle/0018_assign_scene1_wardrobe_to_guliqiao.sql', import.meta.url), 'utf8'));
+  assert.equal(db.prepare("SELECT is_active FROM script_analysis_items WHERE id='ep1-v3-s1-auto-10'").get().is_active, 0);
+  assert.equal(db.prepare("SELECT name FROM script_analysis_items WHERE id='ep1-v3-s1-heroine-wardrobe'").get().name, '顾丽乔｜服装');
+  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM art_submission_files WHERE item_id='ep1-v3-s1-heroine-wardrobe'").get().n, 2);
+  assert.equal(db.prepare("SELECT uploaded_by FROM art_submission_files WHERE id='old-selected'").get().uploaded_by, '玉冰');
+  assert.equal(db.prepare("SELECT created_at FROM art_submission_files WHERE id='other'").get().created_at, '2026-09-14 10:00');
+  assert.equal(db.prepare("SELECT selected_file_id FROM art_submission_details WHERE item_id='ep1-v3-s1-heroine-wardrobe'").get().selected_file_id, 'old-selected');
+  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM art_scene1_wardrobe_files_backup_0914').get().n, 2);
+  db.close();
+});
 test('art cards keep review essentials and omit production metadata forms', () => {
   const source = readFileSync(new URL('../components/submission-center.tsx', import.meta.url), 'utf8');
+  const dropzone = readFileSync(new URL('../components/art-upload-dropzone.tsx', import.meta.url), 'utf8');
   for (const hidden of ['分配责任人（可多人上传）', '精确截止时间', '下一交接人', '完成定义', '采用说明', 'Lipa审核／打回意见', '保存责任与节点']) assert.equal(source.includes(hidden), false);
   for (const essential of ['上传人：', '选为定稿图', 'ReferenceLightbox', 'ArtUploadDropzone']) assert.equal(source.includes(essential), true);
+  assert.equal(dropzone.includes('每张自动署名'), false);
 });
