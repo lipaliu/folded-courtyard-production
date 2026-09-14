@@ -160,8 +160,10 @@ test('first-scene historical wardrobe is assigned to Gu Liqiao without losing at
     INSERT INTO production_items VALUES('第1集','美术清单',2,'');
   `);
   db.exec(readFileSync(new URL('../drizzle/0018_assign_scene1_wardrobe_to_guliqiao.sql', import.meta.url), 'utf8'));
+  db.exec(readFileSync(new URL('../drizzle/0019_clarify_guliqiao_scene1_wardrobe.sql', import.meta.url), 'utf8'));
   assert.equal(db.prepare("SELECT is_active FROM script_analysis_items WHERE id='ep1-v3-s1-auto-10'").get().is_active, 0);
   assert.equal(db.prepare("SELECT name FROM script_analysis_items WHERE id='ep1-v3-s1-heroine-wardrobe'").get().name, '顾丽乔｜服装');
+  assert.equal(db.prepare("SELECT detail FROM script_analysis_items WHERE id='ep1-v3-s1-heroine-wardrobe'").get().detail, '第一场顾丽乔的服装参考，可上传多套备选并由 Lipa 选择定稿。');
   assert.equal(db.prepare("SELECT COUNT(*) AS n FROM art_submission_files WHERE item_id='ep1-v3-s1-heroine-wardrobe'").get().n, 2);
   assert.equal(db.prepare("SELECT uploaded_by FROM art_submission_files WHERE id='old-selected'").get().uploaded_by, '玉冰');
   assert.equal(db.prepare("SELECT created_at FROM art_submission_files WHERE id='other'").get().created_at, '2026-09-14 10:00');
