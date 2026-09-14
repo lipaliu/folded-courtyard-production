@@ -31,6 +31,17 @@
   --radius-xl: calc(var(--radius) * 1.3);
 }
 
+.art-review-export .art-review-sheet {
+  width: 1120px !important;
+  height: 794px !important;
+  min-height: 794px !important;
+  overflow: hidden !important;
+  padding: 40px !important;
+}
+.art-review-export .art-review-layout { grid-template-columns: 270px minmax(0, 1fr) !important; }
+.art-review-export .art-review-files { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+.art-review-export .art-review-file-frame { height: 190px !important; }
+
 :root {
   --background: #0e0f12;
   --foreground: #f5f4f2;

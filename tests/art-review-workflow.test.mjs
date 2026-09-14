@@ -58,6 +58,58 @@ test('script never blocks intake only because the writer omitted scene formattin
   assert.equal(scenes[0].location, '未标场次（系统自动补为第1场）');
   assert.ok(scenes[0].scriptText.includes('顾丽乔回到家'));
 });
+test('flashbacks and montage blocks create separate art scene upload items', () => {
+  const items = script.buildArtItems('复古教堂片场 日 内', ['顾丽乔', '前夫'], [
+    '【闪回】20岁的顾丽乔在小家里被前夫家暴。',
+    '她撞在碎裂的镜子旁。',
+    '【蒙太奇】顾丽乔连续跑过几个片场。',
+  ]);
+  const sceneItems = items.filter((item) => item.category === '场景');
+  assert.equal(sceneItems.length, 3);
+  assert.equal(sceneItems[1].name, '闪回｜20岁顾丽乔被前夫家暴的小家');
+  assert.match(sceneItems[2].name, /^蒙太奇｜/);
+  assert.ok(sceneItems.slice(1).every((item) => item.visualBrief.includes('独立美术场景上传')));
+  assert.ok(items.some((item) => item.name === '闪回｜20岁顾丽乔穿搭'));
+  assert.ok(items.some((item) => item.name === '闪回｜家暴男（前夫）穿搭'));
+});
+test('scene-one domestic-violence flashback restores its orphaned reference and author', () => {
+  const db = new DatabaseSync(':memory:');
+  db.exec(`
+    CREATE TABLE script_analyses(id TEXT PRIMARY KEY,episode TEXT,is_active INTEGER);
+    CREATE TABLE script_analysis_items(id TEXT PRIMARY KEY,analysis_id TEXT,category TEXT,name TEXT,detail TEXT,visual_brief TEXT,yoyo_approved INTEGER,producer_approved INTEGER,sort_order INTEGER,updated_at TEXT,is_active INTEGER);
+    CREATE TABLE art_submission_details(item_id TEXT PRIMARY KEY,assigned_to TEXT,due_at TEXT,handoff_to TEXT,done_definition TEXT,status TEXT,submission_note TEXT,review_note TEXT,selected_file_id TEXT,submitted_at TEXT,reviewed_at TEXT,updated_at TEXT);
+    CREATE TABLE art_submission_files(id TEXT PRIMARY KEY,item_id TEXT,uploaded_by TEXT,file_name TEXT);
+    CREATE TABLE production_items(episode TEXT,category TEXT,planned_qty INTEGER,updated_at TEXT);
+    CREATE TABLE activity_log(id INTEGER PRIMARY KEY AUTOINCREMENT,item_type TEXT,item_id TEXT,action TEXT,operator TEXT,created_at TEXT);
+    INSERT INTO script_analyses VALUES('ep1-v3-s1','第1集',1);
+    INSERT INTO art_submission_files VALUES
+      ('domestic-set','ep1-v3-s1-i02','Lipa','家暴小家参考.jpg'),
+      ('domestic-wardrobe','ep1-v3-s1-i12','小金','顾丽乔家暴闪回穿搭.jpg');
+    INSERT INTO production_items VALUES('第1集','美术清单',1,'');
+  `);
+  db.exec(readFileSync(new URL('../drizzle/0020_restore_flashback_art_scene.sql', import.meta.url), 'utf8'));
+  const item = db.prepare("SELECT name,is_active FROM script_analysis_items WHERE id='ep1-v3-s1-i02'").get();
+  assert.equal(item.name, '闪回｜20岁顾丽乔被前夫家暴的小家');
+  assert.equal(item.is_active, 1);
+  assert.equal(db.prepare("SELECT uploaded_by FROM art_submission_files WHERE id='domestic-set'").get().uploaded_by, 'Lipa');
+  assert.equal(db.prepare("SELECT status FROM art_submission_details WHERE item_id='ep1-v3-s1-i02'").get().status, '已上传');
+  db.exec(readFileSync(new URL('../drizzle/0021_add_flashback_wardrobe.sql', import.meta.url), 'utf8'));
+  const wardrobe = db.prepare("SELECT name,is_active FROM script_analysis_items WHERE id='ep1-v3-s1-i12'").get();
+  assert.equal(wardrobe.name, '闪回｜20岁顾丽乔穿搭');
+  assert.equal(wardrobe.is_active, 1);
+  assert.equal(db.prepare("SELECT status FROM art_submission_details WHERE item_id='ep1-v3-s1-i12'").get().status, '已上传');
+  assert.equal(db.prepare("SELECT uploaded_by FROM art_submission_files WHERE id='domestic-wardrobe'").get().uploaded_by, '小金');
+  assert.equal(db.prepare("SELECT name FROM script_analysis_items WHERE id='ep1-v3-s1-flashback-abuser-wardrobe'").get().name, '闪回｜家暴男（前夫）穿搭');
+  db.close();
+});
+test('art H5 and lightbox keep full images visible in narrow windows', () => {
+  const review = readFileSync(new URL('../components/art-review-page.tsx', import.meta.url), 'utf8');
+  const lightbox = readFileSync(new URL('../components/reference-lightbox.tsx', import.meta.url), 'utf8');
+  assert.ok(review.includes("grid-cols-1 md:grid-cols-2"));
+  assert.ok(review.includes("max-h-full w-auto max-w-full"));
+  assert.ok(lightbox.includes("z-[200]"));
+  assert.ok(lightbox.includes("h-auto max-h-full w-auto max-w-full"));
+});
 test('removing a reused image persists an exclusion and never deletes the source', async () => {
   const statements = [];
   const roles = load('../lib/team-roles.ts');

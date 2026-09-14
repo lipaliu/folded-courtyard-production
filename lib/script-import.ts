@@ -93,8 +93,9 @@ function chineseNumber(value: string) {
   return digits[value] || 1;
 }
 
-export function buildArtItems(location: string, people: string[], _bodyLines: string[]) {
+export function buildArtItems(location: string, people: string[], bodyLines: string[]) {
   const result = [{ category: '场景', name: `${location}｜场景总参考`, detail: '本场一个场景上传位，可多传全景、局部及不同角度。', visualBrief: '先上传一张完整场景氛围图，再按实际需求追加细节图；不按文字自动拆分。' }];
+  result.push(...buildEmbeddedSceneItems(bodyLines));
   for (const person of ['顾丽乔', '陆文川']) {
     if (!people.some((name) => name.includes(person))) continue;
     result.push(
@@ -105,4 +106,42 @@ export function buildArtItems(location: string, people: string[], _bodyLines: st
   const others = people.filter((name) => !/顾丽乔|陆文川/.test(name));
   if (others.length) result.push({ category: '服装', name: '配角与群演｜整体参考', detail: `本场配角与群演：${others.join('、')}。`, visualBrief: '整体形象和服装参考放在这一项，不需要每个人分别出图。' });
   return result;
+}
+
+function buildEmbeddedSceneItems(lines: string[]) {
+  const starts = lines.flatMap((line, index) => {
+    const match = line.match(/(闪回|回忆|蒙太奇|一组镜头|一组画面)/);
+    return match ? [{ index, rawLabel: match[1] }] : [];
+  });
+  return starts.flatMap((start, sequenceIndex) => {
+    const end = starts[sequenceIndex + 1]?.index ?? Math.min(lines.length, start.index + 8);
+    const text = lines.slice(start.index, end).join(' ').replace(/[【】\[\]]/g, '').trim().slice(0, 360);
+    const label = /蒙太奇|一组/.test(start.rawLabel) ? '蒙太奇' : '闪回';
+    const domesticViolence = /家暴|前夫/.test(text) && /顾丽乔|丽乔/.test(text);
+    const subject = domesticViolence
+      ? '20岁顾丽乔被前夫家暴的小家'
+      : text.replace(/^(?:闪回|回忆|蒙太奇|一组镜头|一组画面)\s*[：:]?\s*/, '').split(/[。；;]/)[0].slice(0, 28) || '独立场景参考';
+    const sceneItem = {
+      category: '场景',
+      name: `${label}｜${subject}`,
+      detail: text || `${label}段落需单独确认空间、年代和氛围。`,
+      visualBrief: `${label}作为独立美术场景上传，不与当前主场景混用；先放完整空间图，再追加局部与角度。`,
+    };
+    if (!domesticViolence) return [sceneItem];
+    return [
+      sceneItem,
+      {
+        category: '服装',
+        name: '闪回｜20岁顾丽乔穿搭',
+        detail: '20岁顾丽乔在小家遭遇家暴时的完整穿搭，与片场服装分开审核。',
+        visualBrief: '上传完整穿搭参考，可追加正侧背、材质与受损状态；不要混入当前时空服装。',
+      },
+      {
+        category: '服装',
+        name: '闪回｜家暴男（前夫）穿搭',
+        detail: '家暴男（前夫）在小家闪回中的完整穿搭。',
+        visualBrief: '上传完整穿搭参考，可追加正侧背和细节；与顾丽乔穿搭分开审核。',
+      },
+    ];
+  });
 }
