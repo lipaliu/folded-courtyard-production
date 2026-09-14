@@ -49,9 +49,10 @@ test('upload attribution uses account name and labels legacy images clearly', ()
 });
 test('art upload UI allows unlimited multi-select and keeps uploader attribution visible', () => {
   const source = readFileSync(new URL('../components/submission-center.tsx', import.meta.url), 'utf8');
+  const dropzone = readFileSync(new URL('../components/art-upload-dropzone.tsx', import.meta.url), 'utf8');
   const route = readFileSync(new URL('../app/api/art-submissions/route.ts', import.meta.url), 'utf8');
   const publicReview = readFileSync(new URL('../components/art-review-page.tsx', import.meta.url), 'utf8');
-  assert.match(source, /type="file"[^>]+multiple/);
+  assert.match(dropzone, /type="file"[^>]+multiple/);
   assert.match(source, /数量不限/);
   assert.match(source, /uploadAuthorLabel\(file\.uploadedBy\)/);
   assert.match(source, /选为定稿图/);
