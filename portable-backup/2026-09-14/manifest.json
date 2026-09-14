@@ -1,0 +1,60 @@
+{
+  "formatVersion": 1,
+  "project": "折叠庭院的她",
+  "exportedAt": "2026-09-14T12:20:09.382Z",
+  "source": {
+    "provider": "Cloudflare D1",
+    "database": "folded-courtyard-production-db"
+  },
+  "counts": {
+    "tables": 28,
+    "scriptVersions": 4,
+    "artFiles": 222,
+    "uploadedFiles": 175,
+    "staticFiles": 47,
+    "productionItems": 154,
+    "dailyReports": 0
+  },
+  "excludedAuthentication": {
+    "memberAccounts": 6,
+    "memberSessions": 17,
+    "reason": "The GitHub repository is public; password hashes, salts and live sessions are intentionally excluded."
+  },
+  "sourceTableCounts": {
+    "activity_log": 422,
+    "app_settings": 18,
+    "art_detail_backup_0914": 103,
+    "art_file_ownership_backup_0914": 179,
+    "art_reference_exclusions": 0,
+    "art_scene1_wardrobe_details_backup_0914": 2,
+    "art_scene1_wardrobe_files_backup_0914": 88,
+    "art_scene1_wardrobe_items_backup_0914": 2,
+    "art_scene_alignment_details_backup_0914": 25,
+    "art_scene_alignment_files_backup_0914": 29,
+    "art_scene_alignment_items_backup_0914": 25,
+    "art_structure_backup_0914": 50,
+    "art_submission_details": 121,
+    "art_submission_files": 221,
+    "d1_migrations": 22,
+    "daily_reports": 0,
+    "daily_scene_assignments": 27,
+    "member_accounts": 6,
+    "member_sessions": 17,
+    "plan_batches": 14,
+    "plan_batches_backup_0914": 13,
+    "production_items": 154,
+    "production_plan_backup_0914": 153,
+    "scenes": 8,
+    "script_analyses": 8,
+    "script_analysis_items": 70,
+    "script_versions": 4,
+    "team_members": 0
+  },
+  "files": {
+    "database": "database/production-data.sqlite",
+    "sql": "database/production-data.sql",
+    "assets": "assets/manifest.json",
+    "scriptVersions": "script-versions/index.json",
+    "plan": "plan/production-plan.json"
+  }
+}

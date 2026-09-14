@@ -1,0 +1,3892 @@
+[
+  {
+    "id": "0312fe35-ceaa-4852-afbd-276d03346be6",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:0312fe35-ceaa-4852-afbd-276d03346be6",
+    "originalFileName": "微信图片_20260914190637_2104_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 261617,
+    "actualBytes": 261617,
+    "uploadedBy": "胖胖",
+    "sortOrder": 9,
+    "createdAt": "2026-09-14T11:39:23.434Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/0312fe35-ceaa-4852-afbd-276d03346be6.jpg",
+    "sha256": "f10dc444f262b5f3e0918d76c8dd780b3f6ead4efe1f88c92c1d5405950f6c0c",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "043856f9-e750-476d-b614-6cb21f74ef0c",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:043856f9-e750-476d-b614-6cb21f74ef0c",
+    "originalFileName": "微信图片_20260914191133_2108_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 172556,
+    "actualBytes": 172556,
+    "uploadedBy": "胖胖",
+    "sortOrder": 11,
+    "createdAt": "2026-09-14T11:39:27.200Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/043856f9-e750-476d-b614-6cb21f74ef0c.jpg",
+    "sha256": "685fb7d72b52e31e57aa503c98c0f4590111bff78159f1d29b674d334bff93dd",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "06a7d8dc-de7e-46e6-b5c3-9ac3d5dc641a",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:06a7d8dc-de7e-46e6-b5c3-9ac3d5dc641a",
+    "originalFileName": "微信图片_20260914144522_2043_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 67913,
+    "actualBytes": 67913,
+    "uploadedBy": "胖胖",
+    "sortOrder": 64,
+    "createdAt": "2026-09-14T06:52:15.326Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/06a7d8dc-de7e-46e6-b5c3-9ac3d5dc641a.jpg",
+    "sha256": "fc9dad21b1972a83634e7a65e05c5c220b2894b296518ed2aae5e97a51e25dcc",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "0730514c-4dd5-4595-97e0-cb0ae26d6aae",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:0730514c-4dd5-4595-97e0-cb0ae26d6aae",
+    "originalFileName": "微信图片_20260914144522_2079_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 216937,
+    "actualBytes": 216937,
+    "uploadedBy": "胖胖",
+    "sortOrder": 82,
+    "createdAt": "2026-09-14T06:52:43.774Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/0730514c-4dd5-4595-97e0-cb0ae26d6aae.jpg",
+    "sha256": "53fc4effccb60a2564ec61271ffabd539960d2cf02ae3e5f878a1778a87d84ef",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "08531755-8a15-4fce-88a8-fcbe3eb50d48",
+    "itemId": "ep1-v3-s6-overall-cast",
+    "objectKey": "d1:08531755-8a15-4fce-88a8-fcbe3eb50d48",
+    "originalFileName": "截屏2026-08-24 20.55.48-web.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 175337,
+    "actualBytes": 175337,
+    "uploadedBy": "王承恺",
+    "sortOrder": 1,
+    "createdAt": "2026-09-14T11:17:58.258Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/08531755-8a15-4fce-88a8-fcbe3eb50d48.jpg",
+    "sha256": "a59c474408609107f615cf9b53bc7b813510eec806f8d16e7ba100ebb7feae8d",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "08d3ed05-dc9a-4768-9b7c-d1c2317c9493",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:08d3ed05-dc9a-4768-9b7c-d1c2317c9493",
+    "originalFileName": "微信图片_20260914144522_2070_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 323582,
+    "actualBytes": 323582,
+    "uploadedBy": "胖胖",
+    "sortOrder": 77,
+    "createdAt": "2026-09-14T06:52:36.014Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/08d3ed05-dc9a-4768-9b7c-d1c2317c9493.jpg",
+    "sha256": "1009b1b70995c652f0fe31ed0492c69d47f4882bb573c2d6806a3e92e589a5e9",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "098e9db9-2884-4235-ac90-b51665e3b3b4",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:098e9db9-2884-4235-ac90-b51665e3b3b4",
+    "originalFileName": "微信图片_20260914190637_2101_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 147366,
+    "actualBytes": 147366,
+    "uploadedBy": "胖胖",
+    "sortOrder": 7,
+    "createdAt": "2026-09-14T11:39:20.630Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/098e9db9-2884-4235-ac90-b51665e3b3b4.jpg",
+    "sha256": "bc5919b8a694b9e6e5c8f5141c8d7a7e351de33846afadd84320a1ef9202708a",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "0b8db1cf-560d-4380-95a2-ce637d1cea47",
+    "itemId": "ep1-v3-s5-auto-7",
+    "objectKey": "d1:0b8db1cf-560d-4380-95a2-ce637d1cea47",
+    "originalFileName": "85a3671004a61724de177288cb5041e6.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 142210,
+    "actualBytes": 142210,
+    "uploadedBy": "玉冰",
+    "sortOrder": 5,
+    "createdAt": "2026-09-14T06:09:23.022Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/0b8db1cf-560d-4380-95a2-ce637d1cea47.jpg",
+    "sha256": "6f7ab9c2390fe2ef9df0b9c6fc93472f64a8d93e27ce1d5a430019d118667827",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "0c7a5c9b-893a-498d-9708-8998a9b3b055",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:0c7a5c9b-893a-498d-9708-8998a9b3b055",
+    "originalFileName": "微信图片_20260914144522_2049_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 154623,
+    "actualBytes": 154623,
+    "uploadedBy": "胖胖",
+    "sortOrder": 67,
+    "createdAt": "2026-09-14T06:52:18.897Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/0c7a5c9b-893a-498d-9708-8998a9b3b055.jpg",
+    "sha256": "e01175ebc0851bf08df309fae25fbaeef474da63e046bf661e59e79c4e048d4c",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "0d18421a-2a5e-4d88-89c4-a6eb985cd0bd",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:0d18421a-2a5e-4d88-89c4-a6eb985cd0bd",
+    "originalFileName": "IMG_0494-web.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 317453,
+    "actualBytes": 317453,
+    "uploadedBy": "罗新姗",
+    "sortOrder": 11,
+    "createdAt": "2026-09-14T05:51:27.216Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/0d18421a-2a5e-4d88-89c4-a6eb985cd0bd.jpg",
+    "sha256": "4b9b2f86717c4bdf860b2673b546524c927f70a7ce7dfdca7a3287d7bbd867af",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "102f9bd1-c456-4642-a928-4f296cd423fe",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:102f9bd1-c456-4642-a928-4f296cd423fe",
+    "originalFileName": "微信图片_20260914144522_2039_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 164031,
+    "actualBytes": 164031,
+    "uploadedBy": "胖胖",
+    "sortOrder": 62,
+    "createdAt": "2026-09-14T06:52:10.574Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/102f9bd1-c456-4642-a928-4f296cd423fe.jpg",
+    "sha256": "45180fa118b0c836adf78ec90098f3d5baa2d496504b919f77463270063d3879",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "11072865-e078-4bba-a7a6-79a6a3fc8baa",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:11072865-e078-4bba-a7a6-79a6a3fc8baa",
+    "originalFileName": "微信图片_20260914144522_2062_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 173606,
+    "actualBytes": 173606,
+    "uploadedBy": "胖胖",
+    "sortOrder": 73,
+    "createdAt": "2026-09-14T06:52:27.903Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/11072865-e078-4bba-a7a6-79a6a3fc8baa.jpg",
+    "sha256": "0a7c36ba6faae09d856534f3e652798a6b17b275fd90dc1d168d0d0765c455b3",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "1143aff1-669e-4f44-a370-39ed33bf4219",
+    "itemId": "ep1-v3-s5-overall-cast",
+    "objectKey": "d1:1143aff1-669e-4f44-a370-39ed33bf4219",
+    "originalFileName": "图片 - 2026-09-14T135620.198.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 668515,
+    "actualBytes": 668515,
+    "uploadedBy": "王承恺",
+    "sortOrder": 1,
+    "createdAt": "2026-09-14T11:17:19.752Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/1143aff1-669e-4f44-a370-39ed33bf4219.jpg",
+    "sha256": "98f54336ef93216a65a72d1190749a811b780c26904ad03c32bd21f948094452",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "124174a0-d627-4f77-83e9-a7ad4ad7f1db",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:124174a0-d627-4f77-83e9-a7ad4ad7f1db",
+    "originalFileName": "L6zzgdcxfvRGbHLQyjyQOy_sqvqzkryHIhFu2Uhip4tZ5o96rJMcLbRtWZPHLzFvh5zVw38NpaZW-9sIZmUChob20dUIIeYrLSnHNbIcijFCshzF1SW9DhrbeszHN0QyQ-U4ptsEldE-9Wi4kMXqDVcYNsRf30nOGCnyk6776sOXMpcINfop",
+    "contentType": "image/jpeg",
+    "expectedBytes": 116060,
+    "actualBytes": 116060,
+    "uploadedBy": "胖胖",
+    "sortOrder": 26,
+    "createdAt": "2026-09-14T06:51:17.873Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/124174a0-d627-4f77-83e9-a7ad4ad7f1db.jpg",
+    "sha256": "6550cbcfedbfdad380fdc4e08f945a09c9a5a251446251b8e79530a7e511d897",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "17c10d75-7b36-4309-b972-1a4fee9edc8f",
+    "itemId": "ep1-v3-s5-auto-7",
+    "objectKey": "d1:17c10d75-7b36-4309-b972-1a4fee9edc8f",
+    "originalFileName": "38031c83a5a5f22c5e75bc72cc403410.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 158959,
+    "actualBytes": 158959,
+    "uploadedBy": "玉冰",
+    "sortOrder": 9,
+    "createdAt": "2026-09-14T06:09:45.457Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/17c10d75-7b36-4309-b972-1a4fee9edc8f.jpg",
+    "sha256": "d6c5616015dbffe98077d1078c8325e038fe4e502314f5eaf48291153e260b62",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "182ad487-9f33-4b2c-80df-4d4e1ba1269f",
+    "itemId": "ep1-v3-s5-auto-7",
+    "objectKey": "d1:182ad487-9f33-4b2c-80df-4d4e1ba1269f",
+    "originalFileName": "IMG_0505.JPG",
+    "contentType": "image/jpeg",
+    "expectedBytes": 1119747,
+    "actualBytes": 1119747,
+    "uploadedBy": "罗新姗",
+    "sortOrder": 4,
+    "createdAt": "2026-09-14T06:09:21.329Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/182ad487-9f33-4b2c-80df-4d4e1ba1269f.jpg",
+    "sha256": "c851a715aef41020915dbe3cf9a41d6aec6366c94bec0aa2cbd9eb632c7a0a5b",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "18bfdf1c-7ef4-4e14-ba41-506c754fedf1",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:18bfdf1c-7ef4-4e14-ba41-506c754fedf1",
+    "originalFileName": "微信图片_20260914144522_2055_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 175635,
+    "actualBytes": 175635,
+    "uploadedBy": "胖胖",
+    "sortOrder": 69,
+    "createdAt": "2026-09-14T06:52:22.415Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/18bfdf1c-7ef4-4e14-ba41-506c754fedf1.jpg",
+    "sha256": "eb6c0dfaac922b6af3f30e879c57456707be3a27944dba096d0246a20482d50f",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "195bc710-6b90-440c-8340-186ca232242d",
+    "itemId": "ep1-v3-s1-overall-cast",
+    "objectKey": "d1:195bc710-6b90-440c-8340-186ca232242d",
+    "originalFileName": "使用老机型iPhone全身 噪点略糊没有背景虚化：豪华公寓中20岁中国男人，帅气俊朗健身男性，身材健硕，胸前带口袋设计的T恤袖，下身是西裤皮.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 176836,
+    "actualBytes": 176836,
+    "uploadedBy": "王承恺",
+    "sortOrder": 1,
+    "createdAt": "2026-09-11T11:44:29.148Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/195bc710-6b90-440c-8340-186ca232242d.jpg",
+    "sha256": "8f33f09f336bdfe332311c5f337da5d93cbddde8b1840b7dbb751b5d4297a4c1",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "19adf828-b38e-4606-95b1-55f970537b67",
+    "itemId": "ep1-v3-s4-overall-cast",
+    "objectKey": "d1:19adf828-b38e-4606-95b1-55f970537b67",
+    "originalFileName": "图片 - 2026-09-14T190820.705.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 623716,
+    "actualBytes": 623716,
+    "uploadedBy": "王承恺",
+    "sortOrder": 1,
+    "createdAt": "2026-09-14T11:09:54.232Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/19adf828-b38e-4606-95b1-55f970537b67.jpg",
+    "sha256": "b5de69ab1191749d952b7724bb18a26c816d7bd3e9b6008bc7e6521342f4dd43",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "1b9688b0-19c2-4452-bec6-3afbe5bb6cda",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:1b9688b0-19c2-4452-bec6-3afbe5bb6cda",
+    "originalFileName": "微信图片_20260914144522_2021_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 192891,
+    "actualBytes": 192891,
+    "uploadedBy": "胖胖",
+    "sortOrder": 52,
+    "createdAt": "2026-09-14T06:51:52.251Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/1b9688b0-19c2-4452-bec6-3afbe5bb6cda.jpg",
+    "sha256": "1856b41796545dca633117f440fddf8bb8a83ba18dd544c0a6904dcb31348939",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "1d82a4b6-6b71-4151-9796-294a0c1d9b86",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:1d82a4b6-6b71-4151-9796-294a0c1d9b86",
+    "originalFileName": "微信图片_20260914144522_2071_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 261022,
+    "actualBytes": 261022,
+    "uploadedBy": "胖胖",
+    "sortOrder": 77,
+    "createdAt": "2026-09-14T06:52:36.314Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/1d82a4b6-6b71-4151-9796-294a0c1d9b86.jpg",
+    "sha256": "cb55754bc8c5cd585432830ea95705642fe222231789b5ef2e1bf9aa787c2ecc",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "1ed41dc3-642f-40d4-8aa7-04b61613d897",
+    "itemId": "ep1-v3-s1-auto-7",
+    "objectKey": "d1:1ed41dc3-642f-40d4-8aa7-04b61613d897",
+    "originalFileName": "韩国男性白幼瘦帅哥博主，25岁。东亚男性，韩国男明星英俊帅气。立体骨相，高挺笔直鼻梁，山根自然不突兀，不明显双眼皮眼型偏长，眼尾微微收，不肿.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 179774,
+    "actualBytes": 179774,
+    "uploadedBy": "王承恺",
+    "sortOrder": 2,
+    "createdAt": "2026-09-11T11:50:59.359Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/1ed41dc3-642f-40d4-8aa7-04b61613d897.jpg",
+    "sha256": "6f1a2c184534bf2723021899f512dd9e27b8deecb8326929fc9ce27a324a39e3",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "1f8d2c29-aaba-49a7-a4c0-63bf3ae0a9b9",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:1f8d2c29-aaba-49a7-a4c0-63bf3ae0a9b9",
+    "originalFileName": "微信图片_20260914144522_2018_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 169540,
+    "actualBytes": 169540,
+    "uploadedBy": "胖胖",
+    "sortOrder": 50,
+    "createdAt": "2026-09-14T06:51:49.337Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/1f8d2c29-aaba-49a7-a4c0-63bf3ae0a9b9.jpg",
+    "sha256": "e62b5a1cf9531e2ce032251ab65d490d6fad306a5381a36039b4396fa012a0e8",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "228a0145-722b-4011-923e-0583b90028c1",
+    "itemId": "ep1-v3-s5-auto-7",
+    "objectKey": "d1:228a0145-722b-4011-923e-0583b90028c1",
+    "originalFileName": "16f85cdea6400ab45679d2ac1e1bfeb4.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 177241,
+    "actualBytes": 177241,
+    "uploadedBy": "玉冰",
+    "sortOrder": 10,
+    "createdAt": "2026-09-14T06:10:35.671Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/228a0145-722b-4011-923e-0583b90028c1.jpg",
+    "sha256": "1e0dd241c33773a6759f8e1509513ce374ac64118fcca44a3332d8de14103e71",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "22b8b9b4-92f2-4a5e-8d0b-a6aa64c057f6",
+    "itemId": "ep1-v3-s5-auto-7",
+    "objectKey": "d1:22b8b9b4-92f2-4a5e-8d0b-a6aa64c057f6",
+    "originalFileName": "图片 - 2026-09-14T161253.881.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 690196,
+    "actualBytes": 690196,
+    "uploadedBy": "王承恺",
+    "sortOrder": 20,
+    "createdAt": "2026-09-14T08:13:21.111Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/22b8b9b4-92f2-4a5e-8d0b-a6aa64c057f6.jpg",
+    "sha256": "946873f30b905b599a8e99e221ba816213d2ff2bd205754a868e8e52591837d9",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "232f38f6-b07c-4cc2-8879-f2e6c6735238",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:232f38f6-b07c-4cc2-8879-f2e6c6735238",
+    "originalFileName": "微信图片_20260914144522_2011_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 66190,
+    "actualBytes": 66190,
+    "uploadedBy": "胖胖",
+    "sortOrder": 46,
+    "createdAt": "2026-09-14T06:51:44.943Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/232f38f6-b07c-4cc2-8879-f2e6c6735238.jpg",
+    "sha256": "41dc3fd06cd216d652fcfc3a62c347bad5f9a4a183110585d80bbc6915736167",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "273780bf-d493-4582-9684-a759a7131cb3",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:273780bf-d493-4582-9684-a759a7131cb3",
+    "originalFileName": "微信图片_20260914190637_2103_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 175501,
+    "actualBytes": 175501,
+    "uploadedBy": "胖胖",
+    "sortOrder": 8,
+    "createdAt": "2026-09-14T11:39:22.542Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/273780bf-d493-4582-9684-a759a7131cb3.jpg",
+    "sha256": "f903ab3b1ebc99a66aef5f6dc3297c86d7bd29b810e8e07790f425e0c5173391",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "279e72db-07c8-45b8-80e4-5576df238e0f",
+    "itemId": "ep1-v3-s1-overall-cast",
+    "objectKey": "d1:279e72db-07c8-45b8-80e4-5576df238e0f",
+    "originalFileName": "图片 - 2026-09-11T182558.740.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 677970,
+    "actualBytes": 677970,
+    "uploadedBy": "王承恺",
+    "sortOrder": 1,
+    "createdAt": "2026-09-11T11:49:48.161Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/279e72db-07c8-45b8-80e4-5576df238e0f.jpg",
+    "sha256": "b8ff41616ce585807e3efc30b6e526bcf34a04cfdd6a08fce18d8b5c9fdcf6d8",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "2875c29f-9249-4c03-89f3-120b0e373cc9",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:2875c29f-9249-4c03-89f3-120b0e373cc9",
+    "originalFileName": "图片 - 2026-09-14T191832.702.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 584505,
+    "actualBytes": 584505,
+    "uploadedBy": "王承恺",
+    "sortOrder": 6,
+    "createdAt": "2026-09-14T11:20:05.429Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/2875c29f-9249-4c03-89f3-120b0e373cc9.jpg",
+    "sha256": "ab1928ea029cd1bf3cd569aacf0d50d4bd2d5071010c5b5fc6c4c84b6f5733a0",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "2a05b8ba-1752-4fce-be52-e51d3ff46f33",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:2a05b8ba-1752-4fce-be52-e51d3ff46f33",
+    "originalFileName": "lDwPZNx2ySF8bgaW7NAqpxTWD7tgSUy336-PCAC9OcjwY1gdffz89RN9yrLkQeACZLAeTy2sXAOpEEqsISJALHts18GaOzs-_9snazTyQW7kKCCU4bCeUarFlAoi7jvPWrtT1jTtdVq60TJ5hRaydph2H8VALG6E6cwXrR4XpT8N2tAc9n1i",
+    "contentType": "image/jpeg",
+    "expectedBytes": 761993,
+    "actualBytes": 761993,
+    "uploadedBy": "胖胖",
+    "sortOrder": 28,
+    "createdAt": "2026-09-14T06:51:20.705Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/2a05b8ba-1752-4fce-be52-e51d3ff46f33.jpg",
+    "sha256": "295d921f1aaf1592c10e256b4fd95d7dabf61d503b26bab8928ce4246cb0efb3",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "2a318656-5eec-454f-baaa-fc2032dbc27c",
+    "itemId": "ep1-v3-s4-current-hero-wardrobe",
+    "objectKey": "d1:2a318656-5eec-454f-baaa-fc2032dbc27c",
+    "originalFileName": "图片 - 2026-09-14T191832.702.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 584505,
+    "actualBytes": 584505,
+    "uploadedBy": "王承恺",
+    "sortOrder": 1,
+    "createdAt": "2026-09-14T11:19:06.617Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/2a318656-5eec-454f-baaa-fc2032dbc27c.jpg",
+    "sha256": "ab1928ea029cd1bf3cd569aacf0d50d4bd2d5071010c5b5fc6c4c84b6f5733a0",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "2ba67fff-80d2-4326-8860-34597c0514bd",
+    "itemId": "ep1-v3-s3-overall-cast",
+    "objectKey": "d1:2ba67fff-80d2-4326-8860-34597c0514bd",
+    "originalFileName": "图片 - 2026-09-14T190820.705.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 623716,
+    "actualBytes": 623716,
+    "uploadedBy": "王承恺",
+    "sortOrder": 1,
+    "createdAt": "2026-09-14T11:09:24.696Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/2ba67fff-80d2-4326-8860-34597c0514bd.jpg",
+    "sha256": "b5de69ab1191749d952b7724bb18a26c816d7bd3e9b6008bc7e6521342f4dd43",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "307470df-8e4a-4f5b-9322-8599cd20c912",
+    "itemId": "ep1-v3-s6-overall-cast",
+    "objectKey": "d1:307470df-8e4a-4f5b-9322-8599cd20c912",
+    "originalFileName": "图片 - 2026-09-14T135620.198.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 668515,
+    "actualBytes": 668515,
+    "uploadedBy": "王承恺",
+    "sortOrder": 1,
+    "createdAt": "2026-09-14T08:15:19.855Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/307470df-8e4a-4f5b-9322-8599cd20c912.jpg",
+    "sha256": "98f54336ef93216a65a72d1190749a811b780c26904ad03c32bd21f948094452",
+    "sourceTables": [
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "3078a7ca-aba7-41f2-8057-c967561fe565",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:3078a7ca-aba7-41f2-8057-c967561fe565",
+    "originalFileName": "微信图片_20260914144522_2081_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 126593,
+    "actualBytes": 126593,
+    "uploadedBy": "胖胖",
+    "sortOrder": 83,
+    "createdAt": "2026-09-14T06:52:45.484Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/3078a7ca-aba7-41f2-8057-c967561fe565.jpg",
+    "sha256": "b0cad863dfe53644083f0a311c91d87055d524ce808a462a8cbb6a9ac53d98db",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "30fe8a44-1f68-4fe4-84ed-1a5f6e14163f",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:30fe8a44-1f68-4fe4-84ed-1a5f6e14163f",
+    "originalFileName": "微信图片_20260914144522_2051_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 211555,
+    "actualBytes": 211555,
+    "uploadedBy": "胖胖",
+    "sortOrder": 68,
+    "createdAt": "2026-09-14T06:52:20.708Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/30fe8a44-1f68-4fe4-84ed-1a5f6e14163f.jpg",
+    "sha256": "1fbb2903d7113d81fd4b1bc038d10c506d78cda363cd5383a2fa5b0356cb775e",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "32b52ecd-92e9-4d74-ae84-200fd74ecd03",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:32b52ecd-92e9-4d74-ae84-200fd74ecd03",
+    "originalFileName": "微信图片_20260914144522_2074_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 269888,
+    "actualBytes": 269888,
+    "uploadedBy": "胖胖",
+    "sortOrder": 80,
+    "createdAt": "2026-09-14T06:52:40.316Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/32b52ecd-92e9-4d74-ae84-200fd74ecd03.jpg",
+    "sha256": "12070c92d7a2f7590f804be158e4f47678d85ade58afcb05e166365e0e65b45c",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "336a9253-bcba-4a8d-bc1c-fe0d3591da3e",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:336a9253-bcba-4a8d-bc1c-fe0d3591da3e",
+    "originalFileName": "微信图片_20260914144522_2052_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 254111,
+    "actualBytes": 254111,
+    "uploadedBy": "胖胖",
+    "sortOrder": 68,
+    "createdAt": "2026-09-14T06:52:20.836Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/336a9253-bcba-4a8d-bc1c-fe0d3591da3e.jpg",
+    "sha256": "2e6d1f5c2fc5bcf91c2c168c6dd12204ab99a916069ff8176ecda796274bc20c",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "33885290-7473-4638-8e81-311921c4b9e0",
+    "itemId": "ep1-v3-s5-hero-wardrobe",
+    "objectKey": "d1:33885290-7473-4638-8e81-311921c4b9e0",
+    "originalFileName": "IMG_0511.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 101217,
+    "actualBytes": 101217,
+    "uploadedBy": "罗新姗",
+    "sortOrder": 3,
+    "createdAt": "2026-09-14T06:22:21.371Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/33885290-7473-4638-8e81-311921c4b9e0.jpg",
+    "sha256": "e9c742fa9a3805cf5529cd236ff359f4856ab870794635bfd60d220959b1da63",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "39d63a15-2ed2-4301-aea1-69695a6274f8",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:39d63a15-2ed2-4301-aea1-69695a6274f8",
+    "originalFileName": "MUmtaFheaqa-zL2yA8fUXwCWRuDmRTU2tMwvKvfBtaPfO0pOOJgf8d0yYMWxSCs1i2ZttO6QnRCp3LUrP57GZOw2Qv19WO-npHikqlkVbNtjKPvDf-gUdZTOWsQh1-ocsWKFU1gKQphPIpqqcpUcstGt4p3BQdZrQAzGHr4VBVYjQRHgbPXn",
+    "contentType": "image/jpeg",
+    "expectedBytes": 84172,
+    "actualBytes": 84172,
+    "uploadedBy": "胖胖",
+    "sortOrder": 27,
+    "createdAt": "2026-09-14T06:51:19.611Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/39d63a15-2ed2-4301-aea1-69695a6274f8.jpg",
+    "sha256": "c587968443d8ef166ae94c98c98d0f1a1e2845bc8caa2ee9c7fa1e9e3494ed77",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "3a37a9ca-ce51-4105-9409-13c3b692a406",
+    "itemId": "ep1-v3-s5-auto-7",
+    "objectKey": "d1:3a37a9ca-ce51-4105-9409-13c3b692a406",
+    "originalFileName": "4e7c8e1b5191b90560b6f8ef1110afb2.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 124761,
+    "actualBytes": 124761,
+    "uploadedBy": "玉冰",
+    "sortOrder": 14,
+    "createdAt": "2026-09-14T06:12:25.439Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/3a37a9ca-ce51-4105-9409-13c3b692a406.jpg",
+    "sha256": "ebbb5a03778c4676c9ddbde16e30e3de7eedf095e570d401a96f791d0f25bff2",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "3ebaad51-2ac6-4021-9f0b-831d97a5523c",
+    "itemId": "ep1-v3-s1-auto-7",
+    "objectKey": "d1:3ebaad51-2ac6-4021-9f0b-831d97a5523c",
+    "originalFileName": "图片 - 2026-09-11T160305.320.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 815440,
+    "actualBytes": 815440,
+    "uploadedBy": "王承恺",
+    "sortOrder": 3,
+    "createdAt": "2026-09-11T11:51:32.585Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/3ebaad51-2ac6-4021-9f0b-831d97a5523c.jpg",
+    "sha256": "ca644b9c67286a79e8d060f7b77a067ac79f1e15f6a5a842bbfb39152f1b8728",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "41a8946b-bf1f-47c5-aeca-7639f00736c5",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:41a8946b-bf1f-47c5-aeca-7639f00736c5",
+    "originalFileName": "IMG_8381-web.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 120663,
+    "actualBytes": 120663,
+    "uploadedBy": "玉冰",
+    "sortOrder": 2,
+    "createdAt": "2026-09-14T11:11:31.623Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/41a8946b-bf1f-47c5-aeca-7639f00736c5.jpg",
+    "sha256": "8b921a71553db1f6d20c6d7ad2dd9fcd78661fe8df98015cace52aed9acc47e5",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "43bebf5d-bfc6-4881-b306-df81757aba76",
+    "itemId": "ep1-v3-s2-auto-4",
+    "objectKey": "d1:43bebf5d-bfc6-4881-b306-df81757aba76",
+    "originalFileName": "图片 - 2026-09-10T143809.164-web.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 203741,
+    "actualBytes": 203741,
+    "uploadedBy": "王承恺",
+    "sortOrder": 1,
+    "createdAt": "2026-09-14T06:47:22.416Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/43bebf5d-bfc6-4881-b306-df81757aba76.jpg",
+    "sha256": "f44ecd6faa17f1654c48064811f4d71006b7c2e8b3e12365db9194cd31e35bdc",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "4706554b-772d-462d-9f70-1495e52a4741",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:4706554b-772d-462d-9f70-1495e52a4741",
+    "originalFileName": "微信图片_20260914144522_2009_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 70315,
+    "actualBytes": 70315,
+    "uploadedBy": "胖胖",
+    "sortOrder": 45,
+    "createdAt": "2026-09-14T06:51:43.691Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/4706554b-772d-462d-9f70-1495e52a4741.jpg",
+    "sha256": "d0c7bad6a6104e4b01b6a3def9a5dfc137b275043adb195b4efe1ee949947185",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "48178c8c-6d41-4963-bcd3-804ff865fafd",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:48178c8c-6d41-4963-bcd3-804ff865fafd",
+    "originalFileName": "a36995e93f74cc5aab3e572f59698a97.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 91779,
+    "actualBytes": 91779,
+    "uploadedBy": "玉冰",
+    "sortOrder": 4,
+    "createdAt": "2026-09-14T05:34:48.341Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/48178c8c-6d41-4963-bcd3-804ff865fafd.jpg",
+    "sha256": "617f04e54493e9f013e9e651d9c9039d4186270a420708c47092ffddeb6bd0e0",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "488f4f4a-6818-4c73-859e-788685b9cab7",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:488f4f4a-6818-4c73-859e-788685b9cab7",
+    "originalFileName": "微信图片_20260914144522_2017_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 209589,
+    "actualBytes": 209589,
+    "uploadedBy": "胖胖",
+    "sortOrder": 50,
+    "createdAt": "2026-09-14T06:51:49.500Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/488f4f4a-6818-4c73-859e-788685b9cab7.jpg",
+    "sha256": "fef6fbe454095ed0ec34a77a6cf0e965cf4f303b8282d02425a773fab16ae6c2",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "4cf816c6-0cc1-4046-8c13-9dfb0b260ced",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:4cf816c6-0cc1-4046-8c13-9dfb0b260ced",
+    "originalFileName": "微信图片_20260914144522_2059_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 152835,
+    "actualBytes": 152835,
+    "uploadedBy": "胖胖",
+    "sortOrder": 71,
+    "createdAt": "2026-09-14T06:52:25.724Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/4cf816c6-0cc1-4046-8c13-9dfb0b260ced.jpg",
+    "sha256": "53803ac6c90fc5842c0f817ba0e6649fe7d66b04d009c5419aafec40cc8b8352",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "50e489a6-665a-4e24-ae46-b19f1d000618",
+    "itemId": "ep1-v3-s1-overall-cast",
+    "objectKey": "d1:50e489a6-665a-4e24-ae46-b19f1d000618",
+    "originalFileName": "图片 - 2026-09-14T131555.437.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 682581,
+    "actualBytes": 682581,
+    "uploadedBy": "王承恺",
+    "sortOrder": 1,
+    "createdAt": "2026-09-14T05:45:08.494Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/50e489a6-665a-4e24-ae46-b19f1d000618.jpg",
+    "sha256": "3bcc7bf793f9683f25422386bc72072a5c1beb3a1305dcfd488c0998cb13de8f",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "52887c83-e5cf-4be6-8d25-42714699b0d9",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:52887c83-e5cf-4be6-8d25-42714699b0d9",
+    "originalFileName": "微信图片_20260914144522_2063_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 85719,
+    "actualBytes": 85719,
+    "uploadedBy": "胖胖",
+    "sortOrder": 73,
+    "createdAt": "2026-09-14T06:52:27.896Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/52887c83-e5cf-4be6-8d25-42714699b0d9.jpg",
+    "sha256": "49ae7abd001576d86467b492da683649b6ee41ac7cb26c725a9393476ee8e905",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "5320c385-97d6-40c0-a34d-70a712887685",
+    "itemId": "ep1-v3-s3-auto-8",
+    "objectKey": "d1:5320c385-97d6-40c0-a34d-70a712887685",
+    "originalFileName": "图片 - 2026-09-10T162342.848-web.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 522021,
+    "actualBytes": 522021,
+    "uploadedBy": "王承恺",
+    "sortOrder": 1,
+    "createdAt": "2026-09-14T11:00:00.744Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/5320c385-97d6-40c0-a34d-70a712887685.jpg",
+    "sha256": "7f2a5ea43c5e31fb8a34a01776a8e0573a6146b14c628571ec7c3efa27be0e6d",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "5464f265-0db3-4dd1-a347-f97415964dcc",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:5464f265-0db3-4dd1-a347-f97415964dcc",
+    "originalFileName": "IMG_0539.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 498470,
+    "actualBytes": 498470,
+    "uploadedBy": "罗新姗",
+    "sortOrder": 4,
+    "createdAt": "2026-09-14T11:11:47.751Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/5464f265-0db3-4dd1-a347-f97415964dcc.jpg",
+    "sha256": "b53a827c242d1f5d26aceb3c9bf5c69bccc97b4f70b344d5742e517a07371ed2",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "55102b50-b512-47b9-9056-e476071822cb",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:55102b50-b512-47b9-9056-e476071822cb",
+    "originalFileName": "IMG_0500.JPG",
+    "contentType": "image/jpeg",
+    "expectedBytes": 629176,
+    "actualBytes": 629176,
+    "uploadedBy": "罗新姗",
+    "sortOrder": 6,
+    "createdAt": "2026-09-14T05:51:16.824Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/55102b50-b512-47b9-9056-e476071822cb.jpg",
+    "sha256": "3d32f468adedd06a9968b7bda504dc18c0ee94a0a6a044145cdb02c6d15e4bbc",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "5630e975-b6b7-454b-a875-70be7b386498",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:5630e975-b6b7-454b-a875-70be7b386498",
+    "originalFileName": "微信图片_20260914144522_2048_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 104543,
+    "actualBytes": 104543,
+    "uploadedBy": "胖胖",
+    "sortOrder": 67,
+    "createdAt": "2026-09-14T06:52:18.701Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/5630e975-b6b7-454b-a875-70be7b386498.jpg",
+    "sha256": "8b0e3ac6aae814e7411d8c79dba3711c7435c04f27d55d3ef3416e7c144fe210",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "56b4c63d-3e53-45ba-8cd8-9d0ffaf3ce48",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:56b4c63d-3e53-45ba-8cd8-9d0ffaf3ce48",
+    "originalFileName": "IMG_0512-web.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 452647,
+    "actualBytes": 452647,
+    "uploadedBy": "罗新姗",
+    "sortOrder": 3,
+    "createdAt": "2026-09-14T06:32:03.873Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/56b4c63d-3e53-45ba-8cd8-9d0ffaf3ce48.jpg",
+    "sha256": "378389ed0a03c0dbd34382f6ccaf4b0408fa439e98512e9527d0d4c48c37d9aa",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "58f8082d-06a6-4488-a723-a88a8ed1925b",
+    "itemId": "ep1-v3-s5-auto-7",
+    "objectKey": "d1:58f8082d-06a6-4488-a723-a88a8ed1925b",
+    "originalFileName": "1aece3bb68dd2f9950a402b548ae64b2.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 210515,
+    "actualBytes": 210515,
+    "uploadedBy": "玉冰",
+    "sortOrder": 7,
+    "createdAt": "2026-09-14T06:09:40.431Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/58f8082d-06a6-4488-a723-a88a8ed1925b.jpg",
+    "sha256": "f521ed9b883c650e2aa4a15dcedd3a10e3f373ebd292258d1e52825926389ec1",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "5923776c-5ab2-47ba-9728-557563a4e934",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:5923776c-5ab2-47ba-9728-557563a4e934",
+    "originalFileName": "微信图片_20260914191133_2115_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 353119,
+    "actualBytes": 353119,
+    "uploadedBy": "胖胖",
+    "sortOrder": 14,
+    "createdAt": "2026-09-14T11:39:33.971Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/5923776c-5ab2-47ba-9728-557563a4e934.jpg",
+    "sha256": "6bdd54c055196510560dd8686d1d41cf1913f694668620aba98ae875b3abd920",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "59d8cb89-f595-4c73-af55-7bf3fe4c198c",
+    "itemId": "ep1-v3-s5-auto-7",
+    "objectKey": "d1:59d8cb89-f595-4c73-af55-7bf3fe4c198c",
+    "originalFileName": "图片 - 2026-09-14T170936.365.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 620934,
+    "actualBytes": 620934,
+    "uploadedBy": "王承恺",
+    "sortOrder": 21,
+    "createdAt": "2026-09-14T09:10:23.018Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/59d8cb89-f595-4c73-af55-7bf3fe4c198c.jpg",
+    "sha256": "05e7f8f0162ba95b27b56e1484efb06920b9730513f280295ced76fb9db01b54",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "5d1856da-34c3-4c11-9c8b-136e3050acef",
+    "itemId": "ep1-v3-s5-auto-7",
+    "objectKey": "d1:5d1856da-34c3-4c11-9c8b-136e3050acef",
+    "originalFileName": "IMG_0507.JPG",
+    "contentType": "image/jpeg",
+    "expectedBytes": 310617,
+    "actualBytes": 310617,
+    "uploadedBy": "罗新姗",
+    "sortOrder": 1,
+    "createdAt": "2026-09-14T06:09:16.278Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/5d1856da-34c3-4c11-9c8b-136e3050acef.jpg",
+    "sha256": "9500a7cb95054de53710856c477072f2ae2d47c788421001a74c36dc5252cbcc",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "5d85cd42-8d03-4361-b8c2-aa0c76b72efc",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:5d85cd42-8d03-4361-b8c2-aa0c76b72efc",
+    "originalFileName": "lKHCXThffZNoCJ9KvB6v9j8OxHFJSdJPvjjB3W1MfiAwRBOtEpesQOAq8H-SednqAqb78UF4d5n2zE8IWE6dLH2pk19vUXJb9JVhMkH9i_mXCdhfa8lXZOsUZ41iZq-z3w8Bo1TYmb37LTDxHujtzeFqVGHJB5gW7RwyX-V2rzPzG9d2FZU_",
+    "contentType": "image/jpeg",
+    "expectedBytes": 116169,
+    "actualBytes": 116169,
+    "uploadedBy": "胖胖",
+    "sortOrder": 27,
+    "createdAt": "2026-09-14T06:51:19.610Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/5d85cd42-8d03-4361-b8c2-aa0c76b72efc.jpg",
+    "sha256": "d91602f08c6b59a0b24411b4d3cf1b17c0b3fe7a5b43337d7ba9c775a32886fe",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "5d9edbe2-efa0-44d3-90c8-c8ea8fee0c6a",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:5d9edbe2-efa0-44d3-90c8-c8ea8fee0c6a",
+    "originalFileName": "微信图片_20260914191133_2109_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 391291,
+    "actualBytes": 391291,
+    "uploadedBy": "胖胖",
+    "sortOrder": 11,
+    "createdAt": "2026-09-14T11:39:28.137Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/5d9edbe2-efa0-44d3-90c8-c8ea8fee0c6a.jpg",
+    "sha256": "8d8ceaaf08808f71e9e5e53b638b4e8c730288d09cff72ebe71545fc66a77697",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "5f26c4b9-9b2d-4f1a-8fa6-5dc5aea6eccc",
+    "itemId": "ep1-v3-s1-overall-cast",
+    "objectKey": "d1:5f26c4b9-9b2d-4f1a-8fa6-5dc5aea6eccc",
+    "originalFileName": "图片 - 2026-09-11T180707.728.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 666764,
+    "actualBytes": 666764,
+    "uploadedBy": "王承恺",
+    "sortOrder": 1,
+    "createdAt": "2026-09-11T11:44:45.961Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/5f26c4b9-9b2d-4f1a-8fa6-5dc5aea6eccc.jpg",
+    "sha256": "1bea12fcbfc98b468c2ce4572b9e28be524f19c192b6f19f6cf1ff1c9340eb55",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "619c49b6-b63c-4116-b1b7-67bd97b4ce5a",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:619c49b6-b63c-4116-b1b7-67bd97b4ce5a",
+    "originalFileName": "微信图片_20260914144522_2041_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 152268,
+    "actualBytes": 152268,
+    "uploadedBy": "胖胖",
+    "sortOrder": 63,
+    "createdAt": "2026-09-14T06:52:13.335Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/619c49b6-b63c-4116-b1b7-67bd97b4ce5a.jpg",
+    "sha256": "fa5f300569f43d43a4600158d75eedc8623ac8829c69937c6e3cb1c0a250149d",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "636f94f7-a1ad-4f41-b229-236366d97749",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:636f94f7-a1ad-4f41-b229-236366d97749",
+    "originalFileName": "Whzb-CShAB4a6JaLGDIYN8EcH_NLMMXQHfppewxrsxiB4tPWjUYhCOfdijo6GSuG5F02ofnbfytu5K71PRIzvg06Hx8V_eSN7neUIYDVJtUOzXSldYnzamYQV6LXFqTMoxnpZyq7e48nlz3TiSEGZuhU-6TymJH3Yc4e8C6UkcwJx3UygKm4",
+    "contentType": "image/jpeg",
+    "expectedBytes": 187346,
+    "actualBytes": 187346,
+    "uploadedBy": "胖胖",
+    "sortOrder": 37,
+    "createdAt": "2026-09-14T06:51:32.005Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/636f94f7-a1ad-4f41-b229-236366d97749.jpg",
+    "sha256": "eb7adf329b2c60b840b10beceb4a0679df563454993f13952f4fef4c8d9031ec",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "64f84f63-bded-4652-8767-36fa6e40190f",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:64f84f63-bded-4652-8767-36fa6e40190f",
+    "originalFileName": "sKp52dlO-GkJ9p4APYnpRk9uS5KJDDeH8T5ItIxRwzVZPg4PaItdiiCYtg0cJlU57PSQLapNl3Re4GWBaohLWTXJTh0RWL-HKAmmPCbwO6AZwcGG60SF01ziZ2cP7_4vu5ElPkJN2xdTse8IToWjyEVEaGE4aVcy7AqqwgGhHVxq9eJ9rBrP",
+    "contentType": "image/jpeg",
+    "expectedBytes": 54310,
+    "actualBytes": 54310,
+    "uploadedBy": "胖胖",
+    "sortOrder": 33,
+    "createdAt": "2026-09-14T06:51:28.228Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/64f84f63-bded-4652-8767-36fa6e40190f.jpg",
+    "sha256": "6ce9dca6778cf2523850153c386b2da9ecfc15591b7c8c46bab65b10b975f11b",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "66604019-6c7a-44bb-90b2-f6791ce31252",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:66604019-6c7a-44bb-90b2-f6791ce31252",
+    "originalFileName": "gc3CRefyAYioNJort_cJ_tZRfeyV0ISKRr5FwLBbcegZcw8Drjs5l2kYkoguXc27_TtWZku8PSGMmOk3Y3esbkb8p2SfFSRbDNpEfYj5Vnd-BfuoJZ026UNy3pITj2yEKFcdDM0jExWDFvBo4TsJ9vfTvrpQwHgEK7spr0KCd6gyozgmdRD8",
+    "contentType": "image/jpeg",
+    "expectedBytes": 99134,
+    "actualBytes": 99134,
+    "uploadedBy": "胖胖",
+    "sortOrder": 22,
+    "createdAt": "2026-09-14T06:51:08.604Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/66604019-6c7a-44bb-90b2-f6791ce31252.jpg",
+    "sha256": "3acdb7c8bcdec55eb2641154c163386ca48eb5b2e89d391ecce63da5d3a554e1",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "66bc6579-ef7c-486d-aa97-ac61c7c1451f",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:66bc6579-ef7c-486d-aa97-ac61c7c1451f",
+    "originalFileName": "0c813fa85480efcab802842d3e4a2082.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 145391,
+    "actualBytes": 145391,
+    "uploadedBy": "玉冰",
+    "sortOrder": 1,
+    "createdAt": "2026-09-14T05:34:41.705Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/66bc6579-ef7c-486d-aa97-ac61c7c1451f.jpg",
+    "sha256": "bc091b74a0a1a9ee9e14022f26b5600c6d25a3d1f1deb9508a92ee5f3084ba49",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "6b48a2d2-4c9a-431d-adf0-bb278bfc55ef",
+    "itemId": "ep1-v3-s1-auto-20",
+    "objectKey": "d1:6b48a2d2-4c9a-431d-adf0-bb278bfc55ef",
+    "originalFileName": "图片 - 2026-09-14T143134.745.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 790014,
+    "actualBytes": 790014,
+    "uploadedBy": "王承恺",
+    "sortOrder": 1,
+    "createdAt": "2026-09-14T06:31:50.647Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/6b48a2d2-4c9a-431d-adf0-bb278bfc55ef.jpg",
+    "sha256": "da59ac78a4132ad1dcad99cc460e17a89e503e7bc6566562e480215fac413271",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "6b88ae5a-1d2b-4a55-8d19-c565f9348acd",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:6b88ae5a-1d2b-4a55-8d19-c565f9348acd",
+    "originalFileName": "微信图片_20260914144522_2024_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 85027,
+    "actualBytes": 85027,
+    "uploadedBy": "胖胖",
+    "sortOrder": 54,
+    "createdAt": "2026-09-14T06:51:55.465Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/6b88ae5a-1d2b-4a55-8d19-c565f9348acd.jpg",
+    "sha256": "b7856936db59d06161fd17e4952e49005fb34480aad24914da1c5c132b77f486",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "6cb351c9-942e-4748-87bf-ee103f18ef8a",
+    "itemId": "ep1-v3-s5-auto-7",
+    "objectKey": "d1:6cb351c9-942e-4748-87bf-ee103f18ef8a",
+    "originalFileName": "28cb3986d21dacb5ac8f3d660d1bb331.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 133591,
+    "actualBytes": 133591,
+    "uploadedBy": "玉冰",
+    "sortOrder": 3,
+    "createdAt": "2026-09-14T06:09:20.218Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/6cb351c9-942e-4748-87bf-ee103f18ef8a.jpg",
+    "sha256": "648282d1e9bc6c1f6ea22cf036b4473212b40b56167ed4d84a71c5bb4ca3ab2f",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "6ce5ab18-5eb1-4c32-bbbf-488ae9e1bf9c",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:6ce5ab18-5eb1-4c32-bbbf-488ae9e1bf9c",
+    "originalFileName": "微信图片_20260914144522_2046_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 129405,
+    "actualBytes": 129405,
+    "uploadedBy": "胖胖",
+    "sortOrder": 66,
+    "createdAt": "2026-09-14T06:52:16.895Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/6ce5ab18-5eb1-4c32-bbbf-488ae9e1bf9c.jpg",
+    "sha256": "ced59c3582aac7aef1a39f2bd04b7098ca902f19bcb714fba739993e083989bf",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "6d626447-7a55-4cfb-899c-ec09197de867",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:6d626447-7a55-4cfb-899c-ec09197de867",
+    "originalFileName": "微信图片_20260914190637_2102_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 254359,
+    "actualBytes": 254359,
+    "uploadedBy": "胖胖",
+    "sortOrder": 8,
+    "createdAt": "2026-09-14T11:39:22.558Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/6d626447-7a55-4cfb-899c-ec09197de867.jpg",
+    "sha256": "49063d6adbf99b4255596ba5a35ff469089b7362865ccda5018227ccfaab014e",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "6dbd33f9-6868-4832-a799-2c8351b9da13",
+    "itemId": "ep1-v3-s5-auto-7",
+    "objectKey": "d1:6dbd33f9-6868-4832-a799-2c8351b9da13",
+    "originalFileName": "IMG_0506.JPG",
+    "contentType": "image/jpeg",
+    "expectedBytes": 1050041,
+    "actualBytes": 1050041,
+    "uploadedBy": "罗新姗",
+    "sortOrder": 2,
+    "createdAt": "2026-09-14T06:09:18.797Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/6dbd33f9-6868-4832-a799-2c8351b9da13.jpg",
+    "sha256": "6090eea7e649bf760de1adbe245d0b7497bf26bcc6c0121d7ba6e0fc72353b98",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "6ec855e3-79b7-40ee-ae4b-bacb9acfd047",
+    "itemId": "ep1-v3-s5-auto-7",
+    "objectKey": "d1:6ec855e3-79b7-40ee-ae4b-bacb9acfd047",
+    "originalFileName": "4526eb5e228e8addf0957f5e35814a76.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 114445,
+    "actualBytes": 114445,
+    "uploadedBy": "玉冰",
+    "sortOrder": 18,
+    "createdAt": "2026-09-14T06:13:02.451Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/6ec855e3-79b7-40ee-ae4b-bacb9acfd047.jpg",
+    "sha256": "e4b59177a06eb0d788324bf8e8e1fbea2f9d1472991a9eb6dffb2147521af0c1",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "6f619f8c-ebb2-4bd1-9fee-fe65eca5269b",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:6f619f8c-ebb2-4bd1-9fee-fe65eca5269b",
+    "originalFileName": "微信图片_20260914191133_2113_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 267391,
+    "actualBytes": 267391,
+    "uploadedBy": "胖胖",
+    "sortOrder": 12,
+    "createdAt": "2026-09-14T11:39:31.205Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/6f619f8c-ebb2-4bd1-9fee-fe65eca5269b.jpg",
+    "sha256": "2164c2dc0491f2e07ca637795d4bb8637b17945d47c97ab9409ece4924e5df5b",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "704a998c-5114-41e2-98f5-339d9edc812f",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:704a998c-5114-41e2-98f5-339d9edc812f",
+    "originalFileName": "微信图片_20260914191133_2117_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 257890,
+    "actualBytes": 257890,
+    "uploadedBy": "胖胖",
+    "sortOrder": 15,
+    "createdAt": "2026-09-14T11:39:36.395Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/704a998c-5114-41e2-98f5-339d9edc812f.jpg",
+    "sha256": "7a0cc7ffacd968a32975a07da1bf739e50d812563cabb0b2629671941001d62a",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "71e8b32e-c3ae-476e-8d22-27f2905f5615",
+    "itemId": "ep1-v3-s1-overall-cast",
+    "objectKey": "d1:71e8b32e-c3ae-476e-8d22-27f2905f5615",
+    "originalFileName": "图片 - 2026-09-14T135926.626.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 649124,
+    "actualBytes": 649124,
+    "uploadedBy": "王承恺",
+    "sortOrder": 2,
+    "createdAt": "2026-09-14T06:03:34.272Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/71e8b32e-c3ae-476e-8d22-27f2905f5615.jpg",
+    "sha256": "3079bd760bbd7910e1dc6993e77f9fe9c0feb3786e345543d977f69416822412",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "71f8271f-694e-416b-9985-6e39deac28b0",
+    "itemId": "ep1-v3-s1-overall-cast",
+    "objectKey": "d1:71f8271f-694e-416b-9985-6e39deac28b0",
+    "originalFileName": "图片 - 2026-09-14T140227.702.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 629847,
+    "actualBytes": 629847,
+    "uploadedBy": "王承恺",
+    "sortOrder": 1,
+    "createdAt": "2026-09-14T06:03:12.659Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/71f8271f-694e-416b-9985-6e39deac28b0.jpg",
+    "sha256": "2407703523f5619a3668c8cdfd0396bd28b195656f1e64eccae19db389c4a256",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "72c5724c-63c5-493c-81d7-07b0ab88fd22",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:72c5724c-63c5-493c-81d7-07b0ab88fd22",
+    "originalFileName": "IMG_0499.JPG",
+    "contentType": "image/jpeg",
+    "expectedBytes": 643147,
+    "actualBytes": 643147,
+    "uploadedBy": "罗新姗",
+    "sortOrder": 7,
+    "createdAt": "2026-09-14T05:51:19.194Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/72c5724c-63c5-493c-81d7-07b0ab88fd22.jpg",
+    "sha256": "ad187abc871a4408a2cf6c1e5287670a4820ecc569f26516cffb55c073eba629",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "75010c7c-2e36-4843-a434-0175353fc39e",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:75010c7c-2e36-4843-a434-0175353fc39e",
+    "originalFileName": "微信图片_20260914144522_2067_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 199318,
+    "actualBytes": 199318,
+    "uploadedBy": "胖胖",
+    "sortOrder": 76,
+    "createdAt": "2026-09-14T06:52:33.866Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/75010c7c-2e36-4843-a434-0175353fc39e.jpg",
+    "sha256": "f2e9133214060fedc0d092b6d11d2a13472e810cfc3417ec5c210c33cad52041",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "75373a3e-bc9b-4c8d-b73c-b2265c1ee70b",
+    "itemId": "ep1-v3-s1-auto-7",
+    "objectKey": "d1:75373a3e-bc9b-4c8d-b73c-b2265c1ee70b",
+    "originalFileName": "图片 - 2026-09-12T193423.622.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 639042,
+    "actualBytes": 639042,
+    "uploadedBy": "王承恺",
+    "sortOrder": 4,
+    "createdAt": "2026-09-14T05:49:49.072Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/75373a3e-bc9b-4c8d-b73c-b2265c1ee70b.jpg",
+    "sha256": "0cce94d812d80511182ed24e56e30dac01a80591b54a72472d66f9b3ff55da18",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "76e7788f-74a7-4162-bb73-fd9495c2d7d8",
+    "itemId": "ep1-v3-s5-auto-7",
+    "objectKey": "d1:76e7788f-74a7-4162-bb73-fd9495c2d7d8",
+    "originalFileName": "d92d086c7c2e67531205cf4fa5caf306.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 184249,
+    "actualBytes": 184249,
+    "uploadedBy": "玉冰",
+    "sortOrder": 16,
+    "createdAt": "2026-09-14T06:12:35.899Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/76e7788f-74a7-4162-bb73-fd9495c2d7d8.jpg",
+    "sha256": "ea38a1deda73286c0cb5d7b2026dbb3adb05cfffc10396067a325e3f5592ed7f",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "7772efa8-2911-4bba-8d60-b409602024b8",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:7772efa8-2911-4bba-8d60-b409602024b8",
+    "originalFileName": "IMG_8380-web.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 139800,
+    "actualBytes": 139800,
+    "uploadedBy": "玉冰",
+    "sortOrder": 2,
+    "createdAt": "2026-09-14T11:11:31.641Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/7772efa8-2911-4bba-8d60-b409602024b8.jpg",
+    "sha256": "421e45221a69952bd9c5dc5d86e18fea7e0cff413f56873746c43c672bca5e77",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "7834c7bd-2ad1-44eb-bd62-aa2c7b77bdc4",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:7834c7bd-2ad1-44eb-bd62-aa2c7b77bdc4",
+    "originalFileName": "微信图片_20260914144522_2068_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 99069,
+    "actualBytes": 99069,
+    "uploadedBy": "胖胖",
+    "sortOrder": 76,
+    "createdAt": "2026-09-14T06:52:33.671Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/7834c7bd-2ad1-44eb-bd62-aa2c7b77bdc4.jpg",
+    "sha256": "be8827e825756c3e4155bc8a58113286b00874ea51d871640d58c34f9a72e0c7",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "78676931-85e0-4121-87fa-22e394328aa3",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:78676931-85e0-4121-87fa-22e394328aa3",
+    "originalFileName": "DP329151-web.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 166154,
+    "actualBytes": 166154,
+    "uploadedBy": "胖胖",
+    "sortOrder": 16,
+    "createdAt": "2026-09-14T06:51:01.493Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/78676931-85e0-4121-87fa-22e394328aa3.jpg",
+    "sha256": "bac35c09905a913db4638c8eb27474a3220a15da8b3efdc681eb1f51270a4eba",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "78991d4a-07ca-4ecc-85d3-3da238223c29",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:78991d4a-07ca-4ecc-85d3-3da238223c29",
+    "originalFileName": "89234c34ce1ecd3cebc19a265772dd53.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 142602,
+    "actualBytes": 142602,
+    "uploadedBy": "玉冰",
+    "sortOrder": 3,
+    "createdAt": "2026-09-14T05:34:46.392Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/78991d4a-07ca-4ecc-85d3-3da238223c29.jpg",
+    "sha256": "a379bf65ec4e69a61ac510ed95542786c2341be853dbbe5fdaa97a937d3f44ba",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "7d76a4f0-4bf5-4ab6-a61c-1969cfa7e79e",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:7d76a4f0-4bf5-4ab6-a61c-1969cfa7e79e",
+    "originalFileName": "微信图片_20260914144522_2075_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 240831,
+    "actualBytes": 240831,
+    "uploadedBy": "胖胖",
+    "sortOrder": 81,
+    "createdAt": "2026-09-14T06:52:41.294Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/7d76a4f0-4bf5-4ab6-a61c-1969cfa7e79e.jpg",
+    "sha256": "7862477e748942092bb7ec66e2b17db63255b00c18cc834fc374cc14d20c722b",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "7e759486-2bc8-4b80-afea-14c4bd284fcc",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:7e759486-2bc8-4b80-afea-14c4bd284fcc",
+    "originalFileName": "微信图片_20260914144522_2042_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 124331,
+    "actualBytes": 124331,
+    "uploadedBy": "胖胖",
+    "sortOrder": 63,
+    "createdAt": "2026-09-14T06:52:13.340Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/7e759486-2bc8-4b80-afea-14c4bd284fcc.jpg",
+    "sha256": "d3ef941db678acc0acd10dc84d53ca434db0e949e80fd9c8014cd27535e0be24",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "81d9d08b-f5a2-452f-8e88-ac14397509dc",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:81d9d08b-f5a2-452f-8e88-ac14397509dc",
+    "originalFileName": "3FXl29iRGihq0Rg2wl-0EqW6M0UxL1A5rMa819ghIFHt0po9Ma9L8xOnPKH18E-kDuEp-PhrJflHuaNyYO4bKDnwIQkEr49pDqHyB_UNhiCGZVtpLjpRiB7muaBZr532Fs2xkwA0pwx0tiJi2qRu7k3WOkyNK_EGn4xoRXbEuDS2axhxG8Q6",
+    "contentType": "image/jpeg",
+    "expectedBytes": 122878,
+    "actualBytes": 122878,
+    "uploadedBy": "胖胖",
+    "sortOrder": 12,
+    "createdAt": "2026-09-14T06:50:56.479Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/81d9d08b-f5a2-452f-8e88-ac14397509dc.jpg",
+    "sha256": "9aa58dfde70125e315a8e745d817e92157098f04f9cb720811e5a5dc1f50e71f",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "82859475-93a8-4d72-8206-61666409f219",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:82859475-93a8-4d72-8206-61666409f219",
+    "originalFileName": "微信图片_20260914144522_2073_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 237673,
+    "actualBytes": 237673,
+    "uploadedBy": "胖胖",
+    "sortOrder": 79,
+    "createdAt": "2026-09-14T06:52:38.678Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/82859475-93a8-4d72-8206-61666409f219.jpg",
+    "sha256": "03fc70a44c57ed3cf52cb9ca92d764a80188d8e1b1c8d6e55b62cbd36718a61f",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "82bc2b56-cbe2-4cca-8ce4-8be099892cba",
+    "itemId": "ep1-v3-s1-overall-cast",
+    "objectKey": "d1:82bc2b56-cbe2-4cca-8ce4-8be099892cba",
+    "originalFileName": "图片 - 2026-09-14T140115.174.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 631636,
+    "actualBytes": 631636,
+    "uploadedBy": "王承恺",
+    "sortOrder": 2,
+    "createdAt": "2026-09-14T06:05:32.458Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/82bc2b56-cbe2-4cca-8ce4-8be099892cba.jpg",
+    "sha256": "9e1cb1c5db6f661807d775fd00c9a097f76af461545d9a8691c958c721bee645",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "83563063-2c3e-48d0-b1aa-b7cf0f922a3b",
+    "itemId": "ep1-v3-s5-auto-7",
+    "objectKey": "d1:83563063-2c3e-48d0-b1aa-b7cf0f922a3b",
+    "originalFileName": "c88124b172e72cc1fff259b0af64b43c.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 189903,
+    "actualBytes": 189903,
+    "uploadedBy": "玉冰",
+    "sortOrder": 6,
+    "createdAt": "2026-09-14T06:09:25.620Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/83563063-2c3e-48d0-b1aa-b7cf0f922a3b.jpg",
+    "sha256": "511d1f4490c5d606213bf5c7aca37f13f5b45e7fe70a0d1d08987a3124ab09cd",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "8450096b-3cfc-4ed8-aeac-25f5be456030",
+    "itemId": "ep1-v3-s1-overall-cast",
+    "objectKey": "d1:8450096b-3cfc-4ed8-aeac-25f5be456030",
+    "originalFileName": "图片 - 2026-09-14T140044.487.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 617199,
+    "actualBytes": 617199,
+    "uploadedBy": "王承恺",
+    "sortOrder": 1,
+    "createdAt": "2026-09-14T06:03:20.769Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/8450096b-3cfc-4ed8-aeac-25f5be456030.jpg",
+    "sha256": "4eff8b644a43e9f113dfa577c7758da4a03d83028341a9f6cc4351bc41aa8494",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "87ab0b9d-706a-4ec6-bd41-4e48a3b14c61",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:87ab0b9d-706a-4ec6-bd41-4e48a3b14c61",
+    "originalFileName": "IMG_8386.JPG",
+    "contentType": "image/jpeg",
+    "expectedBytes": 212664,
+    "actualBytes": 212664,
+    "uploadedBy": "玉冰",
+    "sortOrder": 1,
+    "createdAt": "2026-09-14T11:11:27.609Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/87ab0b9d-706a-4ec6-bd41-4e48a3b14c61.jpg",
+    "sha256": "a12415013598f4a726beef04e827e95b74474e4e1402917bc9dc6e041d1356c7",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "87bf8357-1ec3-4de5-9afe-2df47de82d21",
+    "itemId": "ep1-v3-s1-overall-cast",
+    "objectKey": "d1:87bf8357-1ec3-4de5-9afe-2df47de82d21",
+    "originalFileName": "图片 - 2026-09-04T162506.963.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 632956,
+    "actualBytes": 632956,
+    "uploadedBy": "王承恺",
+    "sortOrder": 1,
+    "createdAt": "2026-09-11T11:43:25.750Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/87bf8357-1ec3-4de5-9afe-2df47de82d21.jpg",
+    "sha256": "19f6f57441b211264f4186d55c242219e956639efc79b44788289972bc551e6b",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "8a28f271-6304-4b30-9fbc-01de57404abe",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:8a28f271-6304-4b30-9fbc-01de57404abe",
+    "originalFileName": "微信图片_20260914191133_2111_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 477399,
+    "actualBytes": 477399,
+    "uploadedBy": "胖胖",
+    "sortOrder": 12,
+    "createdAt": "2026-09-14T11:39:30.316Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/8a28f271-6304-4b30-9fbc-01de57404abe.jpg",
+    "sha256": "8007c8df44f52a7927f4e835e6d82deb7c4c27b4e3829a074cd800586eae43a6",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "8bb9f69a-7643-47b3-998a-929319b91da8",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:8bb9f69a-7643-47b3-998a-929319b91da8",
+    "originalFileName": "微信图片_20260914144522_2028_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 318248,
+    "actualBytes": 318248,
+    "uploadedBy": "胖胖",
+    "sortOrder": 57,
+    "createdAt": "2026-09-14T06:51:59.812Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/8bb9f69a-7643-47b3-998a-929319b91da8.jpg",
+    "sha256": "e476c9cb245aa74dc3b228e8a5f9fc8d94b6484ebd0374db5a8eb85cfd825b69",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "8c5656b7-bbcc-4eb1-8b2a-b659e57f2763",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:8c5656b7-bbcc-4eb1-8b2a-b659e57f2763",
+    "originalFileName": "微信图片_20260914144522_2005_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 63734,
+    "actualBytes": 63734,
+    "uploadedBy": "胖胖",
+    "sortOrder": 42,
+    "createdAt": "2026-09-14T06:51:38.586Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/8c5656b7-bbcc-4eb1-8b2a-b659e57f2763.jpg",
+    "sha256": "54c8d16f6200f56d925d7b5341e252ab27c261c5e905ff792d5e189a68801f80",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "8d9ac9dc-4295-4b3e-9804-d0e4bbe059e4",
+    "itemId": "ep1-v3-s4-auto-7",
+    "objectKey": "d1:8d9ac9dc-4295-4b3e-9804-d0e4bbe059e4",
+    "originalFileName": "图片 - 2026-09-14T160922.307.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 635812,
+    "actualBytes": 635812,
+    "uploadedBy": "王承恺",
+    "sortOrder": 1,
+    "createdAt": "2026-09-14T08:17:36.235Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/8d9ac9dc-4295-4b3e-9804-d0e4bbe059e4.jpg",
+    "sha256": "0241c4401460e8ed91536a0b5c19a61138dab7722d897954613f9eca1468e1c3",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "8f170acb-e25e-41b8-bd3f-abc0846db3b3",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:8f170acb-e25e-41b8-bd3f-abc0846db3b3",
+    "originalFileName": "微信图片_20260914191133_2107_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 181278,
+    "actualBytes": 181278,
+    "uploadedBy": "胖胖",
+    "sortOrder": 10,
+    "createdAt": "2026-09-14T11:39:25.473Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/8f170acb-e25e-41b8-bd3f-abc0846db3b3.jpg",
+    "sha256": "db6840a20456f18ce54541f338c4f601874880ac587e5b7e01119f32d87eec8c",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "8f3acbff-28ed-406e-866b-e74f0de7f348",
+    "itemId": "ep1-v3-s5-auto-7",
+    "objectKey": "d1:8f3acbff-28ed-406e-866b-e74f0de7f348",
+    "originalFileName": "79cf0582b6f793ca4c668c57605b03e5.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 208426,
+    "actualBytes": 208426,
+    "uploadedBy": "玉冰",
+    "sortOrder": 12,
+    "createdAt": "2026-09-14T06:10:50.691Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/8f3acbff-28ed-406e-866b-e74f0de7f348.jpg",
+    "sha256": "9d580e89ac9cc9cc01434021718b4068f9141a6718a90d9bcbcd3c1f36ee3d9d",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "90f40f71-021f-4be0-bd76-658256187c3c",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:90f40f71-021f-4be0-bd76-658256187c3c",
+    "originalFileName": "微信图片_20260914144522_2066_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 221827,
+    "actualBytes": 221827,
+    "uploadedBy": "胖胖",
+    "sortOrder": 75,
+    "createdAt": "2026-09-14T06:52:32.018Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/90f40f71-021f-4be0-bd76-658256187c3c.jpg",
+    "sha256": "69b0e1719c38224698b4b8a96b68180d515a28c100c78f86444f48a08d13657a",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "94d97cf1-e4b2-4809-aca6-376ed79d5177",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:94d97cf1-e4b2-4809-aca6-376ed79d5177",
+    "originalFileName": "5eb11628a9267d18545909fae4843fdf.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 81283,
+    "actualBytes": 81283,
+    "uploadedBy": "玉冰",
+    "sortOrder": 2,
+    "createdAt": "2026-09-14T05:34:44.133Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/94d97cf1-e4b2-4809-aca6-376ed79d5177.jpg",
+    "sha256": "d7d998a3caa2f466d85d3e2c4de51f97dd69b627b9220b1922f04bf55e3c52a4",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "976bb7a1-af99-496b-b814-46dc872db981",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:976bb7a1-af99-496b-b814-46dc872db981",
+    "originalFileName": "微信图片_20260914191133_2112_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 299355,
+    "actualBytes": 299355,
+    "uploadedBy": "胖胖",
+    "sortOrder": 12,
+    "createdAt": "2026-09-14T11:39:31.043Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/976bb7a1-af99-496b-b814-46dc872db981.jpg",
+    "sha256": "9efa971af90711d535718b58f334954926b44b495c0f467587044ebf9157bb22",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "9785e60a-96ff-4df2-bd33-698ebd932007",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:9785e60a-96ff-4df2-bd33-698ebd932007",
+    "originalFileName": "微信图片_20260914191133_2114_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 218052,
+    "actualBytes": 218052,
+    "uploadedBy": "胖胖",
+    "sortOrder": 13,
+    "createdAt": "2026-09-14T11:39:33.394Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/9785e60a-96ff-4df2-bd33-698ebd932007.jpg",
+    "sha256": "4d15e0761d244a0ee156dd5397a11a584e23d4d8f534b865ed836363877d2ab6",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "978d2eae-7391-48fd-90eb-774d237e1821",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:978d2eae-7391-48fd-90eb-774d237e1821",
+    "originalFileName": "UpgfK781YxJoZzqFOunv5qNB-Lmd5UDFRp71DamrZyRg3ATlsPfiTkyt-sRWJtvfbcNCfEW0H4-CrxbuyXzh9azn9QpBZWIvcoJijEmc9GhrQO8MWtXgUO7v1gD8pVACBmiTplda6qemMkSHfoUl9Zn8qJK17oA5i8m92j3RUEynZ_F4W56O",
+    "contentType": "image/jpeg",
+    "expectedBytes": 95861,
+    "actualBytes": 95861,
+    "uploadedBy": "胖胖",
+    "sortOrder": 35,
+    "createdAt": "2026-09-14T06:51:29.941Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/978d2eae-7391-48fd-90eb-774d237e1821.jpg",
+    "sha256": "e34a1037b1dcaf059865a8154523933ee64af245b6afe6ca24d8ddf8b1620e38",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "981ca381-0d1b-497c-a40f-a82f6f4165f7",
+    "itemId": "ep1-v3-s1-auto-1",
+    "objectKey": "d1:981ca381-0d1b-497c-a40f-a82f6f4165f7",
+    "originalFileName": "IMG_2520-web.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 168698,
+    "actualBytes": 168698,
+    "uploadedBy": "王承恺",
+    "sortOrder": 1,
+    "createdAt": "2026-09-14T10:58:07.106Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/981ca381-0d1b-497c-a40f-a82f6f4165f7.jpg",
+    "sha256": "41919eae99b714f0aeb07f1ade0f8d17bd4723b4ea64e59503d145948fc1053b",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "99a3c05d-9576-44b2-a316-e5be578cee19",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:99a3c05d-9576-44b2-a316-e5be578cee19",
+    "originalFileName": "微信图片_20260914144522_2069_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 353682,
+    "actualBytes": 353682,
+    "uploadedBy": "胖胖",
+    "sortOrder": 77,
+    "createdAt": "2026-09-14T06:52:35.624Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/99a3c05d-9576-44b2-a316-e5be578cee19.jpg",
+    "sha256": "7afb8d34533ea9a8d36df702e08e887ec31ab86a6288754662013b27575f734a",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "9aa0dc9e-9163-42b5-87ce-bff18b15bd6e",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:9aa0dc9e-9163-42b5-87ce-bff18b15bd6e",
+    "originalFileName": "IMG_8383-web.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 91344,
+    "actualBytes": 91344,
+    "uploadedBy": "玉冰",
+    "sortOrder": 2,
+    "createdAt": "2026-09-14T11:11:31.084Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/9aa0dc9e-9163-42b5-87ce-bff18b15bd6e.jpg",
+    "sha256": "384afb544a19eee5208003eed82088353c98fc1176e3386a9495435173b9bed6",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "9d080b36-1e7c-456b-9578-99bb59ed4482",
+    "itemId": "ep1-v3-s5-auto-7",
+    "objectKey": "d1:9d080b36-1e7c-456b-9578-99bb59ed4482",
+    "originalFileName": "bbd3e3a7fd4732cd7e23be5aa7f10364.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 125195,
+    "actualBytes": 125195,
+    "uploadedBy": "玉冰",
+    "sortOrder": 17,
+    "createdAt": "2026-09-14T06:12:59.712Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/9d080b36-1e7c-456b-9578-99bb59ed4482.jpg",
+    "sha256": "cee05475e2311c302f8cf4689e87c1a27d5d1390c3d526cde58e025f89a34542",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "9e3fb7fb-e777-45db-9359-c5ef010ff3f6",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:9e3fb7fb-e777-45db-9359-c5ef010ff3f6",
+    "originalFileName": "微信图片_20260914144522_2015_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 270143,
+    "actualBytes": 270143,
+    "uploadedBy": "胖胖",
+    "sortOrder": 48,
+    "createdAt": "2026-09-14T06:51:46.915Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/9e3fb7fb-e777-45db-9359-c5ef010ff3f6.jpg",
+    "sha256": "76e81167e51e5d616fbcdec10ff94c60b8d3a2f084dd39fcf20bf3a9d9ff7d11",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "9e7c2bbf-e656-4e25-9268-4500dc7fc0f2",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:9e7c2bbf-e656-4e25-9268-4500dc7fc0f2",
+    "originalFileName": "nxEsD9pQ-5FEHrjIcR-V_Ql7JP_aG50YOKBWwc5jFuEtq1j3pNhenxpSXZ61H8rYd1930Y1LnRzExRVumawzjeq9dNZNYnUh66KtHdZPoO8p-wOYaHfPgTchyMX-Zn01BtlERi505sjTnxXZb5kDwvTtE30-1nPPXKZ-1D9cg0hC7y9tzVEI",
+    "contentType": "image/jpeg",
+    "expectedBytes": 269098,
+    "actualBytes": 269098,
+    "uploadedBy": "胖胖",
+    "sortOrder": 29,
+    "createdAt": "2026-09-14T06:51:22.875Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/9e7c2bbf-e656-4e25-9268-4500dc7fc0f2.jpg",
+    "sha256": "05a76ea6f167f0ec419cc676b7af120c2e202f725db2c9a7e4d01c6a9e0bea1e",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "9ebcedd6-c55a-4851-9b77-3eadd4fd43ca",
+    "itemId": "ep1-v3-s5-auto-7",
+    "objectKey": "d1:9ebcedd6-c55a-4851-9b77-3eadd4fd43ca",
+    "originalFileName": "图片 - 2026-09-14T161248.479.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 726117,
+    "actualBytes": 726117,
+    "uploadedBy": "王承恺",
+    "sortOrder": 20,
+    "createdAt": "2026-09-14T08:13:21.308Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/9ebcedd6-c55a-4851-9b77-3eadd4fd43ca.jpg",
+    "sha256": "20003b26a751d98c669aa6b8294d4771096c10cede4e936d3192da370cf0d585",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "a14cf2ca-e57f-4997-9c3c-109d72c8a380",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:a14cf2ca-e57f-4997-9c3c-109d72c8a380",
+    "originalFileName": "微信图片_20260914144522_2023_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 68898,
+    "actualBytes": 68898,
+    "uploadedBy": "胖胖",
+    "sortOrder": 53,
+    "createdAt": "2026-09-14T06:51:53.967Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/a14cf2ca-e57f-4997-9c3c-109d72c8a380.jpg",
+    "sha256": "776a9a1327930909c990609c31b619101e210eddb133c4ae3401a23eba486b02",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "a6096580-7b73-471b-a095-12a26c1b4a84",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:a6096580-7b73-471b-a095-12a26c1b4a84",
+    "originalFileName": "微信图片_20260914191133_2105_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 188451,
+    "actualBytes": 188451,
+    "uploadedBy": "胖胖",
+    "sortOrder": 10,
+    "createdAt": "2026-09-14T11:39:24.799Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/a6096580-7b73-471b-a095-12a26c1b4a84.jpg",
+    "sha256": "b4b8d7ed90ce736b323d394e8d9aa5ee0637baacf05f1a231f8ea0519d859767",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "a689d2a3-ffa9-4a1b-9ce1-d49bf1637677",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:a689d2a3-ffa9-4a1b-9ce1-d49bf1637677",
+    "originalFileName": "微信图片_20260914144522_2007_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 102201,
+    "actualBytes": 102201,
+    "uploadedBy": "胖胖",
+    "sortOrder": 43,
+    "createdAt": "2026-09-14T06:51:39.545Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/a689d2a3-ffa9-4a1b-9ce1-d49bf1637677.jpg",
+    "sha256": "c97faa3062eaca7e52455827b1482e305f381a7e718d426ef117ed29b5efe605",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "aa575347-de1d-4f6c-afe2-b7d73c4d08a0",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:aa575347-de1d-4f6c-afe2-b7d73c4d08a0",
+    "originalFileName": "wKzh4SRsyrNHjP18bv5DDWvtuQoPWEMowiStNQSKmrt8cd-D8sNZ_HTEsG10PKDERqgiZfYNcOpQae-iEXRA7BzC5GVfG_XjoFsRcdFnvRPxbE0aql8xkXEkU10ac_8aPDnoI-zfTUAaBE7EPePf1qbawRJBaZULfhJWimMCSwU_iX51RB6P",
+    "contentType": "image/jpeg",
+    "expectedBytes": 101322,
+    "actualBytes": 101322,
+    "uploadedBy": "胖胖",
+    "sortOrder": 38,
+    "createdAt": "2026-09-14T06:51:34.093Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/aa575347-de1d-4f6c-afe2-b7d73c4d08a0.jpg",
+    "sha256": "44177686f90d0a40ee83504ece19681f5aa56d7357807a8304e1b621270ec247",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "aae49962-5e18-4228-871d-8fb448f5c20e",
+    "itemId": "ep1-v3-s1-overall-cast",
+    "objectKey": "d1:aae49962-5e18-4228-871d-8fb448f5c20e",
+    "originalFileName": "图片 - 2026-09-14T131746.495.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 627828,
+    "actualBytes": 627828,
+    "uploadedBy": "王承恺",
+    "sortOrder": 3,
+    "createdAt": "2026-09-14T05:48:09.129Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/aae49962-5e18-4228-871d-8fb448f5c20e.jpg",
+    "sha256": "bb61dd5fe1b8c686df8022d0030aebf08e1c896d5ae018f61dd2bbdb36ef8de0",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "abf30ac7-7116-4767-9252-2f15a2e56054",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:abf30ac7-7116-4767-9252-2f15a2e56054",
+    "originalFileName": "微信图片_20260914144522_2054_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 137574,
+    "actualBytes": 137574,
+    "uploadedBy": "胖胖",
+    "sortOrder": 69,
+    "createdAt": "2026-09-14T06:52:22.387Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/abf30ac7-7116-4767-9252-2f15a2e56054.jpg",
+    "sha256": "13d916a64d07587970a06ad185eb555ad17ed1e5e970feefbc24c40c81c20833",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "af521a4f-7b4a-49e3-85d2-d9705e6ab524",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:af521a4f-7b4a-49e3-85d2-d9705e6ab524",
+    "originalFileName": "IMG_0540.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 412715,
+    "actualBytes": 412715,
+    "uploadedBy": "罗新姗",
+    "sortOrder": 5,
+    "createdAt": "2026-09-14T11:12:26.768Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/af521a4f-7b4a-49e3-85d2-d9705e6ab524.jpg",
+    "sha256": "ac4daba1d8da5071c645ddf408e56c93ca344fd6ef156237da00468a7ae38237",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "b239780a-45ef-4ec8-8515-7b0dd114b4d5",
+    "itemId": "ep1-v3-s1-overall-cast",
+    "objectKey": "d1:b239780a-45ef-4ec8-8515-7b0dd114b4d5",
+    "originalFileName": "图片 - 2026-09-14T132026.982.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 677191,
+    "actualBytes": 677191,
+    "uploadedBy": "王承恺",
+    "sortOrder": 2,
+    "createdAt": "2026-09-14T05:45:33.810Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/b239780a-45ef-4ec8-8515-7b0dd114b4d5.jpg",
+    "sha256": "71436d6a8f3b8391b1628520b980835ec4eb5a55d17843decb6401108e5fe06e",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "b4bc5eee-37d9-4abb-88ee-996c37bc99be",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:b4bc5eee-37d9-4abb-88ee-996c37bc99be",
+    "originalFileName": "微信图片_20260914144522_2080_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 235000,
+    "actualBytes": 235000,
+    "uploadedBy": "胖胖",
+    "sortOrder": 83,
+    "createdAt": "2026-09-14T06:52:45.692Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/b4bc5eee-37d9-4abb-88ee-996c37bc99be.jpg",
+    "sha256": "502fe53fbc4d2d1a758d20f18b72889f54204f5a3c6e606638727cd5d994bc59",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "b4d21e02-5c41-4b01-808c-b80d4ccfa14e",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:b4d21e02-5c41-4b01-808c-b80d4ccfa14e",
+    "originalFileName": "微信图片_20260914144522_2057_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 300140,
+    "actualBytes": 300140,
+    "uploadedBy": "胖胖",
+    "sortOrder": 70,
+    "createdAt": "2026-09-14T06:52:24.203Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/b4d21e02-5c41-4b01-808c-b80d4ccfa14e.jpg",
+    "sha256": "54238e7493f0c4d3b2eb1b0b4925bd2e4f290044cd5e8b2894bc8281ccafc26b",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "b55ab793-9918-40dd-add6-319c4e8a10a4",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:b55ab793-9918-40dd-add6-319c4e8a10a4",
+    "originalFileName": "微信图片_20260914144522_2053_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 103194,
+    "actualBytes": 103194,
+    "uploadedBy": "胖胖",
+    "sortOrder": 69,
+    "createdAt": "2026-09-14T06:52:22.114Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/b55ab793-9918-40dd-add6-319c4e8a10a4.jpg",
+    "sha256": "ff51fc7bcb287a98463fe0c37a0af1ad678697550d4897bd92ce524f3b0d9d79",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "b5eb5594-6b0b-4123-87a0-7173d41feb5d",
+    "itemId": "ep1-v3-s5-hero-wardrobe",
+    "objectKey": "d1:b5eb5594-6b0b-4123-87a0-7173d41feb5d",
+    "originalFileName": "7871eed29fc0557369ef0845bca4b547.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 230315,
+    "actualBytes": 230315,
+    "uploadedBy": "玉冰",
+    "sortOrder": 1,
+    "createdAt": "2026-09-14T05:57:19.358Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/b5eb5594-6b0b-4123-87a0-7173d41feb5d.jpg",
+    "sha256": "a0060bd6358ae0a2fe99195de67163bfbe3087d065bd6d6344279cafe4ce01cb",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "b788eeb8-6ec6-4e51-8911-b1cb99ad2323",
+    "itemId": "ep1-v3-s1-auto-20",
+    "objectKey": "d1:b788eeb8-6ec6-4e51-8911-b1cb99ad2323",
+    "originalFileName": "图片 - 2026-09-14T144306.507.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 811399,
+    "actualBytes": 811399,
+    "uploadedBy": "王承恺",
+    "sortOrder": 2,
+    "createdAt": "2026-09-14T06:43:49.875Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/b788eeb8-6ec6-4e51-8911-b1cb99ad2323.jpg",
+    "sha256": "bd93f8581978ca071349b00124f938d7b6f6fbf7666720b8c09ec4a28c30ed21",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "bac0881e-9426-4e0c-a51d-22e5c0fc06a4",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:bac0881e-9426-4e0c-a51d-22e5c0fc06a4",
+    "originalFileName": "微信图片_20260914144522_2012_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 73530,
+    "actualBytes": 73530,
+    "uploadedBy": "胖胖",
+    "sortOrder": 46,
+    "createdAt": "2026-09-14T06:51:45.219Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/bac0881e-9426-4e0c-a51d-22e5c0fc06a4.jpg",
+    "sha256": "ba50f3134bb3db0bdc838995dbff97e8cd62dfc00add02c71a28d13972f865c6",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "bbbbb0f6-7506-4a29-b411-f48d02face5e",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:bbbbb0f6-7506-4a29-b411-f48d02face5e",
+    "originalFileName": "微信图片_20260914144522_2006_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 113657,
+    "actualBytes": 113657,
+    "uploadedBy": "胖胖",
+    "sortOrder": 43,
+    "createdAt": "2026-09-14T06:51:39.513Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/bbbbb0f6-7506-4a29-b411-f48d02face5e.jpg",
+    "sha256": "fd5f5fb57661132d7139c1f92bbfc19fb6023e3ec1198b968a45654610e96ed3",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "bdbb3a8d-8972-45cc-b09d-240750006353",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:bdbb3a8d-8972-45cc-b09d-240750006353",
+    "originalFileName": "微信图片_20260914144522_2013_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 243703,
+    "actualBytes": 243703,
+    "uploadedBy": "胖胖",
+    "sortOrder": 47,
+    "createdAt": "2026-09-14T06:51:46.020Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/bdbb3a8d-8972-45cc-b09d-240750006353.jpg",
+    "sha256": "d013732ce84248012bbdc0bec31e22590e73aa35cf0a1981a48cc991af18f174",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "bdee9268-700a-403a-a48f-7226f9c802c5",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:bdee9268-700a-403a-a48f-7226f9c802c5",
+    "originalFileName": "IMG_0495-web.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 310804,
+    "actualBytes": 310804,
+    "uploadedBy": "罗新姗",
+    "sortOrder": 10,
+    "createdAt": "2026-09-14T05:51:25.200Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/bdee9268-700a-403a-a48f-7226f9c802c5.jpg",
+    "sha256": "f30b607ae21cbda573454144f7a693d654a3012ae1ebd6c26495b9beedface1b",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "be9c172f-8d0e-4e36-b3bc-e3c60983a058",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:be9c172f-8d0e-4e36-b3bc-e3c60983a058",
+    "originalFileName": "微信图片_20260914144522_2072_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 247896,
+    "actualBytes": 247896,
+    "uploadedBy": "胖胖",
+    "sortOrder": 78,
+    "createdAt": "2026-09-14T06:52:37.822Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/be9c172f-8d0e-4e36-b3bc-e3c60983a058.jpg",
+    "sha256": "3f0833f6a624422958262279cfd22dce64ba317b4d67648f39e2a72b3aecef15",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "c038739f-9e4d-46c4-8e3e-49a55dea29f1",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:c038739f-9e4d-46c4-8e3e-49a55dea29f1",
+    "originalFileName": "微信图片_20260914190637_2099_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 80617,
+    "actualBytes": 80617,
+    "uploadedBy": "胖胖",
+    "sortOrder": 7,
+    "createdAt": "2026-09-14T11:39:20.481Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/c038739f-9e4d-46c4-8e3e-49a55dea29f1.jpg",
+    "sha256": "a42f3308372a4cc42254f72178a6e85de535589d72da577e8de91f41314f9059",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "c2083cf0-c800-4894-8ed7-a6c80fc2a121",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:c2083cf0-c800-4894-8ed7-a6c80fc2a121",
+    "originalFileName": "IMG_0497.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 385064,
+    "actualBytes": 385064,
+    "uploadedBy": "罗新姗",
+    "sortOrder": 9,
+    "createdAt": "2026-09-14T05:51:23.027Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/c2083cf0-c800-4894-8ed7-a6c80fc2a121.jpg",
+    "sha256": "7610be121420553975a4de38ae5b45f28086c21df3a6cf74961c054c9d4afdab",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "c77d0282-e97c-4f7d-b9d3-1e849fb3b08c",
+    "itemId": "ep1-v3-s5-hero-wardrobe",
+    "objectKey": "d1:c77d0282-e97c-4f7d-b9d3-1e849fb3b08c",
+    "originalFileName": "IMG_0510.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 160081,
+    "actualBytes": 160081,
+    "uploadedBy": "罗新姗",
+    "sortOrder": 4,
+    "createdAt": "2026-09-14T06:22:23.455Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/c77d0282-e97c-4f7d-b9d3-1e849fb3b08c.jpg",
+    "sha256": "54c001135b8b753097ba7c8c080c4ca457c7e799b5f6ec608d4f32e4f747f12e",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "c7d093ef-5ea2-4a75-ae8e-dd33f06af732",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:c7d093ef-5ea2-4a75-ae8e-dd33f06af732",
+    "originalFileName": "微信图片_20260914144522_2020_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 284935,
+    "actualBytes": 284935,
+    "uploadedBy": "胖胖",
+    "sortOrder": 53,
+    "createdAt": "2026-09-14T06:51:53.670Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/c7d093ef-5ea2-4a75-ae8e-dd33f06af732.jpg",
+    "sha256": "4e63911674f15dce102285165d938e7195a6e5e3bcc6b52e6bf4993aaae933c5",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "c80882ee-2194-47d5-8cc7-6d883c900aff",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:c80882ee-2194-47d5-8cc7-6d883c900aff",
+    "originalFileName": "微信图片_20260914144522_2045_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 136616,
+    "actualBytes": 136616,
+    "uploadedBy": "胖胖",
+    "sortOrder": 64,
+    "createdAt": "2026-09-14T06:52:15.393Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/c80882ee-2194-47d5-8cc7-6d883c900aff.jpg",
+    "sha256": "90f5dc91a4fa6d85dcfdb2c831ee320d8b1857cbf1a5b97ee866a297e1505b82",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "c915aeda-87f9-4a40-9bc1-24a60234ded4",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:c915aeda-87f9-4a40-9bc1-24a60234ded4",
+    "originalFileName": "h3VJiQWSoP6bcWmeGkNSCNWIZiTaG3a-pLnHAdTHCZQuvDalsfYQd9jQSxM8ir5ERWVq8kttaCzsYn_T0hOStOoqiSHvlNJDf2iRvSXyfcrwQkRgmDI63p_OP9xYxWHojrb0SGF0XlbjRswnGO3xWo0vy20U1vegfqt30ujMW8XD95iyjyla",
+    "contentType": "image/jpeg",
+    "expectedBytes": 166358,
+    "actualBytes": 166358,
+    "uploadedBy": "胖胖",
+    "sortOrder": 23,
+    "createdAt": "2026-09-14T06:51:10.594Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/c915aeda-87f9-4a40-9bc1-24a60234ded4.jpg",
+    "sha256": "db83a73734276bcda6d78f280156e1efca11c8ff795f80c0bffaf698a98e9954",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "cbe2b366-0b33-4768-9b11-3f50a2f081ce",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:cbe2b366-0b33-4768-9b11-3f50a2f081ce",
+    "originalFileName": "微信图片_20260914190637_2100_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 138544,
+    "actualBytes": 138544,
+    "uploadedBy": "胖胖",
+    "sortOrder": 7,
+    "createdAt": "2026-09-14T11:39:20.637Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/cbe2b366-0b33-4768-9b11-3f50a2f081ce.jpg",
+    "sha256": "a93264661789ca3a8e044a5388fc1ecf0a068fc5e29a68efac973e9d24b149ec",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "cea86304-ecc6-40f9-acac-97386298d1b2",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:cea86304-ecc6-40f9-acac-97386298d1b2",
+    "originalFileName": "微信图片_20260914144522_2061_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 298103,
+    "actualBytes": 298103,
+    "uploadedBy": "胖胖",
+    "sortOrder": 73,
+    "createdAt": "2026-09-14T06:52:27.915Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/cea86304-ecc6-40f9-acac-97386298d1b2.jpg",
+    "sha256": "5c576ab8029f00d4eff1e35743be8bb3b775a3cb2ac1ec8b0d0989e6bec76217",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "ceee1bb2-bf4a-4fa7-a205-41e7a09187cb",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:ceee1bb2-bf4a-4fa7-a205-41e7a09187cb",
+    "originalFileName": "微信图片_20260914144522_2008_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 65841,
+    "actualBytes": 65841,
+    "uploadedBy": "胖胖",
+    "sortOrder": 44,
+    "createdAt": "2026-09-14T06:51:42.841Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/ceee1bb2-bf4a-4fa7-a205-41e7a09187cb.jpg",
+    "sha256": "f9ac387d839de85f2e1dfe3f69c12af92ce207722ddf314b52ff8c5fcf0f2816",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "curated-hero-rental-set-01",
+    "itemId": "ep1-v3-s1-i13",
+    "objectKey": "static:/reference-assets/episode-1/hero-rental-set-01.png",
+    "originalFileName": "女主出租屋｜空间参考 01",
+    "contentType": "image/png",
+    "expectedBytes": 2267102,
+    "actualBytes": 2267102,
+    "uploadedBy": "Lipa",
+    "sortOrder": 1,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/hero-rental-set-01.png",
+    "sha256": "37c5e4e014b50ba7eaa9eab46777f97c7b1c66d13f2773fe9a432d12144c4567",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-hero-rental-set-02",
+    "itemId": "ep1-v3-s1-i13",
+    "objectKey": "static:/reference-assets/episode-1/hero-rental-set-02.png",
+    "originalFileName": "女主出租屋｜空间参考 02",
+    "contentType": "image/png",
+    "expectedBytes": 2569710,
+    "actualBytes": 2569710,
+    "uploadedBy": "Lipa",
+    "sortOrder": 2,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/hero-rental-set-02.png",
+    "sha256": "dac975a6ff06403cd670e073abe4251461d7aa8796b2ee442e194248804af270",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-hero-rental-set-03",
+    "itemId": "ep1-v3-s1-i13",
+    "objectKey": "static:/reference-assets/episode-1/hero-rental-set-03.jpg",
+    "originalFileName": "女主出租屋｜空间参考 03",
+    "contentType": "image/jpeg",
+    "expectedBytes": 240986,
+    "actualBytes": 240986,
+    "uploadedBy": "Lipa",
+    "sortOrder": 3,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/hero-rental-set-03.jpg",
+    "sha256": "627dcb6ca5eed0bd61ae35819e9aeb47b3894266bc7d0919914e8842c47a2526",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-hero-rental-set-04",
+    "itemId": "ep1-v3-s1-i13",
+    "objectKey": "static:/reference-assets/episode-1/hero-rental-set-04.png",
+    "originalFileName": "女主出租屋｜空间参考 04",
+    "contentType": "image/png",
+    "expectedBytes": 2360564,
+    "actualBytes": 2360564,
+    "uploadedBy": "Lipa",
+    "sortOrder": 4,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/hero-rental-set-04.png",
+    "sha256": "85d527825ba01ad5e189d14cf9b64ac15105a41cdaa74c3f3253950ba3a7e1da",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-hero-rental-set-05",
+    "itemId": "ep1-v3-s1-i13",
+    "objectKey": "static:/reference-assets/episode-1/hero-rental-set-05.png",
+    "originalFileName": "女主出租屋｜空间参考 05",
+    "contentType": "image/png",
+    "expectedBytes": 2403051,
+    "actualBytes": 2403051,
+    "uploadedBy": "Lipa",
+    "sortOrder": 5,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/hero-rental-set-05.png",
+    "sha256": "383579850d7e37c33d727b5beda387d6cb30810a8861ea0e839ac20525058ea0",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-male-lu-face-a",
+    "itemId": "ep1-v3-s3-i09",
+    "objectKey": "static:/reference-assets/episode-1/male-lu-face-a.jpg",
+    "originalFileName": "男主陆·人脸 Option A｜黑发冷感·白衬衫黑西装",
+    "contentType": "image/jpeg",
+    "expectedBytes": 149837,
+    "actualBytes": 149837,
+    "uploadedBy": "Lipa",
+    "sortOrder": 1,
+    "createdAt": "2026-09-11T10:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/male-lu-face-a.jpg",
+    "sha256": "303b89744d1d0892cc24b06243f6bbdb4abc6a8116b083910ba3de75eec5abcf",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-male-lu-face-b",
+    "itemId": "ep1-v3-s3-i09",
+    "objectKey": "static:/reference-assets/episode-1/male-lu-face-b.jpg",
+    "originalFileName": "男主陆·人脸 Option B｜黑发冷感·全黑西装",
+    "contentType": "image/jpeg",
+    "expectedBytes": 145250,
+    "actualBytes": 145250,
+    "uploadedBy": "Lipa",
+    "sortOrder": 2,
+    "createdAt": "2026-09-11T10:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/male-lu-face-b.jpg",
+    "sha256": "d2a714103f721f072e9778df7dee0b69a516e63836c3c41cb8e752993b360432",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-male-lu-face-c",
+    "itemId": "ep1-v3-s3-i09",
+    "objectKey": "static:/reference-assets/episode-1/male-lu-face-c.jpg",
+    "originalFileName": "男主陆·人脸 Option C｜锐利眉眼·松散领带",
+    "contentType": "image/jpeg",
+    "expectedBytes": 160347,
+    "actualBytes": 160347,
+    "uploadedBy": "Lipa",
+    "sortOrder": 3,
+    "createdAt": "2026-09-11T10:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/male-lu-face-c.jpg",
+    "sha256": "eb302638f28a090db40317296a70c27ccbe2f666ccbe0c43898b3772524f0958",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-male-lu-face-d",
+    "itemId": "ep1-v3-s3-i09",
+    "objectKey": "static:/reference-assets/episode-1/male-lu-face-d.jpg",
+    "originalFileName": "男主陆·人脸 Option D｜成熟骨相·正侧近景",
+    "contentType": "image/jpeg",
+    "expectedBytes": 136887,
+    "actualBytes": 136887,
+    "uploadedBy": "Lipa",
+    "sortOrder": 4,
+    "createdAt": "2026-09-11T10:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/male-lu-face-d.jpg",
+    "sha256": "9c9fc2ad580a7af32943c93e03e14bc9f0585e4554eeed87e11ebbca638665c9",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-male-lu-wardrobe-a",
+    "itemId": "ep1-v3-s3-i10",
+    "objectKey": "static:/reference-assets/episode-1/male-lu-wardrobe-a.jpg",
+    "originalFileName": "男主陆·服装 Option A｜卡其收腰猎装夹克",
+    "contentType": "image/jpeg",
+    "expectedBytes": 89591,
+    "actualBytes": 89591,
+    "uploadedBy": "Lipa",
+    "sortOrder": 1,
+    "createdAt": "2026-09-11T10:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/male-lu-wardrobe-a.jpg",
+    "sha256": "56a395490dc3875db3c821885538eec369a0898728d058e51e6ddf8da31fb475",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-male-lu-wardrobe-b",
+    "itemId": "ep1-v3-s3-i10",
+    "objectKey": "static:/reference-assets/episode-1/male-lu-wardrobe-b.jpg",
+    "originalFileName": "男主陆·服装 Option B｜棕灰短外套＋宽松长裤",
+    "contentType": "image/jpeg",
+    "expectedBytes": 110296,
+    "actualBytes": 110296,
+    "uploadedBy": "Lipa",
+    "sortOrder": 2,
+    "createdAt": "2026-09-11T10:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/male-lu-wardrobe-b.jpg",
+    "sha256": "f4d2b5fe0ecca70159e878c82e18303d3c5ee5544dead22f4fe1ec8cb21e8f8e",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-male-lu-wardrobe-c",
+    "itemId": "ep1-v3-s3-i10",
+    "objectKey": "static:/reference-assets/episode-1/male-lu-wardrobe-c.jpg",
+    "originalFileName": "男主陆·服装 Option C｜棕色绞花针织＋阔腿裤",
+    "contentType": "image/jpeg",
+    "expectedBytes": 140306,
+    "actualBytes": 140306,
+    "uploadedBy": "Lipa",
+    "sortOrder": 3,
+    "createdAt": "2026-09-11T10:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/male-lu-wardrobe-c.jpg",
+    "sha256": "938ab531d1337a375f268d6fb508e2642e0048e7286580bb0008c4f184930262",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-male-lu-wardrobe-d",
+    "itemId": "ep1-v3-s3-i10",
+    "objectKey": "static:/reference-assets/episode-1/male-lu-wardrobe-d.jpg",
+    "originalFileName": "男主陆·服装 Option D｜橄榄绿腰带猎装套装",
+    "contentType": "image/jpeg",
+    "expectedBytes": 148704,
+    "actualBytes": 148704,
+    "uploadedBy": "Lipa",
+    "sortOrder": 4,
+    "createdAt": "2026-09-11T10:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/male-lu-wardrobe-d.jpg",
+    "sha256": "04fecae2605973174b2a812abd30d05d21f16d5360b6a04697a8d04dff071ee8",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-male-lu-wardrobe-e",
+    "itemId": "ep1-v3-s3-i10",
+    "objectKey": "static:/reference-assets/episode-1/male-lu-wardrobe-e.jpg",
+    "originalFileName": "男主陆·服装 Option E｜浅灰双排扣西装＋阔腿裤",
+    "contentType": "image/jpeg",
+    "expectedBytes": 61936,
+    "actualBytes": 61936,
+    "uploadedBy": "Lipa",
+    "sortOrder": 5,
+    "createdAt": "2026-09-11T10:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/male-lu-wardrobe-e.jpg",
+    "sha256": "1db0314e9181d0cd1382494e8c15b75f71ec09008c3dcb1197836c5571cf4a9b",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-male-lu-wardrobe-f",
+    "itemId": "ep1-v3-s3-i10",
+    "objectKey": "static:/reference-assets/episode-1/male-lu-wardrobe-f.jpg",
+    "originalFileName": "男主陆·服装 Option F｜格纹西装＋酒红针织层叠",
+    "contentType": "image/jpeg",
+    "expectedBytes": 84941,
+    "actualBytes": 84941,
+    "uploadedBy": "Lipa",
+    "sortOrder": 6,
+    "createdAt": "2026-09-11T10:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/male-lu-wardrobe-f.jpg",
+    "sha256": "89e6075c711812619fd62e420ab3d98b9993ce50548030cb819963091f80e795",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-male-lu-wardrobe-g",
+    "itemId": "ep1-v3-s3-i10",
+    "objectKey": "static:/reference-assets/episode-1/male-lu-wardrobe-g.jpg",
+    "originalFileName": "男主陆·服装 Option G｜蓝灰工装外套＋针织裤",
+    "contentType": "image/jpeg",
+    "expectedBytes": 85602,
+    "actualBytes": 85602,
+    "uploadedBy": "Lipa",
+    "sortOrder": 7,
+    "createdAt": "2026-09-11T10:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/male-lu-wardrobe-g.jpg",
+    "sha256": "542c486cd2d21a4bf2f652f09e15cb07de8446a4fd545c1656aeb647633caca5",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-male-lu-wardrobe-h",
+    "itemId": "ep1-v3-s3-i10",
+    "objectKey": "static:/reference-assets/episode-1/male-lu-wardrobe-h.jpg",
+    "originalFileName": "男主陆·服装 Option H｜棕色针织开衫＋白色阔腿裤",
+    "contentType": "image/jpeg",
+    "expectedBytes": 74995,
+    "actualBytes": 74995,
+    "uploadedBy": "Lipa",
+    "sortOrder": 8,
+    "createdAt": "2026-09-11T10:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/male-lu-wardrobe-h.jpg",
+    "sha256": "d07f8bf993d44285f26e1210f4fa200a39d062bce273b66f5b2eee94eb4fb110",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-male-lu-wardrobe-i",
+    "itemId": "ep1-v3-s3-i10",
+    "objectKey": "static:/reference-assets/episode-1/male-lu-wardrobe-i.jpg",
+    "originalFileName": "男主陆·服装 Option I｜九套大地色造型方向",
+    "contentType": "image/jpeg",
+    "expectedBytes": 108255,
+    "actualBytes": 108255,
+    "uploadedBy": "Lipa",
+    "sortOrder": 9,
+    "createdAt": "2026-09-11T10:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/male-lu-wardrobe-i.jpg",
+    "sha256": "9d0d7b95938931b1537f6048f9359266f6b7438bf0d7d4e69a04a94f8fbe5b02",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-male-lu-wardrobe-j",
+    "itemId": "ep1-v3-s3-i10",
+    "objectKey": "static:/reference-assets/episode-1/male-lu-wardrobe-j.jpg",
+    "originalFileName": "男主陆·服装 Option J｜九套秋冬层叠方向",
+    "contentType": "image/jpeg",
+    "expectedBytes": 118701,
+    "actualBytes": 118701,
+    "uploadedBy": "Lipa",
+    "sortOrder": 10,
+    "createdAt": "2026-09-11T10:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/male-lu-wardrobe-j.jpg",
+    "sha256": "ca9bdf6929b009b4d9c8f7ab42ef78c427f7dc361d4b6d92837fb4bb359eb6fc",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-male-lu-wardrobe-k",
+    "itemId": "ep1-v3-s3-i10",
+    "objectKey": "static:/reference-assets/episode-1/male-lu-wardrobe-k.jpg",
+    "originalFileName": "男主陆·服装 Option K｜卡其收腰猎装四视图",
+    "contentType": "image/jpeg",
+    "expectedBytes": 160485,
+    "actualBytes": 160485,
+    "uploadedBy": "Lipa",
+    "sortOrder": 11,
+    "createdAt": "2026-09-11T10:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/male-lu-wardrobe-k.jpg",
+    "sha256": "bd329653b5f20735fdf509128c580dcdaa84156281af97a89632e1fbbf0d34e7",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-male-lu-wardrobe-l",
+    "itemId": "ep1-v3-s3-i10",
+    "objectKey": "static:/reference-assets/episode-1/male-lu-wardrobe-l.jpg",
+    "originalFileName": "男主陆·服装 Option L｜米白西装＋粉色衬衫四视图",
+    "contentType": "image/jpeg",
+    "expectedBytes": 171953,
+    "actualBytes": 171953,
+    "uploadedBy": "Lipa",
+    "sortOrder": 12,
+    "createdAt": "2026-09-11T10:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/male-lu-wardrobe-l.jpg",
+    "sha256": "9b464b63356d9b474527000821704acd7ca76b2794d4752eb949b6d5be8d946e",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-male-lu-wardrobe-m",
+    "itemId": "ep1-v3-s3-i10",
+    "objectKey": "static:/reference-assets/episode-1/male-lu-wardrobe-m.jpg",
+    "originalFileName": "男主陆·服装 Option M｜米白西装完整四视图",
+    "contentType": "image/jpeg",
+    "expectedBytes": 162350,
+    "actualBytes": 162350,
+    "uploadedBy": "Lipa",
+    "sortOrder": 13,
+    "createdAt": "2026-09-11T10:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/male-lu-wardrobe-m.jpg",
+    "sha256": "7c855d05371c83ec2138c6aa71c63cf2ce1a6bbb6f88b6b366e8f4b358b6941d",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-offwork-a",
+    "itemId": "ep1-v3-s3-i08",
+    "objectKey": "static:/reference-assets/episode-1/offwork-wardrobe-a.png",
+    "originalFileName": "下班后 Option A｜连帽卫衣＋破洞牛仔长裤",
+    "contentType": "image/png",
+    "expectedBytes": 2120606,
+    "actualBytes": 2120606,
+    "uploadedBy": "Lipa",
+    "sortOrder": 1,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/offwork-wardrobe-a.png",
+    "sha256": "b072d852eaeb83f5f5c47bb7e478772a5fb48bc3119b70d1d9f79a4cbc3dda86",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-offwork-b",
+    "itemId": "ep1-v3-s3-i08",
+    "objectKey": "static:/reference-assets/episode-1/offwork-wardrobe-b.jpg",
+    "originalFileName": "下班后 Option B｜短款连帽卫衣＋破洞牛仔长裤",
+    "contentType": "image/jpeg",
+    "expectedBytes": 183307,
+    "actualBytes": 183307,
+    "uploadedBy": "Lipa",
+    "sortOrder": 2,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/offwork-wardrobe-b.jpg",
+    "sha256": "f54e0fd7e58161bfe99797644d2396f06c91af9189bf188a7944da6085703acb",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-offwork-c",
+    "itemId": "ep1-v3-s3-i08",
+    "objectKey": "static:/reference-assets/episode-1/offwork-wardrobe-c.jpg",
+    "originalFileName": "下班后 Option C｜白色短上衣＋黑色层叠短裙",
+    "contentType": "image/jpeg",
+    "expectedBytes": 195765,
+    "actualBytes": 195765,
+    "uploadedBy": "Lipa",
+    "sortOrder": 3,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/offwork-wardrobe-c.jpg",
+    "sha256": "bcb52c32e5f7b0eeec2c21f210f2e95f695bbfd094d1a15556c7a74e138e6e72",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-offwork-d",
+    "itemId": "ep1-v3-s3-i08",
+    "objectKey": "static:/reference-assets/episode-1/offwork-wardrobe-d.png",
+    "originalFileName": "下班后 Option D｜白色立体上衣＋黑色层叠短裙",
+    "contentType": "image/png",
+    "expectedBytes": 2360309,
+    "actualBytes": 2360309,
+    "uploadedBy": "Lipa",
+    "sortOrder": 4,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/offwork-wardrobe-d.png",
+    "sha256": "da36c2d9f7905d350bc049863960a0e2fadfaca3267a981991683156187a7e1e",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-offwork-e",
+    "itemId": "ep1-v3-s3-i08",
+    "objectKey": "static:/reference-assets/episode-1/offwork-wardrobe-e.png",
+    "originalFileName": "下班后 Option E｜白色海军领上衣＋黑色短裙",
+    "contentType": "image/png",
+    "expectedBytes": 2000742,
+    "actualBytes": 2000742,
+    "uploadedBy": "Lipa",
+    "sortOrder": 5,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/offwork-wardrobe-e.png",
+    "sha256": "7cfd6f5b137411f8020ee24ad2d6c9c0d1ab8c7b243298ce70c56270b307f7a0",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-offwork-f",
+    "itemId": "ep1-v3-s3-i08",
+    "objectKey": "static:/reference-assets/episode-1/offwork-wardrobe-f.png",
+    "originalFileName": "下班后 Option F｜印花短袖衬衫＋短裙长靴",
+    "contentType": "image/png",
+    "expectedBytes": 2219299,
+    "actualBytes": 2219299,
+    "uploadedBy": "Lipa",
+    "sortOrder": 6,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/offwork-wardrobe-f.png",
+    "sha256": "e0cc9487b586b350d5e7fa643b0fda2b0c1f5bd638329e7e9414266dba21dc3c",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-offwork-g",
+    "itemId": "ep1-v3-s3-i08",
+    "objectKey": "static:/reference-assets/episode-1/offwork-wardrobe-g.png",
+    "originalFileName": "下班后 Option G｜黑色长外套＋围巾叠穿",
+    "contentType": "image/png",
+    "expectedBytes": 2136822,
+    "actualBytes": 2136822,
+    "uploadedBy": "Lipa",
+    "sortOrder": 7,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/offwork-wardrobe-g.png",
+    "sha256": "3de97a3ca68e5dcf6fa73b05833b517f768ca80349d4eed93744df2b983a868a",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-offwork-h",
+    "itemId": "ep1-v3-s3-i08",
+    "objectKey": "static:/reference-assets/episode-1/offwork-wardrobe-h.png",
+    "originalFileName": "下班后 Option H｜牛仔外套＋牛仔长裤",
+    "contentType": "image/png",
+    "expectedBytes": 2058772,
+    "actualBytes": 2058772,
+    "uploadedBy": "Lipa",
+    "sortOrder": 8,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/offwork-wardrobe-h.png",
+    "sha256": "169ae84284b597b0cf381be10ab60489403b269c9a9f7a5e97920c0b8c3de140",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-offwork-i",
+    "itemId": "ep1-v3-s3-i08",
+    "objectKey": "static:/reference-assets/episode-1/offwork-wardrobe-i.png",
+    "originalFileName": "下班后 Option I｜针织开衫＋卫衣＋破洞牛仔裤",
+    "contentType": "image/png",
+    "expectedBytes": 2243414,
+    "actualBytes": 2243414,
+    "uploadedBy": "Lipa",
+    "sortOrder": 9,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/offwork-wardrobe-i.png",
+    "sha256": "36765c0e3cca050a26b16c65c78d18284f02ada3ed98dea54d3dc531708b9ea6",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-offwork-j",
+    "itemId": "ep1-v3-s3-i08",
+    "objectKey": "static:/reference-assets/episode-1/offwork-wardrobe-j.png",
+    "originalFileName": "下班后 Option J｜黑色吊带＋牛仔短裤＋堆叠长靴",
+    "contentType": "image/png",
+    "expectedBytes": 1969555,
+    "actualBytes": 1969555,
+    "uploadedBy": "Lipa",
+    "sortOrder": 10,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/offwork-wardrobe-j.png",
+    "sha256": "a4d7cec9402b872ac0be9447b1a1c98f3d6089b3d2727499bb739e240d016524",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-s1-domestic-set-01",
+    "itemId": "ep1-v3-s1-i02",
+    "objectKey": "static:/reference-assets/episode-1/scene-1-domestic-set-01.png",
+    "originalFileName": "家暴出租屋｜破损房间与黄昏光线参考",
+    "contentType": "image/png",
+    "expectedBytes": 1667327,
+    "actualBytes": 1667327,
+    "uploadedBy": "Lipa",
+    "sortOrder": 1,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/scene-1-domestic-set-01.png",
+    "sha256": "7e2688daed21441f399b47783118f67d3e2f6c9f447b15f1188677a2f72507cc",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-s1-domestic-wardrobe-a",
+    "itemId": "ep1-v3-s1-i12",
+    "objectKey": "static:/reference-assets/episode-1/scene-1-domestic-wardrobe-a.jpg",
+    "originalFileName": "家暴出租屋 Option A｜灰蓝长袖长裤家居服",
+    "contentType": "image/jpeg",
+    "expectedBytes": 65154,
+    "actualBytes": 65154,
+    "uploadedBy": "Lipa",
+    "sortOrder": 1,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/scene-1-domestic-wardrobe-a.jpg",
+    "sha256": "18a4edefd862fc82062d73c7f1d1f0477bc5bbeb0c6a427e3ada76ce9e885567",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-s1-domestic-wardrobe-b",
+    "itemId": "ep1-v3-s1-i12",
+    "objectKey": "static:/reference-assets/episode-1/scene-1-domestic-wardrobe-b.jpg",
+    "originalFileName": "家暴出租屋 Option B｜浅色长袖短裤家居服",
+    "contentType": "image/jpeg",
+    "expectedBytes": 65511,
+    "actualBytes": 65511,
+    "uploadedBy": "Lipa",
+    "sortOrder": 2,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/scene-1-domestic-wardrobe-b.jpg",
+    "sha256": "f3012ca72ad2158fe6c4884b3b8f1c0f24abb200961644709105a96dde0005cf",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-s1-domestic-wardrobe-c",
+    "itemId": "ep1-v3-s1-i12",
+    "objectKey": "static:/reference-assets/episode-1/scene-1-domestic-wardrobe-c.jpg",
+    "originalFileName": "家暴出租屋 Option C｜深灰长袖长裤家居服",
+    "contentType": "image/jpeg",
+    "expectedBytes": 59698,
+    "actualBytes": 59698,
+    "uploadedBy": "Lipa",
+    "sortOrder": 3,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/scene-1-domestic-wardrobe-c.jpg",
+    "sha256": "717852af7395dea192898f877752a3910c5a742f301859e2335cbb6e1ef41c78",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-s1-domestic-wardrobe-d",
+    "itemId": "ep1-v3-s1-i12",
+    "objectKey": "static:/reference-assets/episode-1/scene-1-domestic-wardrobe-d.jpg",
+    "originalFileName": "家暴出租屋 Option D｜白色长袖长裤家居服",
+    "contentType": "image/jpeg",
+    "expectedBytes": 70948,
+    "actualBytes": 70948,
+    "uploadedBy": "Lipa",
+    "sortOrder": 4,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/scene-1-domestic-wardrobe-d.jpg",
+    "sha256": "5ef037cb1817aa0ae8cc70bb6483b080ddcccb2cc9111d88a3a6d4a2bf6a2acd",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-s1-domestic-wardrobe-e",
+    "itemId": "ep1-v3-s1-i12",
+    "objectKey": "static:/reference-assets/episode-1/scene-1-domestic-wardrobe-e.jpg",
+    "originalFileName": "家暴出租屋 Option E｜蓝色背心＋白色下装组合",
+    "contentType": "image/jpeg",
+    "expectedBytes": 527200,
+    "actualBytes": 527200,
+    "uploadedBy": "Lipa",
+    "sortOrder": 5,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/scene-1-domestic-wardrobe-e.jpg",
+    "sha256": "ebb314ebf7e72b31e44b24378f3cce83ff7a79ebeb17e865cc6043d9437a4e41",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-s1-set-01",
+    "itemId": "ep1-v3-s1-i01",
+    "objectKey": "static:/reference-assets/episode-1/scene-1-set-01.png",
+    "originalFileName": "片场参考 01｜带工作人员与机位",
+    "contentType": "image/png",
+    "expectedBytes": 1702155,
+    "actualBytes": 1702155,
+    "uploadedBy": "Lipa",
+    "sortOrder": 1,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/scene-1-set-01.png",
+    "sha256": "7af98749d196c69140cdebc52d2a069e9916f089f9503724598271c5fff53595",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-s1-set-02",
+    "itemId": "ep1-v3-s1-i01",
+    "objectKey": "static:/reference-assets/episode-1/scene-1-set-02.jpg",
+    "originalFileName": "片场参考 02｜教堂空间与尸体血迹",
+    "contentType": "image/jpeg",
+    "expectedBytes": 2587531,
+    "actualBytes": 2587531,
+    "uploadedBy": "Lipa",
+    "sortOrder": 2,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/scene-1-set-02.jpg",
+    "sha256": "f14bf68285fb85bc4ac7c4f2e9da36e6184e33cadfa3d5f62928ab4dee874cc1",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-s1-wardrobe-a",
+    "itemId": "ep1-v3-s1-i04",
+    "objectKey": "static:/reference-assets/episode-1/scene-1-wardrobe-a.png",
+    "originalFileName": "教堂片场 Option A｜长款白色吊带裙＋粉色长发",
+    "contentType": "image/png",
+    "expectedBytes": 1744223,
+    "actualBytes": 1744223,
+    "uploadedBy": "Lipa",
+    "sortOrder": 1,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/scene-1-wardrobe-a.png",
+    "sha256": "2aeb82dbc5363049673e8a6fbe6f189535ec9464f8762cbdf3ddd8e25926ec23",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-s1-wardrobe-b",
+    "itemId": "ep1-v3-s1-i04",
+    "objectKey": "static:/reference-assets/episode-1/scene-1-wardrobe-b.png",
+    "originalFileName": "教堂片场 Option B｜收腰白色缎面中长裙＋粉色长发",
+    "contentType": "image/png",
+    "expectedBytes": 1711169,
+    "actualBytes": 1711169,
+    "uploadedBy": "Lipa",
+    "sortOrder": 2,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/scene-1-wardrobe-b.png",
+    "sha256": "3714ba37c6c48b0cf064c3e36ef03e9005b7a637250b18a2ae0ebfb8af90e44b",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-s1-wardrobe-c",
+    "itemId": "ep1-v3-s1-i04",
+    "objectKey": "static:/reference-assets/episode-1/scene-1-wardrobe-c.png",
+    "originalFileName": "教堂片场 Option C｜白色短款伞摆裙＋粉色长发",
+    "contentType": "image/png",
+    "expectedBytes": 1716944,
+    "actualBytes": 1716944,
+    "uploadedBy": "Lipa",
+    "sortOrder": 3,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/scene-1-wardrobe-c.png",
+    "sha256": "da41c8f24fad675075ad16243d12571e1ca000f442e7cebf6f3468bbe41d5611",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-s4-set-01",
+    "itemId": "ep1-v3-s4-i01",
+    "objectKey": "static:/reference-assets/episode-1/scene-4-courtyard-set-01.jpg",
+    "originalFileName": "东方庭院｜建筑、水道与月洞门参考",
+    "contentType": "image/jpeg",
+    "expectedBytes": 175523,
+    "actualBytes": 175523,
+    "uploadedBy": "Lipa",
+    "sortOrder": 1,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/scene-4-courtyard-set-01.jpg",
+    "sha256": "baef8c3ed17cb1e1337a9fa00a7766e4884b81ca1e70535eddf4656b41b3b490",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-s4-wardrobe-a",
+    "itemId": "ep1-v3-s4-i03",
+    "objectKey": "static:/reference-assets/episode-1/scene-4-wardrobe-a.jpg",
+    "originalFileName": "庭院沿用 Option A｜白色短款伞摆裙＋粉色长发",
+    "contentType": "image/jpeg",
+    "expectedBytes": 106701,
+    "actualBytes": 106701,
+    "uploadedBy": "Lipa",
+    "sortOrder": 1,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/scene-4-wardrobe-a.jpg",
+    "sha256": "ebe0888e6ff6cd343780b6d24d1154fcde3ebc444ff309f4ea003638219d3429",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-s4-wardrobe-b",
+    "itemId": "ep1-v3-s4-i03",
+    "objectKey": "static:/reference-assets/episode-1/scene-4-wardrobe-b.jpg",
+    "originalFileName": "庭院沿用 Option B｜长款白色吊带裙＋粉色长发",
+    "contentType": "image/jpeg",
+    "expectedBytes": 101820,
+    "actualBytes": 101820,
+    "uploadedBy": "Lipa",
+    "sortOrder": 2,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/scene-4-wardrobe-b.jpg",
+    "sha256": "472853798cf182c3ddfe4611b2e49990f4854a6f5afbf55a337862dbe9b5dc43",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "curated-s4-wardrobe-c",
+    "itemId": "ep1-v3-s4-i03",
+    "objectKey": "static:/reference-assets/episode-1/scene-4-wardrobe-c.png",
+    "originalFileName": "庭院沿用 Option C｜收腰白色缎面中长裙＋粉色长发",
+    "contentType": "image/png",
+    "expectedBytes": 1711169,
+    "actualBytes": 1711169,
+    "uploadedBy": "Lipa",
+    "sortOrder": 3,
+    "createdAt": "2026-09-10T14:00:00.000Z",
+    "repositoryPath": "public/reference-assets/episode-1/scene-4-wardrobe-c.png",
+    "sha256": "3714ba37c6c48b0cf064c3e36ef03e9005b7a637250b18a2ae0ebfb8af90e44b",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "d0902c5e-8877-477b-af40-764d692256b5",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:d0902c5e-8877-477b-af40-764d692256b5",
+    "originalFileName": "微信图片_20260914144522_2016_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 232155,
+    "actualBytes": 232155,
+    "uploadedBy": "胖胖",
+    "sortOrder": 49,
+    "createdAt": "2026-09-14T06:51:48.264Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/d0902c5e-8877-477b-af40-764d692256b5.jpg",
+    "sha256": "da83c367522eb2d16febaad947526239982e62e6c96696b56484398764b8a911",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "d2a122c2-15e7-41c5-8fcb-e4076bfff0d8",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:d2a122c2-15e7-41c5-8fcb-e4076bfff0d8",
+    "originalFileName": "微信图片_20260914191133_2110_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 314090,
+    "actualBytes": 314090,
+    "uploadedBy": "胖胖",
+    "sortOrder": 11,
+    "createdAt": "2026-09-14T11:39:28.495Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/d2a122c2-15e7-41c5-8fcb-e4076bfff0d8.jpg",
+    "sha256": "e64f3b1ae2ee5dbfbc93c23853ea0cc125908c1bf2c01d955746e5ca83ac86f5",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "d4d9449d-8d6f-472b-8470-c88e25bc877b",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:d4d9449d-8d6f-472b-8470-c88e25bc877b",
+    "originalFileName": "微信图片_20260914144522_2078_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 205101,
+    "actualBytes": 205101,
+    "uploadedBy": "胖胖",
+    "sortOrder": 82,
+    "createdAt": "2026-09-14T06:52:43.767Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/d4d9449d-8d6f-472b-8470-c88e25bc877b.jpg",
+    "sha256": "80a469ee9f1a38610340eee7d2852e5a82c8625442abd91faf54e38f0fb015f8",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "d5209c8f-3be4-4204-a5cc-1a800b0c7563",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:d5209c8f-3be4-4204-a5cc-1a800b0c7563",
+    "originalFileName": "微信图片_20260914144522_2060_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 149422,
+    "actualBytes": 149422,
+    "uploadedBy": "胖胖",
+    "sortOrder": 72,
+    "createdAt": "2026-09-14T06:52:26.123Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/d5209c8f-3be4-4204-a5cc-1a800b0c7563.jpg",
+    "sha256": "8001767d14c38f9405d56bdd5aae56f4ac7ccef959c9d98d15e277536d3e5fd4",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "d6b756dc-d516-44dd-b02c-030dccf0685d",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:d6b756dc-d516-44dd-b02c-030dccf0685d",
+    "originalFileName": "微信图片_20260914144522_2014_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 310967,
+    "actualBytes": 310967,
+    "uploadedBy": "胖胖",
+    "sortOrder": 48,
+    "createdAt": "2026-09-14T06:51:46.902Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/d6b756dc-d516-44dd-b02c-030dccf0685d.jpg",
+    "sha256": "75bfd352aca17e731cf524d2842e668e50c64867f6a948f801d1f99e395b6427",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "d6f9d003-5a9f-48d4-90df-9b78067270c0",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:d6f9d003-5a9f-48d4-90df-9b78067270c0",
+    "originalFileName": "微信图片_20260914144522_2065_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 231758,
+    "actualBytes": 231758,
+    "uploadedBy": "胖胖",
+    "sortOrder": 75,
+    "createdAt": "2026-09-14T06:52:31.983Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/d6f9d003-5a9f-48d4-90df-9b78067270c0.jpg",
+    "sha256": "cdc6b13dadd4ff72a51c05dc36b44900d0f87749521ebc7aaa9f8d0430625db1",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "d7c588fe-3cb2-4d3d-9ca4-62d5451e2a3e",
+    "itemId": "ep1-v3-s4-auto-7",
+    "objectKey": "d1:d7c588fe-3cb2-4d3d-9ca4-62d5451e2a3e",
+    "originalFileName": "静帧 2026-09-14 155557_1.4.3-web.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 125365,
+    "actualBytes": 125365,
+    "uploadedBy": "王承恺",
+    "sortOrder": 2,
+    "createdAt": "2026-09-14T08:18:36.944Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/d7c588fe-3cb2-4d3d-9ca4-62d5451e2a3e.jpg",
+    "sha256": "683e6a18aeb29ad3d0962b8a9bc4a25651200256bfb89c4c0876ff11b79d6ed0",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "dae10025-c8a8-4b6d-9b5f-f6e3c3b3cdd1",
+    "itemId": "ep1-v3-s1-auto-7",
+    "objectKey": "d1:dae10025-c8a8-4b6d-9b5f-f6e3c3b3cdd1",
+    "originalFileName": "34e82df325c99ed1a126f49d6cb008f9.png",
+    "contentType": "image/png",
+    "expectedBytes": 1395685,
+    "actualBytes": 1395685,
+    "uploadedBy": "王承恺",
+    "sortOrder": 1,
+    "createdAt": "2026-09-11T11:50:27.821Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/dae10025-c8a8-4b6d-9b5f-f6e3c3b3cdd1.png",
+    "sha256": "0462f6b38aa6d2b900e6a441f91dbc26654e58eda9b12987a57f199660fe689e",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "db1b1e4f-b0eb-4976-aa75-46bb2899b6db",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:db1b1e4f-b0eb-4976-aa75-46bb2899b6db",
+    "originalFileName": "IMG_0498.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 136905,
+    "actualBytes": 136905,
+    "uploadedBy": "罗新姗",
+    "sortOrder": 8,
+    "createdAt": "2026-09-14T05:51:21.325Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/db1b1e4f-b0eb-4976-aa75-46bb2899b6db.jpg",
+    "sha256": "e8262757fdeb3960d1e8b13a3b5bc29170b9818a5408f74f43eedd117f9973cc",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "db6531be-718d-4359-a91f-5b6a1633cc99",
+    "itemId": "ep1-v3-s5-auto-7",
+    "objectKey": "d1:db6531be-718d-4359-a91f-5b6a1633cc99",
+    "originalFileName": "b17c5bfbf860a97f29d2de9d617d3fca.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 176454,
+    "actualBytes": 176454,
+    "uploadedBy": "玉冰",
+    "sortOrder": 11,
+    "createdAt": "2026-09-14T06:10:39.290Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/db6531be-718d-4359-a91f-5b6a1633cc99.jpg",
+    "sha256": "6fd56d0bef90c79f184f869e0a2e769d7de5ad7b20b4675945b86793bed94b43",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "dc1d377f-bc98-4f69-a5d0-8978742bf958",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:dc1d377f-bc98-4f69-a5d0-8978742bf958",
+    "originalFileName": "IMG_8385.JPG",
+    "contentType": "image/jpeg",
+    "expectedBytes": 351584,
+    "actualBytes": 351584,
+    "uploadedBy": "玉冰",
+    "sortOrder": 1,
+    "createdAt": "2026-09-14T11:11:28.052Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/dc1d377f-bc98-4f69-a5d0-8978742bf958.jpg",
+    "sha256": "6a3c6388bcb238a75dd42cd9fe80a305e215a4aa4c548d506937070c24e1f36e",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "dce5fbc8-10db-43f8-964a-b824a23c8e0c",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:dce5fbc8-10db-43f8-964a-b824a23c8e0c",
+    "originalFileName": "微信图片_20260914144522_2056_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 289410,
+    "actualBytes": 289410,
+    "uploadedBy": "胖胖",
+    "sortOrder": 70,
+    "createdAt": "2026-09-14T06:52:23.911Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/dce5fbc8-10db-43f8-964a-b824a23c8e0c.jpg",
+    "sha256": "97ec34ee402e8f3fd38c635d23a7e01ae6de805b6f62838cd44608cce7a14b3f",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "ddfbe91d-f7ca-4e43-bc2e-da26a34071b9",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:ddfbe91d-f7ca-4e43-bc2e-da26a34071b9",
+    "originalFileName": "微信图片_20260914144522_2064_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 107255,
+    "actualBytes": 107255,
+    "uploadedBy": "胖胖",
+    "sortOrder": 74,
+    "createdAt": "2026-09-14T06:52:30.248Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/ddfbe91d-f7ca-4e43-bc2e-da26a34071b9.jpg",
+    "sha256": "1cbb7ee04a35a0aba9b68f89c376b51bbcf9fb69d3b9ae15ef6212bfbd19e81e",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "de08aed6-bb3c-478b-8659-b034df4cdb92",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:de08aed6-bb3c-478b-8659-b034df4cdb92",
+    "originalFileName": "图片 - 2026-09-14T191826.436.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 601278,
+    "actualBytes": 601278,
+    "uploadedBy": "王承恺",
+    "sortOrder": 6,
+    "createdAt": "2026-09-14T11:20:04.965Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/de08aed6-bb3c-478b-8659-b034df4cdb92.jpg",
+    "sha256": "694c7720b4339acbfac3c255b61e5bdaa3a618a28bac012bdc98feea2f1404cb",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "dfa8522b-33e7-4578-b0f6-694d29ba8106",
+    "itemId": "ep1-v3-s5-auto-7",
+    "objectKey": "d1:dfa8522b-33e7-4578-b0f6-694d29ba8106",
+    "originalFileName": "64721185ba4e059022764bc6d9aceb00.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 219681,
+    "actualBytes": 219681,
+    "uploadedBy": "玉冰",
+    "sortOrder": 8,
+    "createdAt": "2026-09-14T06:09:42.963Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/dfa8522b-33e7-4578-b0f6-694d29ba8106.jpg",
+    "sha256": "e1ab5c86632008bcfeabd6ea82845f7b80b9014c4ead8dfebb3e95d026975a89",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "e1d64053-8d7a-4e0d-a8f9-0f10328fad78",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:e1d64053-8d7a-4e0d-a8f9-0f10328fad78",
+    "originalFileName": "微信图片_20260914144522_2040_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 148642,
+    "actualBytes": 148642,
+    "uploadedBy": "胖胖",
+    "sortOrder": 63,
+    "createdAt": "2026-09-14T06:52:13.342Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/e1d64053-8d7a-4e0d-a8f9-0f10328fad78.jpg",
+    "sha256": "281b68b612cd93308e92320b2b77f43626e980a6c80fa6ddf7469624e58d1ffe",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "e3a86eb8-e152-4e0d-9c73-0198234ef8ce",
+    "itemId": "ep1-v3-s4-current-hero-wardrobe",
+    "objectKey": "d1:e3a86eb8-e152-4e0d-9c73-0198234ef8ce",
+    "originalFileName": "图片 - 2026-09-14T191826.436.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 601278,
+    "actualBytes": 601278,
+    "uploadedBy": "王承恺",
+    "sortOrder": 1,
+    "createdAt": "2026-09-14T11:19:06.647Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/e3a86eb8-e152-4e0d-9c73-0198234ef8ce.jpg",
+    "sha256": "694c7720b4339acbfac3c255b61e5bdaa3a618a28bac012bdc98feea2f1404cb",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "e47a9fb7-42bb-47cd-bbaa-d879c724f4c3",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:e47a9fb7-42bb-47cd-bbaa-d879c724f4c3",
+    "originalFileName": "微信图片_20260914144522_2058_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 340816,
+    "actualBytes": 340816,
+    "uploadedBy": "胖胖",
+    "sortOrder": 71,
+    "createdAt": "2026-09-14T06:52:25.518Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/e47a9fb7-42bb-47cd-bbaa-d879c724f4c3.jpg",
+    "sha256": "90f12521f3f3b7a32029e18d238cd3aea60445b8ec53c2ba62c01c2deb8e0a4a",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "e4a964cc-629e-4641-bd89-192485c7a05f",
+    "itemId": "ep1-v3-s6-auto-9",
+    "objectKey": "d1:e4a964cc-629e-4641-bd89-192485c7a05f",
+    "originalFileName": "图片 - 2026-09-10T174138.885-web.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 223154,
+    "actualBytes": 223154,
+    "uploadedBy": "王承恺",
+    "sortOrder": 1,
+    "createdAt": "2026-09-14T05:41:23.314Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/e4a964cc-629e-4641-bd89-192485c7a05f.jpg",
+    "sha256": "0e62fa4f34f7b83a98b9baaa53187f3a0a83a9f4be4caca7f3a9a150f78326ca",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "e73b87f7-189a-4d0e-be08-98d27ce6cdeb",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:e73b87f7-189a-4d0e-be08-98d27ce6cdeb",
+    "originalFileName": "IMG_0538.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 468798,
+    "actualBytes": 468798,
+    "uploadedBy": "罗新姗",
+    "sortOrder": 4,
+    "createdAt": "2026-09-14T11:11:47.687Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/e73b87f7-189a-4d0e-be08-98d27ce6cdeb.jpg",
+    "sha256": "285fe35d376d310966b24686b5fe89b69d831f7f38cc2daca88f8e24775acd26",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "e750bad8-b7c6-49c5-929a-0e1e382c2921",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:e750bad8-b7c6-49c5-929a-0e1e382c2921",
+    "originalFileName": "IMG_8382.JPG",
+    "contentType": "image/jpeg",
+    "expectedBytes": 460005,
+    "actualBytes": 460005,
+    "uploadedBy": "玉冰",
+    "sortOrder": 1,
+    "createdAt": "2026-09-14T11:11:28.271Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/e750bad8-b7c6-49c5-929a-0e1e382c2921.jpg",
+    "sha256": "2a323eec1b2cb9da167be00a44c35dbe1fb4ce289f1da1c1f32a459fab804fd2",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "e7a4750a-96c9-4ec3-b717-ce2601ba5811",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:e7a4750a-96c9-4ec3-b717-ce2601ba5811",
+    "originalFileName": "微信图片_20260914144522_2050_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 218309,
+    "actualBytes": 218309,
+    "uploadedBy": "胖胖",
+    "sortOrder": 68,
+    "createdAt": "2026-09-14T06:52:20.482Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/e7a4750a-96c9-4ec3-b717-ce2601ba5811.jpg",
+    "sha256": "6e34fe5f318edce04c88383c355d0fb8ad3b99b747bdafaea0fb743747bba291",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "e7c24f0b-f710-4e9e-84aa-cb79446f9f56",
+    "itemId": "ep1-v3-s5-hero-wardrobe",
+    "objectKey": "d1:e7c24f0b-f710-4e9e-84aa-cb79446f9f56",
+    "originalFileName": "c8d6f05b5a1850c07b3cd3667d78e86c.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 304692,
+    "actualBytes": 304692,
+    "uploadedBy": "玉冰",
+    "sortOrder": 2,
+    "createdAt": "2026-09-14T05:57:22.268Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/e7c24f0b-f710-4e9e-84aa-cb79446f9f56.jpg",
+    "sha256": "9c1507b757941841c28f6b3c784c5a52f35191220a5ec4e7112a06f39291cf68",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "ec1a0394-0b80-4293-b0a7-af9fee8223c1",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:ec1a0394-0b80-4293-b0a7-af9fee8223c1",
+    "originalFileName": "e00ec71d56da89f16455b1eeb6a02848.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 131324,
+    "actualBytes": 131324,
+    "uploadedBy": "玉冰",
+    "sortOrder": 5,
+    "createdAt": "2026-09-14T05:34:50.630Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/ec1a0394-0b80-4293-b0a7-af9fee8223c1.jpg",
+    "sha256": "bd2eb0d49f9b5fb77e9620d24c6b456ebf547fd1f82d9a971f23283efeccc1ce",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "ee1de1e2-8b75-41e9-8775-e16bed271876",
+    "itemId": "ep1-v3-s5-auto-7",
+    "objectKey": "d1:ee1de1e2-8b75-41e9-8775-e16bed271876",
+    "originalFileName": "IMG_0504.JPG",
+    "contentType": "image/jpeg",
+    "expectedBytes": 144792,
+    "actualBytes": 144792,
+    "uploadedBy": "罗新姗",
+    "sortOrder": 5,
+    "createdAt": "2026-09-14T06:09:23.792Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/ee1de1e2-8b75-41e9-8775-e16bed271876.jpg",
+    "sha256": "23bf48ccac10f7499c05b89f6d4438f03341b52e5009ff544f5bacedd5ca07eb",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "efc8067a-c730-4310-849e-f414216a8ded",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:efc8067a-c730-4310-849e-f414216a8ded",
+    "originalFileName": "微信图片_20260914191133_2116_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 233081,
+    "actualBytes": 233081,
+    "uploadedBy": "胖胖",
+    "sortOrder": 14,
+    "createdAt": "2026-09-14T11:39:33.972Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/efc8067a-c730-4310-849e-f414216a8ded.jpg",
+    "sha256": "ddfa283cf8d7b779ff11a939201f091565b61f67ff00d2326e067748e0b22326",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "f004c2f6-313f-4037-80ce-d1377b4a45b7",
+    "itemId": "ep1-v3-s1-overall-cast",
+    "objectKey": "d1:f004c2f6-313f-4037-80ce-d1377b4a45b7",
+    "originalFileName": "图片 - 2026-09-14T143054.419.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 641942,
+    "actualBytes": 641942,
+    "uploadedBy": "王承恺",
+    "sortOrder": 2,
+    "createdAt": "2026-09-14T06:31:12.659Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/f004c2f6-313f-4037-80ce-d1377b4a45b7.jpg",
+    "sha256": "a2cdc031de32ff98ff3c180ef6c41ba9c8e6def9f247fe17640c2b872acb3f69",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "f0f2a575-e7be-4591-b450-2bbc8e642f80",
+    "itemId": "ep1-v3-s5-auto-7",
+    "objectKey": "d1:f0f2a575-e7be-4591-b450-2bbc8e642f80",
+    "originalFileName": "20318d68479db6282d56c143b07555f6.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 184963,
+    "actualBytes": 184963,
+    "uploadedBy": "玉冰",
+    "sortOrder": 15,
+    "createdAt": "2026-09-14T06:12:29.606Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/f0f2a575-e7be-4591-b450-2bbc8e642f80.jpg",
+    "sha256": "6cf0649743c01f2733a4c462821fe0d5ecece27951f2bfe6c9ada37b5d5a36fc",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "f300e35c-fe9b-4595-8a2b-327af458865a",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:f300e35c-fe9b-4595-8a2b-327af458865a",
+    "originalFileName": "IMG_0537.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 143074,
+    "actualBytes": 143074,
+    "uploadedBy": "罗新姗",
+    "sortOrder": 3,
+    "createdAt": "2026-09-14T11:11:45.607Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/f300e35c-fe9b-4595-8a2b-327af458865a.jpg",
+    "sha256": "c8873372925774489bed094a34154c0de106398be68be43c9d675ae90644f4e8",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  },
+  {
+    "id": "f4669b8c-bceb-47e8-bd78-6c18d756caaf",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:f4669b8c-bceb-47e8-bd78-6c18d756caaf",
+    "originalFileName": "微信图片_20260914144522_2037_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 109546,
+    "actualBytes": 109546,
+    "uploadedBy": "胖胖",
+    "sortOrder": 62,
+    "createdAt": "2026-09-14T06:52:10.389Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/f4669b8c-bceb-47e8-bd78-6c18d756caaf.jpg",
+    "sha256": "f8dc8fcbeea96f0e4f743250d76ca89dfacc831bb74f5884c22ce42207511f6e",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "f64448e5-6b00-4703-b8e6-ecfbd842497e",
+    "itemId": "ep1-v3-s1-overall-cast",
+    "objectKey": "d1:f64448e5-6b00-4703-b8e6-ecfbd842497e",
+    "originalFileName": "图片 - 2026-09-14T142156.710.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 663138,
+    "actualBytes": 663138,
+    "uploadedBy": "王承恺",
+    "sortOrder": 1,
+    "createdAt": "2026-09-14T06:22:16.713Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/f64448e5-6b00-4703-b8e6-ecfbd842497e.jpg",
+    "sha256": "e6c65cf6095df83a936c91e038b4550cbc8866feff7db7a1fc53fbb008a1a55d",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "f786439e-b0e4-4682-88aa-92de57eddae2",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:f786439e-b0e4-4682-88aa-92de57eddae2",
+    "originalFileName": "微信图片_20260914144522_2022_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 74302,
+    "actualBytes": 74302,
+    "uploadedBy": "胖胖",
+    "sortOrder": 53,
+    "createdAt": "2026-09-14T06:51:53.976Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/f786439e-b0e4-4682-88aa-92de57eddae2.jpg",
+    "sha256": "6bba3462bd5a13ffd4cf6b8df3f078606c7495c95659177402d7519522341ed5",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "f7fdee75-bd50-480d-9820-43c780b8a716",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:f7fdee75-bd50-480d-9820-43c780b8a716",
+    "originalFileName": "GGrD3BiHCdP3TBZJEaqyw9ECSHTME9RdnK4qUxTAPTJYzpXsqYnfvvSvb6gRKOVMVTsLvIKrgpdvk4l_7KQ1zkW6J6Xr330RFSowxI3frcTYpvJhzjPhtImYXQoLjMTot9k6iSjZBDs9di4ZhX7QLq98oGYFa9T2sfr6ku9D1Q-8uJ-r8uyW",
+    "contentType": "image/jpeg",
+    "expectedBytes": 185757,
+    "actualBytes": 185757,
+    "uploadedBy": "胖胖",
+    "sortOrder": 23,
+    "createdAt": "2026-09-14T06:51:10.554Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/f7fdee75-bd50-480d-9820-43c780b8a716.jpg",
+    "sha256": "5aa1add45cf628514059fe254e791ffec871862d87f990476858a05bf9535504",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "fb3ad5da-7484-490f-9222-c4711c745dc4",
+    "itemId": "ep1-v3-s1-heroine-wardrobe",
+    "objectKey": "d1:fb3ad5da-7484-490f-9222-c4711c745dc4",
+    "originalFileName": "微信图片_20260914144522_2010_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 118717,
+    "actualBytes": 118717,
+    "uploadedBy": "胖胖",
+    "sortOrder": 45,
+    "createdAt": "2026-09-14T06:51:43.729Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/fb3ad5da-7484-490f-9222-c4711c745dc4.jpg",
+    "sha256": "65c045858ae4047d67dff4e95187d594a5f275f6cee120809f3fa3547442a39a",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene1_wardrobe_files_backup_0914"
+    ]
+  },
+  {
+    "id": "fcb322ab-867a-44fa-a103-60a17666d36b",
+    "itemId": "ep1-v3-s5-auto-7",
+    "objectKey": "d1:fcb322ab-867a-44fa-a103-60a17666d36b",
+    "originalFileName": "b0a0b97315a5cad66e3fd87f4b2a3892.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 153709,
+    "actualBytes": 153709,
+    "uploadedBy": "玉冰",
+    "sortOrder": 13,
+    "createdAt": "2026-09-14T06:10:58.035Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/fcb322ab-867a-44fa-a103-60a17666d36b.jpg",
+    "sha256": "df72c7455d47c02d7979d876c7a3607df904c3ae73ef73ebbf0935bbb4876ff0",
+    "sourceTables": [
+      "art_submission_files",
+      "art_scene_alignment_files_backup_0914"
+    ]
+  },
+  {
+    "id": "feb3a002-3d15-4956-a71e-3010ca9d4760",
+    "itemId": "ep1-v3-s1-hero-wardrobe",
+    "objectKey": "d1:feb3a002-3d15-4956-a71e-3010ca9d4760",
+    "originalFileName": "微信图片_20260914191133_2106_22.jpg",
+    "contentType": "image/jpeg",
+    "expectedBytes": 192154,
+    "actualBytes": 192154,
+    "uploadedBy": "胖胖",
+    "sortOrder": 10,
+    "createdAt": "2026-09-14T11:39:24.898Z",
+    "repositoryPath": "portable-backup/2026-09-14/assets/uploads/feb3a002-3d15-4956-a71e-3010ca9d4760.jpg",
+    "sha256": "f88f12bcc5860576eaf41f091f3cde1a8954f959225a8836b6e8d8f9692c930b",
+    "sourceTables": [
+      "art_submission_files"
+    ]
+  }
+]
