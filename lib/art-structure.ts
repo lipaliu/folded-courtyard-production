@@ -9,7 +9,22 @@ export function characterName(name: string) {
   }
   return name.split(/[｜|（(:：]/)[0].replace(/(?:人物造型|人脸.*|妆造.*|服装.*|整体参考.*)$/, '').trim();
 }
+
+function isEmbeddedNarrativeBlock(item: Asset) {
+  return /^(?:闪回|回忆|蒙太奇|一组镜头|一组画面)(?:\s*\d+)?\s*[｜|]/.test(item.name.trim());
+}
+
 export function compareArtItems(a: Asset, b: Asset) {
+  // A flashback/montage is its own narrative block. Finish every asset in the
+  // main scene before entering that block; never lift an embedded scene above
+  // the main-scene characters just because both items belong to “场景”.
+  const aEmbedded = isEmbeddedNarrativeBlock(a);
+  const bEmbedded = isEmbeddedNarrativeBlock(b);
+  if (aEmbedded !== bEmbedded) return aEmbedded ? 1 : -1;
+  // Embedded blocks are generated in script order, with each block ordered as
+  // scene → character styling → wardrobe. Preserve that contiguous sequence.
+  if (aEmbedded && bEmbedded) return a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'zh-CN');
+
   const rank = (item: Asset) => {
     if (item.category === '场景') return 0;
     if (item.category === '道具') return 900;

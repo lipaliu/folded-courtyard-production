@@ -27,6 +27,20 @@ test('scene, heroine styling and clothes, hero styling and clothes, ensemble ord
   const items = [asset('hc', 's1', '陆文川｜服装', '服装'), asset('extra', 's1', '配角与群演｜整体参考', '服装'), asset('f', 's1', '顾丽乔｜人脸、妆造、梳发'), asset('scene', 's1', '医院', '场景'), asset('fc', 's1', '顾丽乔｜服装', '服装'), asset('h', 's1', '陆文川｜人脸、妆造、梳发')];
   assert.deepEqual(items.sort(structure.compareArtItems).map((item) => item.id), ['scene', 'f', 'fc', 'h', 'hc', 'extra']);
 });
+test('main scene stays complete before flashback, then flashback keeps scene before people and wardrobe', () => {
+  const rows = [
+    { ...asset('flash-her-clothes', 's1', '闪回｜20岁顾丽乔穿搭', '服装'), sortOrder: 3 },
+    { ...asset('hero', 's1', '陆文川｜人脸、妆造、梳发'), sortOrder: 7 },
+    { ...asset('flash-scene', 's1', '闪回｜20岁顾丽乔被前夫家暴的小家', '场景'), sortOrder: 2 },
+    { ...asset('main-clothes', 's1', '顾丽乔｜服装', '服装'), sortOrder: 11 },
+    { ...asset('main-scene', 's1', '玄幻剧片场｜场景总参考', '场景'), sortOrder: 0 },
+    { ...asset('flash-abuser', 's1', '闪回｜家暴男（前夫）穿搭', '服装'), sortOrder: 4 },
+    { ...asset('heroine', 's1', '顾丽乔｜人脸、妆造、梳发'), sortOrder: 1 },
+  ];
+  assert.deepEqual(rows.sort(structure.compareArtItems).map((item) => item.id), [
+    'main-scene', 'heroine', 'main-clothes', 'hero', 'flash-scene', 'flash-her-clothes', 'flash-abuser',
+  ]);
+});
 test('script creates a single scene slot, two slots per lead and one ensemble slot, no keyword props', () => {
   const items = script.buildArtItems('医院 内 夜', ['顾丽乔', '陆文川', '助理', '护士', '群演'], ['她拿起手机、酒瓶，门窗和灯架都在病床边。']);
   assert.equal(items.length, 6);
@@ -71,6 +85,16 @@ test('flashbacks and montage blocks create separate art scene upload items', () 
   assert.ok(sceneItems.slice(1).every((item) => item.visualBrief.includes('独立美术场景上传')));
   assert.ok(items.some((item) => item.name === '闪回｜20岁顾丽乔穿搭'));
   assert.ok(items.some((item) => item.name === '闪回｜家暴男（前夫）穿搭'));
+  assert.deepEqual(Array.from(items, (item) => item.name), [
+    '复古教堂片场 日 内｜场景总参考',
+    '顾丽乔｜人脸、妆造、梳发',
+    '顾丽乔｜服装',
+    '配角与群演｜整体参考',
+    '闪回｜20岁顾丽乔被前夫家暴的小家',
+    '闪回｜20岁顾丽乔穿搭',
+    '闪回｜家暴男（前夫）穿搭',
+    sceneItems[2].name,
+  ]);
 });
 test('scene-one domestic-violence flashback restores its orphaned reference and author', () => {
   const db = new DatabaseSync(':memory:');

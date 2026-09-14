@@ -18,6 +18,7 @@ import { TEAM_ROLES, roleCanSeeArt } from '@/lib/team-roles';
 import { SubmissionCenter } from '@/components/submission-center';
 import { accountFormError } from '@/lib/account-form';
 import { FinalScriptReader } from '@/components/final-script-reader';
+import { compareArtItems } from '@/lib/art-structure';
 
 const stageLabels: Array<{ key: keyof Scene; label: string }> = [
   { key: 'scriptStatus', label: '剧本' },
@@ -702,7 +703,7 @@ function ScriptAnalysisView({ isAdmin, selectedDate, productionItems, onAssigned
     })}
     {isAdmin && dailyPropIds.length > 0 && <div className="no-print mt-3 flex flex-col gap-3 rounded-xl border border-white/10 bg-card p-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-medium">道具多选</p><p className="mt-1 text-xs text-muted-foreground">勾选不需要细化的道具后一次删除；人物、服装和场景不进入多选。</p></div><div className="flex flex-wrap items-center gap-2"><span className="text-xs text-muted-foreground">已选 {selectedPropIds.length} 项</span><Button size="sm" variant="outline" onClick={() => setSelectedPropIds(allDailyPropsSelected ? [] : dailyPropIds)}>{allDailyPropsSelected ? '取消全选' : '全选当天道具'}</Button><Button size="sm" variant="destructive" disabled={!selectedPropIds.length} onClick={() => void deleteSelectedProps()}><Trash2 />删除选中（{selectedPropIds.length}）</Button></div></div>}
     <div className="production-handbook-print mt-3 space-y-4">{dailyAnalyses.length ? dailyAnalyses.map((analysis) => {
-      const rows = assetItems.filter((item) => item.analysisId === analysis.id).sort((a, b) => a.sortOrder - b.sortOrder);
+      const rows = assetItems.filter((item) => item.analysisId === analysis.id).sort(compareArtItems);
       const assignedToday = productionItems.some((item) => item.workDate === workDate && item.episode === analysis.episode && item.category === '美术清单');
       return <article key={analysis.id} className="print-scene control-card p-4 md:p-5">
         <div className="flex flex-col gap-3 border-b border-white/8 pb-4 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex flex-wrap items-center gap-2"><p className="text-xs text-[#ff8066]">{analysis.episode} · 第{analysis.sceneNo}场</p><span className={`rounded-full border px-2 py-0.5 text-[10px] ${assignedToday ? 'border-[#ff6240]/30 bg-[#ff6240]/10 text-[#ff8a72]' : 'border-white/8 bg-white/4 text-zinc-500'}`}>{assignedToday ? `已排${shortDate(workDate)}` : '未排当天'}</span></div><h3 className="mt-1 text-lg font-medium">{analysis.sceneTitle}</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">{analysis.location} · {analysis.sceneSummary}</p></div><span className="w-fit shrink-0 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-muted-foreground">主美清单 {rows.length}项</span></div>

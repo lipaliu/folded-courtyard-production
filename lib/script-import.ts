@@ -95,7 +95,6 @@ function chineseNumber(value: string) {
 
 export function buildArtItems(location: string, people: string[], bodyLines: string[]) {
   const result = [{ category: '场景', name: `${location}｜场景总参考`, detail: '本场一个场景上传位，可多传全景、局部及不同角度。', visualBrief: '先上传一张完整场景氛围图，再按实际需求追加细节图；不按文字自动拆分。' }];
-  result.push(...buildEmbeddedSceneItems(bodyLines));
   for (const person of ['顾丽乔', '陆文川']) {
     if (!people.some((name) => name.includes(person))) continue;
     result.push(
@@ -105,6 +104,9 @@ export function buildArtItems(location: string, people: string[], bodyLines: str
   }
   const others = people.filter((name) => !/顾丽乔|陆文川/.test(name));
   if (others.length) result.push({ category: '服装', name: '配角与群演｜整体参考', detail: `本场配角与群演：${others.join('、')}。`, visualBrief: '整体形象和服装参考放在这一项，不需要每个人分别出图。' });
+  // Main-scene assets must stay together. Flashback/montage blocks come only
+  // after the main scene and keep their own scene → people → wardrobe order.
+  result.push(...buildEmbeddedSceneItems(bodyLines));
   return result;
 }
 
