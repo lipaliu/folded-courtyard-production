@@ -1,7 +1,8 @@
 export const LOCKED_SCHEDULE_START = '2026-09-14';
-export const LOCKED_SCHEDULE_END = '2026-09-14';
+export const LOCKED_SCHEDULE_END = '2026-09-15';
 
 export const LOCKED_SCHEDULE_TASK_IDS = [
+  'review-scripts-2026-09-15',
   'rollup-2026-09-14-ep1-script',
   'rollup-2026-09-14-ep1-art',
   'rollup-2026-09-14-ep1-wardrobe',

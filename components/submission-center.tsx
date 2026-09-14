@@ -4,6 +4,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Archive, Check, Clock3, Download, ExternalLink, FileText, ImagePlus, Loader2, RefreshCw, Trash2, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ReferenceLightbox } from '@/components/reference-lightbox';
+import { buildReuseMap, compareArtItems, type ReuseExclusion } from '@/lib/art-structure';
 import { ArtUploadDropzone } from '@/components/art-upload-dropzone';
 import { Textarea } from '@/components/ui/textarea';
 import { canEditArtCategory, roleCanSeeArt } from '@/lib/team-roles';
@@ -19,7 +21,7 @@ type SubmissionDetail = { itemId: string; assignedTo: string; dueAt: string; han
 type SubmissionFile = { id: string; itemId: string; fileName: string; contentType: string; byteSize: number; uploadedBy: string; sortOrder: number; createdAt: string; url: string };
 type ReuseInfo = { sourceItemId: string; sourceSceneNo: number; files: SubmissionFile[] };
 
-const categories = ['人物', '服装', '道具', '场景'];
+const categories = ['场景', '人物', '服装'];
 const activeStatuses = new Set(['已上传', '待审核', '已锁定']);
 
 export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned, mode = 'art' }: { me: CurrentUser; selectedDate: string; productionItems: ProductionItem[]; onAssigned: (date: string) => Promise<void>; mode?: 'script' | 'art' }) {
@@ -28,6 +30,7 @@ export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned
   const [versions, setVersions] = useState<ScriptVersion[]>([]);
   const [assignments, setAssignments] = useState<DailySceneAssignment[]>([]);
   const [details, setDetails] = useState<SubmissionDetail[]>([]);
+  const [exclusions, setExclusions] = useState<ReuseExclusion[]>([]);
   const [files, setFiles] = useState<SubmissionFile[]>([]);
   const [workDate, setWorkDate] = useState(selectedDate);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -56,7 +59,7 @@ export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned
         fetch('/api/art-submissions', { cache: 'no-store' }),
       ]);
       const scriptData = await scriptResponse.json() as { analyses?: ScriptAnalysis[]; items?: ScriptAssetItem[]; versions?: ScriptVersion[]; assignments?: DailySceneAssignment[]; error?: string };
-      const submissionData = await submissionResponse.json() as { details?: SubmissionDetail[]; files?: SubmissionFile[]; error?: string };
+      const submissionData = await submissionResponse.json() as { details?: SubmissionDetail[]; files?: SubmissionFile[]; exclusions?: ReuseExclusion[]; error?: string };
       if (!scriptResponse.ok) throw new Error(scriptData.error || '读取剧本提报失败');
       if (!submissionResponse.ok) throw new Error(submissionData.error || '读取美术提报失败');
       setAnalyses(scriptData.analyses || []);
@@ -65,6 +68,7 @@ export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned
       setAssignments(scriptData.assignments || []);
       setDetails(submissionData.details || []);
       setFiles(submissionData.files || []);
+      setExclusions(submissionData.exclusions || []);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : '暂时无法读取提报中心');
     } finally {
@@ -91,7 +95,7 @@ export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned
     for (const file of files) map.set(file.itemId, [...(map.get(file.itemId) || []), file]);
     return map;
   }, [files]);
-  const reuseByItem = useMemo(() => buildReuseMap(analyses, items, filesByItem), [analyses, items, filesByItem]);
+  const reuseByItem = useMemo(() => buildReuseMap(analyses, items, filesByItem, exclusions), [analyses, items, filesByItem, exclusions]);
   const resolvedFilesByItem = useMemo(() => {
     const map = new Map<string, SubmissionFile[]>();
     for (const item of items) map.set(item.id, filesByItem.get(item.id)?.length ? filesByItem.get(item.id)! : (reuseByItem.get(item.id)?.files || []));
@@ -185,12 +189,25 @@ export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned
     setDetails((current) => current.some((row) => row.itemId === itemId) ? current.map((row) => row.itemId === itemId ? data.detail! : row) : [...current, data.detail!]);
   }
 
-  async function deleteFile(file: SubmissionFile) {
-    if (!window.confirm(`确定删除错误上传的“${file.fileName}”吗？`)) return;
-    const response = await fetch('/api/art-submissions', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileId: file.id }) });
+  async function deleteFile(file: SubmissionFile, itemId = file.itemId) {
+    const isReuse = itemId !== file.itemId;
+    if (!window.confirm(isReuse ? '仅从本场移除这张复用图？其他场次原图保留。' : `确定删除错误上传的“${file.fileName}”吗？`)) return;
+    const response = await fetch('/api/art-submissions', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileId: file.id, itemId }) });
     const data = await response.json() as { error?: string };
     if (!response.ok) throw new Error(data.error || '删除图片失败');
-    setFiles((current) => current.filter((row) => row.id !== file.id));
+    if (isReuse) setExclusions((current) => [...current, { itemId, fileId: file.id }]);
+    else setFiles((current) => current.filter((row) => row.id !== file.id));
+    setDetails((current) => current.map((row) => row.itemId === itemId && row.selectedFileId === file.id ? { ...row, selectedFileId: '', status: '已上传' } : row));
+    await onAssigned(workDate);
+  }
+
+  async function moveFile(file: SubmissionFile, targetId: string) {
+    const response = await fetch('/api/art-submissions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ itemId: targetId, moveFileId: file.id }) });
+    const data = await response.json() as { error?: string };
+    if (!response.ok) throw new Error(data.error || '移动图片失败');
+    setFiles((current) => current.map((row) => row.id === file.id ? { ...row, itemId: targetId } : row));
+    setDetails((current) => current.map((row) => row.selectedFileId === file.id ? { ...row, selectedFileId: '', status: '需复核' } : row));
+    await onAssigned(workDate);
   }
 
   async function deleteProp(item: ScriptAssetItem) {
@@ -303,7 +320,7 @@ export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned
   </section>;
 
   return <section>
-    <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">ART UPLOAD & REVIEW</p><h2 className="mt-1 text-2xl font-semibold">美术上传与审图</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">服化道副导演上传场景和角色服装；主美保留人物、服装、道具和场景上传权限。场景共用同一清单，双方图片一起保留；Lipa确认齐套后，独立生成本集美术提报H5或PDF。</p></div><button onClick={() => void loadAll()} className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/5 text-muted-foreground" aria-label="刷新美术档案"><RefreshCw className="h-4 w-4" /></button></div>
+    <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">ART UPLOAD & REVIEW</p><h2 className="mt-1 text-2xl font-semibold">美术上传与审图</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">服化道副导演上传场景和角色服装；主美保留人物、服装、道具和场景上传权限。场景共用同一清单，双方图片一起保留；Lipa随时可生成本集美术H5预览；未齐套会标注预览状态，确认后再正式提报。</p></div><button onClick={() => void loadAll()} className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/5 text-muted-foreground" aria-label="刷新美术档案"><RefreshCw className="h-4 w-4" /></button></div>
 
     {canEditArt && <section className="mb-4 flex flex-col gap-3 rounded-2xl border border-[#ff6240]/30 bg-[#ff6240]/[.07] p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold text-[#ff9a86]">{wardrobeAssistant ? '服化道副导演 · 场景与角色服装上传' : '美术上传入口'}</p><p className="mt-1 text-xs leading-5 text-muted-foreground">先选当天日期，再到下方对应场次上传；支持一次拖入多张或点击多选，上传中可以继续追加；图片数量不限。上传成功后立刻显示缩略图和实际上传人。</p></div><Button size="sm" onClick={() => document.getElementById('art-upload-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}><ImagePlus />去上传图片</Button></section>}
 
@@ -331,21 +348,22 @@ export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned
     {notice && <p className="mt-4 rounded-xl border border-emerald-400/20 bg-emerald-400/[.06] px-4 py-3 text-sm text-emerald-300">{notice}</p>}
     {error && <p className="mt-4 rounded-xl border border-red-400/20 bg-red-400/[.06] px-4 py-3 text-sm text-red-300">{error}</p>}
 
-    <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">DAILY ART PACKAGE</p><h2 className="mt-1 text-xl font-semibold">{formatDate(workDate)} · {wardrobeAssistant ? '场景与角色服装上传清单' : '人服道景上传清单'}</h2><p className="mt-1 text-xs text-muted-foreground">{dailyAnalyses.length}场 · {readyCount}/{dailyItems.length}项齐套 · 美术团队上传，Lipa最终审图和提报</p></div>{me.isAdmin && <div className="flex flex-wrap gap-2">{dailyEpisodes.map((episode) => <div key={episode} className="flex gap-2"><a href={`/art-review?episode=${encodeURIComponent(episode)}`} target="_blank" rel="noreferrer" className={`inline-flex h-10 items-center gap-2 rounded-lg border px-3 text-sm ${readyCount === dailyItems.length && dailyItems.length ? 'border-cyan-300/25 bg-cyan-300/8 text-cyan-200' : 'pointer-events-none border-white/8 text-zinc-600'}`}><ExternalLink className="h-4 w-4" />生成美术H5</a><Button variant="outline" disabled={pdfEpisode === episode || readyCount !== dailyItems.length || !dailyItems.length} onClick={() => void downloadPdf(episode)}>{pdfEpisode === episode ? <Loader2 className="animate-spin" /> : <Download />}{`下载${episode}美术PDF`}</Button></div>)}</div>}</div>
+    <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">DAILY ART PACKAGE</p><h2 className="mt-1 text-xl font-semibold">{formatDate(workDate)} · {wardrobeAssistant ? '场景与角色服装上传清单' : '人服道景上传清单'}</h2><p className="mt-1 text-xs text-muted-foreground">{dailyAnalyses.length}场 · {readyCount}/{dailyItems.length}项齐套 · 美术团队上传，Lipa最终审图和提报</p></div>{me.isAdmin && <div className="flex flex-wrap gap-2">{[...new Set(analyses.map((analysis) => analysis.episode))].map((episode) => <div key={episode} className="flex gap-2"><a href={`/art-review?episode=${encodeURIComponent(episode)}&preview=1`} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-lg border border-cyan-300/25 bg-cyan-300/8 px-3 text-sm text-cyan-200"><ExternalLink className="h-4 w-4" />{episode} · H5预览</a><Button variant="outline" disabled={pdfEpisode === episode || readyCount !== dailyItems.length || !dailyItems.length} onClick={() => void downloadPdf(episode)}>{pdfEpisode === episode ? <Loader2 className="animate-spin" /> : <Download />}{`下载${episode}美术PDF`}</Button></div>)}</div>}</div>
 
     {canDeleteProps && dailyProps.length > 0 && <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-400/20 bg-red-400/[.045] px-3 py-2.5"><button type="button" onClick={() => setSelectedPropIds(allDailyPropsSelected ? [] : dailyProps.map((item) => item.id))} className="text-xs text-red-200">{allDailyPropsSelected ? '取消全选道具' : `选择全部道具（${dailyProps.length}）`}</button><Button size="sm" variant="destructive" disabled={!selectedPropIds.length || saving} onClick={() => void deleteSelectedProps()}><Trash2 />批量删除选中道具{selectedPropIds.length ? `（${selectedPropIds.length}）` : ''}</Button></div>}
 
-    <div id="art-upload-list" className="mt-4 scroll-mt-6 space-y-4">{dailyAnalyses.length ? dailyAnalyses.map((analysis) => { const sceneItems = dailyItems.filter((item) => item.analysisId === analysis.id).sort((a, b) => a.sortOrder - b.sortOrder); return <article key={analysis.id} className="control-card p-4 md:p-5"><div className="border-b border-white/8 pb-4"><p className="text-xs text-[#ff8066]">{analysis.episode} · 第{analysis.sceneNo}场</p><h3 className="mt-1 text-lg font-medium">{analysis.sceneTitle}</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">{analysis.location} · {analysis.sceneSummary}</p></div><div className="mt-4 grid gap-3 xl:grid-cols-2">{sceneItems.map((item) => <SubmissionItemCard key={item.id} item={item} detail={detailMap.get(item.id)} files={resolvedFilesByItem.get(item.id) || []} reuseInfo={reuseByItem.get(item.id)} defaultDueAt={`${workDate}T18:00`} canEdit={canEditArtCategory(me, item.category)} canDelete={canDeleteProps && item.category === '道具'} selectedForDelete={selectedPropIds.includes(item.id)} onToggleDelete={() => setSelectedPropIds((current) => current.includes(item.id) ? current.filter((id) => id !== item.id) : [...current, item.id])} isAdmin={me.isAdmin} currentName={me.name} onUpload={uploadImages} onUploadsIdle={() => onAssigned(workDate)} onSave={saveDetail} onDeleteFile={deleteFile} onDeleteItem={deleteProp} />)}</div></article>; }) : <Empty text={`${formatDate(workDate)}还没有具体场次。Lipa上传单集剧本，或在上方选择场次排入当天。`} />}</div>
+    <div id="art-upload-list" className="mt-4 scroll-mt-6 space-y-4">{dailyAnalyses.length ? dailyAnalyses.map((analysis) => { const sceneItems = dailyItems.filter((item) => item.analysisId === analysis.id).sort(compareArtItems); return <article key={analysis.id} className="control-card p-4 md:p-5"><div className="border-b border-white/8 pb-4"><p className="text-xs text-[#ff8066]">{analysis.episode} · 第{analysis.sceneNo}场</p><h3 className="mt-1 text-lg font-medium">{analysis.sceneTitle}</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">{analysis.location} · {analysis.sceneSummary}</p></div><div className="mt-4 grid gap-3 xl:grid-cols-2">{sceneItems.map((item) => <SubmissionItemCard key={item.id} item={item} detail={detailMap.get(item.id)} files={resolvedFilesByItem.get(item.id) || []} reuseInfo={reuseByItem.get(item.id)} defaultDueAt={`${workDate}T18:00`} canEdit={canEditArtCategory(me, item.category)} canDelete={canDeleteProps && item.category === '道具'} selectedForDelete={selectedPropIds.includes(item.id)} onToggleDelete={() => setSelectedPropIds((current) => current.includes(item.id) ? current.filter((id) => id !== item.id) : [...current, item.id])} isAdmin={me.isAdmin} currentName={me.name} onUpload={uploadImages} onUploadsIdle={() => onAssigned(workDate)} onSave={saveDetail} onDeleteFile={deleteFile} onDeleteItem={deleteProp} moveTargets={sceneItems.filter((target) => target.id !== item.id)} onMoveFile={moveFile} />)}</div></article>; }) : <Empty text={`${formatDate(workDate)}还没有具体场次。Lipa上传单集剧本，或在上方选择场次排入当天。`} />}</div>
 
     <div className="submission-pdf-source" aria-hidden="true">{dailyEpisodes.map((episode) => <SubmissionPdfSource key={episode} id={`submission-pdf-${episode.replace(/\W/g, '')}`} episode={episode} workDate={workDate} version={versionForEpisode(episode)} analyses={dailyAnalyses.filter((analysis) => analysis.episode === episode)} items={items} details={details} filesByItem={resolvedFilesByItem} />)}</div>
   </section>;
 }
 
-function SubmissionItemCard({ item, detail, files, reuseInfo, defaultDueAt, canEdit, canDelete, selectedForDelete, onToggleDelete, isAdmin, currentName, onUpload, onUploadsIdle, onSave, onDeleteFile, onDeleteItem }: { item: ScriptAssetItem; detail?: SubmissionDetail; files: SubmissionFile[]; reuseInfo?: ReuseInfo; defaultDueAt: string; canEdit: boolean; canDelete: boolean; selectedForDelete: boolean; onToggleDelete: () => void; isAdmin: boolean; currentName: string; onUpload: (itemId: string, files: File[], onProgress?: (done: number) => void) => Promise<number>; onUploadsIdle: () => Promise<void>; onSave: (itemId: string, changes: Partial<SubmissionDetail>) => Promise<void>; onDeleteFile: (file: SubmissionFile) => Promise<void>; onDeleteItem: (item: ScriptAssetItem) => Promise<void> }) {
+function SubmissionItemCard({ moveTargets, onMoveFile, item, detail, files, reuseInfo, defaultDueAt, canEdit, canDelete, selectedForDelete, onToggleDelete, isAdmin, currentName, onUpload, onUploadsIdle, onSave, onDeleteFile, onDeleteItem }: { moveTargets: ScriptAssetItem[]; onMoveFile: (file: SubmissionFile, targetId: string) => Promise<void>; item: ScriptAssetItem; detail?: SubmissionDetail; files: SubmissionFile[]; reuseInfo?: ReuseInfo; defaultDueAt: string; canEdit: boolean; canDelete: boolean; selectedForDelete: boolean; onToggleDelete: () => void; isAdmin: boolean; currentName: string; onUpload: (itemId: string, files: File[], onProgress?: (done: number) => void) => Promise<number>; onUploadsIdle: () => Promise<void>; onSave: (itemId: string, changes: Partial<SubmissionDetail>) => Promise<void>; onDeleteFile: (file: SubmissionFile, itemId?: string) => Promise<void>; onDeleteItem: (item: ScriptAssetItem) => Promise<void> }) {
   const [draft, setDraft] = useState({ assignedTo: detail?.assignedTo || (canEdit ? currentName : '主美小金'), dueAt: detail?.dueAt || defaultDueAt, handoffTo: detail?.handoffTo || 'Lipa', doneDefinition: detail?.doneDefinition || item.visualBrief, status: detail?.status || '待上传', submissionNote: detail?.submissionNote || '', reviewNote: detail?.reviewNote || '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const uploaders = [...new Set(files.map((file) => file.uploadedBy?.trim()).filter(Boolean))];
+  const [previewId, setPreviewId] = useState('');
   const selectedFile = files.find((file) => file.id === detail?.selectedFileId);
   useEffect(() => { setDraft({ assignedTo: detail?.assignedTo || (canEdit ? currentName : '主美小金'), dueAt: detail?.dueAt || defaultDueAt, handoffTo: detail?.handoffTo || 'Lipa', doneDefinition: detail?.doneDefinition || item.visualBrief, status: detail?.status || '待上传', submissionNote: detail?.submissionNote || '', reviewNote: detail?.reviewNote || '' }); }, [detail, defaultDueAt, item.visualBrief, canEdit, currentName]);
   async function save(nextStatus?: string) { setSaving(true); setError(''); try { const next = { ...draft, status: nextStatus || draft.status }; await onSave(item.id, next); setDraft(next); } catch (nextError) { setError(nextError instanceof Error ? nextError.message : '保存失败'); } finally { setSaving(false); } }
@@ -360,10 +378,10 @@ function SubmissionItemCard({ item, detail, files, reuseInfo, defaultDueAt, canE
     } finally { setSaving(false); }
   }
   return <section className={`rounded-xl border p-3 ${selectedForDelete ? 'border-red-400/55 bg-red-400/[.07]' : detail?.status === '打回' || detail?.status === '需复核' ? 'border-red-400/35 bg-red-400/[.04]' : detail?.status === '已锁定' ? 'border-emerald-400/30 bg-emerald-400/[.04]' : 'border-white/10 bg-white/[.025]'}`}><div className="flex items-start justify-between gap-3"><div className="flex items-start gap-2">{canDelete && <input type="checkbox" checked={selectedForDelete} onChange={onToggleDelete} aria-label={`选择删除道具${item.name}`} className="mt-1 h-4 w-4 accent-red-400" />}<div><div className="flex flex-wrap items-center gap-1.5"><span className="rounded-md bg-white/6 px-2 py-0.5 text-[10px] text-muted-foreground">{item.category}</span><span className="rounded-md bg-cyan-400/[.08] px-2 py-0.5 text-[10px] text-cyan-300">{files.length}张</span>{selectedFile && <span className="rounded-md bg-emerald-400/15 px-2 py-0.5 text-[10px] font-medium text-emerald-300">已选定稿图</span>}{reuseInfo && <span className="rounded-full border border-cyan-400/25 bg-cyan-400/[.08] px-2 py-0.5 text-[10px] text-cyan-300">复用第{reuseInfo.sourceSceneNo}场 · 已自动贴图</span>}</div><h4 className="mt-2 text-sm font-medium">{item.name}</h4>{uploaders.length > 0 && <p className="mt-1 text-[11px] text-cyan-300">上传人：{uploaders.join('、')}</p>}{selectedFile && <p className="mt-1 text-[11px] text-emerald-300">定稿：{friendlyReferenceLabel(item, selectedFile)} · {uploadAuthorLabel(selectedFile.uploadedBy)}</p>}</div></div><div className="flex items-center gap-1.5"><span className="rounded-full border border-white/10 px-2 py-1 text-[10px] text-muted-foreground">{detail?.status || (reuseInfo ? '复用' : '待上传')}</span>{canDelete && <button type="button" onClick={() => void onDeleteItem(item)} aria-label={`删除道具${item.name}`} title="删除这个道具" className="grid h-7 w-7 place-items-center rounded-full border border-red-400/20 bg-red-400/[.06] text-red-300 hover:bg-red-400/15"><Trash2 className="h-3.5 w-3.5" /></button>}</div></div><p className="mt-2 text-xs leading-5 text-zinc-300">{item.detail}</p><p className="mt-2 border-t border-white/6 pt-2 text-xs leading-5 text-muted-foreground">需要出：{item.visualBrief}</p>
-    <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">{files.map((file) => { const isSelected = detail?.selectedFileId === file.id; return <div key={`${item.id}-${file.id}`} className={`group relative overflow-hidden rounded-lg border bg-black/20 ${isSelected ? 'border-emerald-400/70 ring-1 ring-emerald-400/30' : 'border-white/10'}`}><img src={file.url} alt={`${item.name}·${file.fileName}`} className="aspect-[4/3] w-full object-cover" />{isSelected && <span className="absolute left-1 top-1 rounded-full bg-emerald-400 px-2 py-1 text-[10px] font-semibold text-black">✓ 定稿图</span>}<div title={file.fileName} className="min-h-[58px] px-2 py-1.5 text-[11px] leading-4"><p className="truncate text-zinc-300">{reuseInfo ? `与第${reuseInfo.sourceSceneNo}场一样` : friendlyReferenceLabel(item, file)}</p><p className="mt-0.5 font-medium text-cyan-300">{uploadAuthorLabel(file.uploadedBy)}</p>{uploadTimeLabel(file.createdAt) && <p className="text-[10px] text-zinc-500">{uploadTimeLabel(file.createdAt)}</p>}{isAdmin && !reuseInfo && <button type="button" disabled={saving} onClick={() => void selectFinal(file)} className={`mt-1.5 w-full rounded-md px-2 py-1.5 text-[10px] font-medium ${isSelected ? 'bg-emerald-400/15 text-emerald-300' : 'bg-white/8 text-white/75 hover:bg-emerald-400/15 hover:text-emerald-300'}`}>{isSelected ? '取消定稿' : '选为定稿图'}</button>}</div>{canEdit && !reuseInfo && <button onClick={() => void onDeleteFile(file).catch((nextError) => setError(nextError instanceof Error ? nextError.message : '删除失败'))} aria-label={`删除${file.fileName}`} className="absolute right-1 top-1 grid h-7 w-7 place-items-center rounded-full bg-black/75 text-zinc-300 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"><Trash2 className="h-3.5 w-3.5" /></button>}</div>})}{canEdit && <ArtUploadDropzone name={item.name} currentName={currentName} reuse={Boolean(reuseInfo)} onUpload={(file) => onUpload(item.id, [file])} onIdle={onUploadsIdle} />}</div>
+    <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">{files.map((file) => { const isSelected = detail?.selectedFileId === file.id; return <div key={`${item.id}-${file.id}`} className={`group relative overflow-hidden rounded-lg border bg-black/20 ${isSelected ? 'border-emerald-400/70 ring-1 ring-emerald-400/30' : 'border-white/10'}`}><button type="button" onClick={() => setPreviewId(file.id)} aria-label={`放大查看${file.fileName}`} className="block w-full"><img src={file.url} alt={`${item.name}·${file.fileName}`} className="aspect-[4/3] w-full object-contain" /></button>{isSelected && <span className="absolute left-1 top-1 rounded-full bg-emerald-400 px-2 py-1 text-[10px] font-semibold text-black">✓ 定稿图</span>}<div title={file.fileName} className="min-h-[58px] px-2 py-1.5 text-[11px] leading-4"><p className="truncate text-zinc-300">{reuseInfo ? `与第${reuseInfo.sourceSceneNo}场一样` : friendlyReferenceLabel(item, file)}</p><p className="mt-0.5 font-medium text-cyan-300">{uploadAuthorLabel(file.uploadedBy)}</p>{uploadTimeLabel(file.createdAt) && <p className="text-[10px] text-zinc-500">{uploadTimeLabel(file.createdAt)}</p>}{isAdmin && !reuseInfo && <select aria-label={`调整${file.fileName}归属`} className="mt-2 w-full rounded border border-white/15 bg-[#171b20] p-1 text-[10px]" value="" onChange={(event) => { if (event.target.value) void onMoveFile(file, event.target.value).catch((err) => setError(err instanceof Error ? err.message : '移动失败')); }}><option value="">移动到本场其他项…</option>{moveTargets.map((target) => <option key={target.id} value={target.id}>{target.name}</option>)}</select>}{isAdmin && !reuseInfo && <button type="button" disabled={saving} onClick={() => void selectFinal(file)} className={`mt-1.5 w-full rounded-md px-2 py-1.5 text-[10px] font-medium ${isSelected ? 'bg-emerald-400/15 text-emerald-300' : 'bg-white/8 text-white/75 hover:bg-emerald-400/15 hover:text-emerald-300'}`}>{isSelected ? '取消定稿' : '选为定稿图'}</button>}</div>{canEdit && <button title={reuseInfo ? '仅从本场移除，保留来源图' : '删除图片'} onClick={() => void onDeleteFile(file, item.id).catch((nextError) => setError(nextError instanceof Error ? nextError.message : '删除失败'))} aria-label={`删除${file.fileName}`} className="absolute right-1 top-1 grid h-7 w-7 place-items-center rounded-full bg-black/75 text-zinc-300 opacity-100"><Trash2 className="h-3.5 w-3.5" /></button>}</div>})}{canEdit && <ArtUploadDropzone name={item.name} currentName={currentName} reuse={Boolean(reuseInfo)} onUpload={(file) => onUpload(item.id, [file])} onIdle={onUploadsIdle} />}</div>
     <div className="mt-3 grid gap-2 sm:grid-cols-2"><Field label="分配责任人（可多人上传）"><input disabled={!canEdit} value={draft.assignedTo} onChange={(event) => setDraft((current) => ({ ...current, assignedTo: event.target.value }))} className="edit-input" /></Field><Field label="精确截止时间"><input type="datetime-local" disabled={!canEdit} value={draft.dueAt} onChange={(event) => setDraft((current) => ({ ...current, dueAt: event.target.value }))} className="edit-input" /></Field><Field label="下一交接人"><input disabled={!canEdit} value={draft.handoffTo} onChange={(event) => setDraft((current) => ({ ...current, handoffTo: event.target.value }))} className="edit-input" /></Field><Field label="提交状态"><select disabled={!canEdit} value={draft.status} onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))} className="edit-input">{(isAdmin ? ['待上传', '已上传', '待审核', '打回', '已锁定', '需复核'] : ['待上传', '已上传', '待审核', '需复核']).map((status) => <option key={status}>{status}</option>)}</select></Field></div>
     <div className="mt-2"><Field label="完成定义"><Textarea disabled={!canEdit} rows={2} value={draft.doneDefinition} onChange={(event) => setDraft((current) => ({ ...current, doneDefinition: event.target.value }))} /></Field></div><div className="mt-2"><Field label="采用说明"><Textarea disabled={!canEdit} rows={2} value={draft.submissionNote} onChange={(event) => setDraft((current) => ({ ...current, submissionNote: event.target.value }))} placeholder="写清具体采用哪种造型、颜色、材质或空间方案" /></Field></div>{isAdmin && <div className="mt-2"><Field label="Lipa审核／打回意见"><Textarea rows={2} value={draft.reviewNote} onChange={(event) => setDraft((current) => ({ ...current, reviewNote: event.target.value }))} placeholder="打回时写清具体改什么和新的时间节点" /></Field></div>}
-    {error && <p className="mt-2 text-xs text-red-300">{error}</p>}{canEdit && <div className="mt-3 flex flex-wrap justify-end gap-2">{isAdmin && <><Button size="sm" variant="destructive" disabled={saving || !draft.reviewNote.trim()} onClick={() => void save('打回')}><X />打回</Button><Button size="sm" variant="outline" disabled={saving || !files.length} onClick={() => void save('已锁定')}><Check />锁定</Button></>}<Button size="sm" disabled={saving} onClick={() => void save()}>{saving ? <Loader2 className="animate-spin" /> : <Check />}{saving ? '保存中' : '保存责任与节点'}</Button></div>}</section>;
+    {previewId && <ReferenceLightbox files={files} initialId={previewId} onClose={() => setPreviewId('')} />}{error && <p className="mt-2 text-xs text-red-300">{error}</p>}{canEdit && <div className="mt-3 flex flex-wrap justify-end gap-2">{isAdmin && <><Button size="sm" variant="destructive" disabled={saving || !draft.reviewNote.trim()} onClick={() => void save('打回')}><X />打回</Button><Button size="sm" variant="outline" disabled={saving || !files.length} onClick={() => void save('已锁定')}><Check />锁定</Button></>}<Button size="sm" disabled={saving} onClick={() => void save()}>{saving ? <Loader2 className="animate-spin" /> : <Check />}{saving ? '保存中' : '保存责任与节点'}</Button></div>}</section>;
 }
 
 function SubmissionPdfSource({ id, episode, workDate, version, analyses, items, details, filesByItem }: { id: string; episode: string; workDate: string; version?: ScriptVersion; analyses: ScriptAnalysis[]; items: ScriptAssetItem[]; details: SubmissionDetail[]; filesByItem: Map<string, SubmissionFile[]> }) {
@@ -384,7 +402,7 @@ function SubmissionPdfSource({ id, episode, workDate, version, analyses, items, 
 
     const reviewItems = episodeItems
       .filter((item) => item.analysisId === analysis.id && ['人物', '服装'].includes(item.category))
-      .sort((a, b) => a.sortOrder - b.sortOrder);
+      .sort(compareArtItems);
     for (const item of reviewItems) {
       const itemFiles = filesByItem.get(item.id) || [];
       if (!itemFiles.length) continue;
@@ -435,65 +453,6 @@ function friendlyReferenceLabel(item: ScriptAssetItem, file: SubmissionFile) {
 }
 function reviewItemTitle(item: ScriptAssetItem) {
   return item.name.replace(/\s*｜\s*(?:人物造型|场景图)\s*$/, '').trim() || item.name;
-}
-
-function buildReuseMap(analyses: ScriptAnalysis[], items: ScriptAssetItem[], filesByItem: Map<string, SubmissionFile[]>) {
-  const result = new Map<string, ReuseInfo>();
-  const resolved = new Map<string, SubmissionFile[]>();
-  const origin = new Map<string, { sourceItemId: string; sourceSceneNo: number }>();
-  const analysisById = new Map(analyses.map((analysis) => [analysis.id, analysis]));
-  const ordered = [...items].sort((left, right) => {
-    const a = analysisById.get(left.analysisId); const b = analysisById.get(right.analysisId);
-    return (a?.episode || '').localeCompare(b?.episode || '', 'zh-CN') || (a?.sceneNo || 0) - (b?.sceneNo || 0) || left.sortOrder - right.sortOrder;
-  });
-  const previous: ScriptAssetItem[] = [];
-  for (const item of ordered) {
-    const analysis = analysisById.get(item.analysisId);
-    const ownFiles = filesByItem.get(item.id) || [];
-    if (ownFiles.length && analysis) {
-      resolved.set(item.id, ownFiles);
-      origin.set(item.id, { sourceItemId: item.id, sourceSceneNo: analysis.sceneNo });
-      previous.push(item);
-      continue;
-    }
-    const key = reusableAssetKey(item);
-    const explicitScenes = referencedSceneNumbers(`${item.name} ${item.detail} ${item.visualBrief}`);
-    if (analysis && key) {
-      const candidate = [...previous].reverse().find((row) => {
-        const sourceAnalysis = analysisById.get(row.analysisId);
-        return sourceAnalysis?.episode === analysis.episode && sourceAnalysis.sceneNo < analysis.sceneNo && (!explicitScenes.length || explicitScenes.includes(sourceAnalysis.sceneNo)) && reusableAssetKey(row) === key && Boolean(resolved.get(row.id)?.length);
-      });
-      if (candidate) {
-        const source = origin.get(candidate.id) || { sourceItemId: candidate.id, sourceSceneNo: analysisById.get(candidate.analysisId)?.sceneNo || 0 };
-        const reusedFiles = resolved.get(candidate.id) || [];
-        result.set(item.id, { ...source, files: reusedFiles });
-        resolved.set(item.id, reusedFiles);
-        origin.set(item.id, source);
-      }
-    }
-    previous.push(item);
-  }
-  return result;
-}
-
-function reusableAssetKey(item: ScriptAssetItem) {
-  const generic = /^(?:本场|其他|新增|临时|相关|全部).*(?:人物|服装|道具|场景)/;
-  const name = item.name.replace(/\s*｜\s*(?:人物造型|人物状态|服装|道具|场景图)\s*$/, '').replace(/[：:（(].*$/, '').trim();
-  if (!name || generic.test(name)) return '';
-  if (item.category === '人物') {
-    const text = `${item.name} ${item.detail} ${item.visualBrief}`;
-    const entity = ['顾丽乔', '陆文川', '沈糯', '怪物演员', '制片主任', '视察人员', '神秘人', '导演', '群演', '群头', '助理', '前夫', '姑妈', '白鸽'].find((value) => text.includes(value));
-    if (entity) return `人物:${entity}`;
-  }
-  return `${item.category}:${name.replace(/[\s·，,。]/g, '').toLowerCase()}`;
-}
-
-function referencedSceneNumbers(text: string) {
-  const scenes = new Set<number>();
-  for (const match of text.matchAll(/第\s*([\d、,，和及/\s]+)\s*场/g)) {
-    for (const value of match[1].match(/\d+/g) || []) scenes.add(Number(value));
-  }
-  return [...scenes];
 }
 
 function formatDate(value: string) { if (!value) return '未定日期'; const [, month, day] = value.split('-'); return `${Number(month)}月${Number(day)}日`; }

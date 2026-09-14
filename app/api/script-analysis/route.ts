@@ -78,7 +78,8 @@ async function activateFinalVersion(versionId: string, finalizedBy: string) {
       statements.push(env.DB.prepare(`UPDATE script_analyses SET scene_title = ?, script_text = ?, scene_summary = ?, location = ?,
         script_version_id = ?, is_active = 1, updated_at = ? WHERE id = ?`)
         .bind(scene.sceneTitle, scene.scriptText, scene.sceneSummary, scene.location, version.id, now, analysisId));
-      statements.push(env.DB.prepare('UPDATE script_analysis_items SET is_active = 1, updated_at = ? WHERE analysis_id = ?').bind(now, analysisId));
+      // Preserve manually archived/deleted over-split items when reselecting the same final script.
+      statements.push(env.DB.prepare('UPDATE script_analysis_items SET updated_at = ? WHERE analysis_id = ? AND is_active = 1').bind(now, analysisId));
     } else {
       statements.push(env.DB.prepare(`INSERT INTO script_analyses
         (id, episode, scene_no, scene_title, script_text, scene_summary, location, created_at, updated_at, script_version_id, is_active)
@@ -98,8 +99,8 @@ async function activateFinalVersion(versionId: string, finalizedBy: string) {
       });
     }
 
-    const dates = assignmentDatesByScene.get(scene.sceneNo) || [version.workDate];
-    for (const workDate of dates) {
+    const dates = (assignmentDatesByScene.get(scene.sceneNo) || [version.workDate]).map((date) => version.episode === '第2集' && date < '2026-09-15' ? '2026-09-15' : date);
+    for (const workDate of new Set(dates)) {
       statements.push(env.DB.prepare(`INSERT INTO daily_scene_assignments
         (id, work_date, analysis_id, script_version_id, assigned_by, created_at) VALUES (?, ?, ?, ?, ?, ?)`)
         .bind(`daily-scene-${workDate}-${analysisId}`, workDate, analysisId, version.id, finalizedBy, now));
@@ -277,8 +278,8 @@ export async function POST(request: Request) {
   const placeholders = uniqueIds.map(() => '?').join(',');
   const [analysisRows, itemRows, submissionRows] = await Promise.all([
     env.DB.prepare(`SELECT id, episode, scene_no AS sceneNo, scene_title AS sceneTitle FROM script_analyses WHERE id IN (${placeholders}) ORDER BY episode, scene_no`).bind(...uniqueIds).all<{ id: string; episode: string; sceneNo: number; sceneTitle: string }>(),
-    env.DB.prepare(`SELECT analysis_id AS analysisId, COUNT(*) AS itemCount FROM script_analysis_items WHERE analysis_id IN (${placeholders}) GROUP BY analysis_id`).bind(...uniqueIds).all<{ analysisId: string; itemCount: number }>(),
-    env.DB.prepare(`SELECT id, visual_brief AS visualBrief FROM script_analysis_items WHERE analysis_id IN (${placeholders})`).bind(...uniqueIds).all<{ id: string; visualBrief: string }>(),
+    env.DB.prepare(`SELECT analysis_id AS analysisId, COUNT(*) AS itemCount FROM script_analysis_items WHERE is_active = 1 AND analysis_id IN (${placeholders}) GROUP BY analysis_id`).bind(...uniqueIds).all<{ analysisId: string; itemCount: number }>(),
+    env.DB.prepare(`SELECT id, visual_brief AS visualBrief FROM script_analysis_items WHERE is_active = 1 AND analysis_id IN (${placeholders})`).bind(...uniqueIds).all<{ id: string; visualBrief: string }>(),
   ]);
   if (!analysisRows.results.length) return Response.json({ error: '没有找到所选场次' }, { status: 404 });
 

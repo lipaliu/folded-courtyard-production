@@ -23,14 +23,14 @@ const lockedSchedule = loadTs('../lib/locked-schedule.ts');
 const planData = loadTs('../lib/plan-data.ts', { '@/lib/work-calendar': workCalendar });
 const uploadAttribution = loadTs('../lib/upload-attribution.ts');
 const { accountFormError } = loadTs('../lib/account-form.ts', { './team-roles': roles, './account-rules': accountRules });
-test('September 14 is production Day 1 and the following plan starts September 15', () => {
+test('September 14 is production Day 1 and September 15 reviews scripts before episode 2 art', () => {
   assert.equal(workCalendar.PROJECT_START, '2026-09-14');
   assert.equal(workCalendar.productionDayNumber('2026-09-14'), 1);
   assert.equal(workCalendar.productionDayNumber('2026-09-15'), 2);
   assert.equal(workCalendar.isSixOnOneOffRestDay('2026-09-20'), true);
   assert.equal(workCalendar.nextProductionDay('2026-09-19'), '2026-09-21');
   assert.equal(lockedSchedule.LOCKED_SCHEDULE_START, '2026-09-14');
-  assert.equal(lockedSchedule.LOCKED_SCHEDULE_END, '2026-09-14');
+  assert.equal(lockedSchedule.LOCKED_SCHEDULE_END, '2026-09-15');
   assert.ok(planData.initialItems.every((item) => item.workDate >= '2026-09-14'));
   assert.equal(planData.initialBatches[0].id, 'kickoff-0914');
   assert.equal(planData.initialBatches[1].startDate, '2026-09-15');
@@ -38,9 +38,9 @@ test('September 14 is production Day 1 and the following plan starts September 1
 test('kickoff tasks merge approval and assign both art upload roles', () => {
   const kickoff = planData.initialItems.filter((item) => item.workDate === '2026-09-14');
   assert.equal(kickoff.filter((item) => item.owner === '编剧').length, 2);
-  assert.equal(kickoff.filter((item) => item.owner === '主美').length, 2);
-  assert.equal(kickoff.filter((item) => item.owner === '服化道副导演').length, 2);
-  assert.equal(kickoff.filter((item) => item.owner === '叶总／Yoyo').length, 2);
+  assert.equal(kickoff.filter((item) => item.owner === '主美').length, 1);
+  assert.equal(kickoff.filter((item) => item.owner === '服化道副导演').length, 1);
+  assert.equal(kickoff.filter((item) => item.owner === '叶总／Yoyo').length, 0);
   assert.equal(kickoff.some((item) => ['制片人（叶总）', '红人（Yoyo）'].includes(item.owner)), false);
 });
 test('upload attribution uses account name and labels legacy images clearly', () => {

@@ -4,7 +4,7 @@ export async function GET(request: Request) {
   const episode = new URL(request.url).searchParams.get('episode')?.trim().slice(0, 40) || '';
   if (!episode) return Response.json({ error: '缺少集数' }, { status: 400 });
   try {
-    const [analyses, items, details, files, version] = await Promise.all([
+    const [analyses, items, details, files, version, exclusions] = await Promise.all([
       env.DB.prepare(`SELECT id, episode, scene_no AS sceneNo, scene_title AS sceneTitle,
         scene_summary AS sceneSummary, location FROM script_analyses
         WHERE episode = ? AND is_active = 1 ORDER BY scene_no`).bind(episode).all(),
@@ -26,9 +26,11 @@ export async function GET(request: Request) {
         ORDER BY a.scene_no, i.sort_order, f.sort_order`).bind(episode).all<{ id: string; itemId: string; fileName: string; uploadedBy: string; createdAt: string; sortOrder: number }>(),
       env.DB.prepare(`SELECT version_no AS versionNo, finalized_at AS finalizedAt
         FROM script_versions WHERE episode = ? AND is_final = 1 LIMIT 1`).bind(episode).first(),
+      env.DB.prepare('SELECT item_id AS itemId, file_id AS fileId FROM art_reference_exclusions WHERE item_id IN (SELECT i.id FROM script_analysis_items i JOIN script_analyses a ON a.id = i.analysis_id WHERE a.episode = ?)').bind(episode).all(),
     ]);
     return Response.json({
       episode,
+      exclusions: exclusions.results,
       version,
       analyses: analyses.results,
       items: items.results,

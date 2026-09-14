@@ -54,7 +54,7 @@ export type PlanBatch = {
 
 const now = '2026-09-09T09:00:00.000Z';
 
-export const lockedScheduleItems: ProductionItem[] = [
+const originalKickoffItems: ProductionItem[] = [
   item('rollup-2026-09-14-ep1-script', '2026-09-14', '第1集', '剧本', '提交第1集完整剧本给Lipa', '编剧', '未开始', 1, 0, '12:00', '上传完整稿，由Lipa选择定稿后生成本集生产与美术清单。', 1, '', '执行制片人：Lipa', '提交后立即定稿'),
   item('rollup-2026-09-14-ep2-script', '2026-09-14', '第2集', '剧本', '提交第2集完整剧本给Lipa', '编剧', '未开始', 1, 0, '13:00', '上传完整稿，由Lipa选择定稿后生成本集生产与美术清单。', 2, '', '执行制片人：Lipa', '提交后立即定稿'),
   item('rollup-2026-09-14-ep1-art', '2026-09-14', '第1集', '美术清单', '生成并上传第1集全部美术资产', '主美', '未开始', 1, 0, '20:00', '人物造型、服装、道具、场景全部生成并上传；按最终剧本清单逐项完成。', 3, 'rollup-2026-09-14-ep1-script', '执行制片人：Lipa', '20:15'),
@@ -65,6 +65,18 @@ export const lockedScheduleItems: ProductionItem[] = [
   item('rollup-2026-09-14-ep2-send', '2026-09-14', '第2集', '资产提报', '整理第2集全部图片并上传给Yoyo', '执行制片人：Lipa', '未开始', 1, 0, '21:00', '确认主美与服化道副导演已传齐，再生成美术提报H5／PDF并上传Yoyo。', 8, 'rollup-2026-09-14-ep2-wardrobe', '叶总／Yoyo', '发出后等待回复'),
   item('rollup-2026-09-14-ep1-review', '2026-09-14', '第1集', '整集资产确认', '记录叶总／Yoyo对第1集全部资产的审核结果', '叶总／Yoyo', '未开始', 1, 0, '微信待回复', '审核统一记录为“叶总／Yoyo”，不再拆成两项。', 9, 'rollup-2026-09-14-ep1-send', '执行制片人：Lipa', '收到微信后录入'),
   item('rollup-2026-09-14-ep2-review', '2026-09-14', '第2集', '整集资产确认', '记录叶总／Yoyo对第2集全部资产的审核结果', '叶总／Yoyo', '未开始', 1, 0, '微信待回复', '审核统一记录为“叶总／Yoyo”，不再拆成两项。', 10, 'rollup-2026-09-14-ep2-send', '执行制片人：Lipa', '收到微信后录入'),
+];
+
+export const lockedScheduleItems: ProductionItem[] = [
+  ...originalKickoffItems.map((row) => {
+    if (row.id === 'rollup-2026-09-14-ep1-script') return { ...row, note: '保留已交第一集剧本；今天编剧交稿至第二集，明天统一过稿。' };
+    if (row.id === 'rollup-2026-09-14-ep2-script') return { ...row, title: '上传第2集完整剧本（交稿至第二集）', handoffDeadline: '9月15日过稿', note: '今天交第二集完整稿，明天Lipa与叶总／Yoyo过剧本后定稿。' };
+    if (row.episode === '第2集' && ['美术清单', '场景服装清单'].includes(row.category)) return { ...row, workDate: '2026-09-15', title: row.owner === '主美' ? '剧本审核通过后，开始上传第2集美术资产' : '剧本审核通过后，开始上传第2集场景和服装', dependsOnId: 'review-scripts-2026-09-15', dueTime: '过稿后开始', handoffDeadline: '随上传进度预览', note: '先由Lipa与叶总／Yoyo过稿，确认定稿后全组开始第二集资产，不要求过稿前出图。' };
+    if (row.episode === '第2集') return { ...row, workDate: '2026-09-16', dueTime: '资产齐套后', note: '第二集资产齐套后由Lipa提报，再统一记录叶总／Yoyo审核意见。' };
+    if (row.category === '整集资产确认') return { ...row, workDate: '2026-09-15', note: '第一集资产今天上传齐，明天统一记录审核意见。' };
+    return row;
+  }),
+  item('review-scripts-2026-09-15', '2026-09-15', '第1—2集', '剧本审核', '与叶总／Yoyo过第1、2集剧本并确认定稿', '执行制片人：Lipa', '未开始', 1, 0, '上传第二集资产前', '过稿通过后，在编剧页面选择定稿，再开始第二集资产上传。', 0, 'rollup-2026-09-14-ep2-script', '主美、服化道副导演', '过稿后立即开始'),
 ];
 
 const batches = [
@@ -88,7 +100,7 @@ function datesBetween(start: string, end: string) {
 }
 
 const rollingWorkDateBySource = new Map<string, string>();
-let rollingCursor = '2026-09-14';
+let rollingCursor = '2026-09-15';
 for (const sourceDate of batches.flatMap((batch) => datesBetween(batch.start, batch.end))) {
   rollingCursor = nextProductionDay(rollingCursor);
   rollingWorkDateBySource.set(sourceDate, rollingCursor);
@@ -132,7 +144,7 @@ const rolling = batches.flatMap((batch, batchIndex) =>
 export const initialItems: ProductionItem[] = [
   ...lockedScheduleItems,
   ...rolling,
-  item('1021-delivery', '2026-10-24', '全片', '成片', '全片总审、修正与最终交付', '执行制片人：Lipa', '未开始', 10, 0, '20:00', '9月14日正式开工，其余大计划从9月15日起顺延接续。', 999, '', '叶总／Yoyo', '20:00'),
+  item('1021-delivery', '2026-10-26', '全片', '成片', '全片总审、修正与最终交付', '执行制片人：Lipa', '未开始', 10, 0, '20:00', '9月14日正式开工，9月15日先过剧本，原大计划从9月16日起顺延接续。', 999, '', '叶总／Yoyo', '20:00'),
 ];
 
 function item(id: string, workDate: string, episode: string, category: string, title: string, owner: string, status: Status, plannedQty: number, completedQty: number, dueTime: string, note: string, sortOrder: number, dependsOnId = '', handoffTo = '', handoffDeadline = ''): ProductionItem {
@@ -158,7 +170,7 @@ function scene(id: string, sceneNo: number, title: string, location: string, own
   };
 }
 
-export const initialBatches: PlanBatch[] = [
+const originalBatches: PlanBatch[] = [
   { id: 'kickoff-0914', startDate: '2026-09-14', endDate: '2026-09-14', production: '正式开工 Day 1：第1、2集剧本与全部图片当天交齐', prep: 'Lipa上传Yoyo · 叶总／Yoyo统一审核', note: '固定开工日，不可修改、不可被自动顺延。', sortOrder: 1, updatedAt: now },
   { id: 'batch-1', startDate: '2026-09-15', endDate: '2026-09-18', production: '第1集 生成＋初剪＋成片', prep: '第2—3集 筹备', note: '9月14日开工后接续原大计划。', sortOrder: 2, updatedAt: now },
   { id: 'batch-2', startDate: '2026-09-19', endDate: '2026-09-25', production: '第2—3集 生成＋初剪＋成片', prep: '第4—5集 筹备', note: '9月20日六休一，其余任务顺延接续。', sortOrder: 3, updatedAt: now },
@@ -173,3 +185,12 @@ export const initialBatches: PlanBatch[] = [
   { id: 'batch-6', startDate: '2026-10-22', endDate: '2026-10-24', production: '第10集生成＋初剪＋成片', prep: '全片精剪与统一', note: '第10集保留生成、初剪、修改成片三天。', sortOrder: 14, updatedAt: now },
   { id: 'delivery', startDate: '2026-10-24', endDate: '2026-10-24', production: '全片最终交付', prep: '机动修正', note: '9月14日正式开工，后续计划顺延接续，预计10月24日交付。', sortOrder: 99, updatedAt: now },
 ];
+
+export const initialBatches: PlanBatch[] = [
+  ...originalBatches.map((row) => {
+    if (row.id === 'kickoff-0914') return { ...row, production: 'Day 1：第一集全部资产上传完成', prep: '编剧交完整剧本至第二集', note: '9月14日固定安排，已完成记录保留。' };
+    if (row.id.startsWith('rest-') || row.id === 'holiday-national-day') return row;
+    return { ...row, startDate: nextProductionDay(row.startDate), endDate: nextProductionDay(row.endDate), note: '9月15日先过剧本，再开始第二集资产；其余按工作日顺延，保留六休一及国庆安排。' };
+  }),
+  { id: 'review-day-0915', startDate: '2026-09-15', endDate: '2026-09-15', production: 'Lipa与叶总／Yoyo过第1、2集剧本', prep: '通过后全组开始上传第2集资产', note: '先过稿，后定稿与第二集资产上传。', sortOrder: 1.5, updatedAt: now },
+].sort((a, b) => a.sortOrder - b.sortOrder);
