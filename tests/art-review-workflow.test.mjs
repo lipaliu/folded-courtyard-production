@@ -79,3 +79,53 @@ test('tomorrow art depends on the joint script review and old rolling plan resum
   assert.ok(art.every((row) => row.episode === '第2集' && row.dependsOnId === 'review-scripts-2026-09-15'));
   assert.equal(plan.initialItems.find((row) => row.id === '2026-09-12-gen').workDate, '2026-09-16');
 });
+test('final-script scene alignment moves hospital and hotel files without losing authors', () => {
+  const db = new DatabaseSync(':memory:');
+  db.exec(`
+    CREATE TABLE script_analyses(id TEXT PRIMARY KEY,episode TEXT,scene_no INTEGER,scene_title TEXT,script_text TEXT,scene_summary TEXT,location TEXT,created_at TEXT,updated_at TEXT,script_version_id TEXT,is_active INTEGER);
+    CREATE TABLE script_analysis_items(id TEXT PRIMARY KEY,analysis_id TEXT,category TEXT,name TEXT,detail TEXT,visual_brief TEXT,yoyo_approved INTEGER,producer_approved INTEGER,sort_order INTEGER,updated_at TEXT,is_active INTEGER);
+    CREATE TABLE art_submission_details(item_id TEXT PRIMARY KEY,assigned_to TEXT,due_at TEXT,handoff_to TEXT,done_definition TEXT,status TEXT,submission_note TEXT,review_note TEXT,selected_file_id TEXT,submitted_at TEXT,reviewed_at TEXT,updated_at TEXT);
+    CREATE TABLE art_submission_files(id TEXT PRIMARY KEY,item_id TEXT,object_key TEXT,file_name TEXT,content_type TEXT,byte_size INTEGER,uploaded_by TEXT,sort_order INTEGER,created_at TEXT);
+    CREATE TABLE art_reference_exclusions(item_id TEXT,file_id TEXT,removed_by TEXT,created_at TEXT,PRIMARY KEY(item_id,file_id));
+    CREATE TABLE production_items(episode TEXT,category TEXT,planned_qty INTEGER,updated_at TEXT);
+    CREATE TABLE activity_log(id INTEGER PRIMARY KEY AUTOINCREMENT,item_type TEXT,item_id TEXT,action TEXT,operator TEXT,created_at TEXT);
+    INSERT INTO script_analyses VALUES
+      ('ep1-v3-s4','第1集',4,'东方庭院·临水巷道　日　内','','','东方庭院·临水巷道　日　内','','','v',1),
+      ('ep1-v3-s5','第1集',5,'影视城监控室　夜　内','','','影视城监控室　夜　内','','','v',1),
+      ('ep1-v3-s6','第1集',6,'医院病房　深夜　内','','','医院病房　深夜　内','','','v',1),
+      ('ep1-v3-s7','第1集',7,'群演酒店标间　深夜　内','','','群演酒店标间　深夜　内','','','v',1);
+    INSERT INTO script_analysis_items VALUES
+      ('ep1-v3-s4-auto-7','ep1-v3-s4','场景','影视城监控室　夜　内｜场景图','','',0,0,0,'',1),
+      ('ep1-v3-s4-overall-cast','ep1-v3-s4','服装','配角与群演｜整体参考','','',0,0,800,'',1),
+      ('ep1-v3-s5-auto-7','ep1-v3-s5','场景','医院病房　深夜　内｜场景图','','',0,0,0,'',1),
+      ('ep1-v3-s5-auto-1','ep1-v3-s5','人物','陆文川｜人脸、妆造、梳发','','',0,0,10,'',1),
+      ('ep1-v3-s5-hero-wardrobe','ep1-v3-s5','服装','陆文川｜服装','','',0,0,21,'',1),
+      ('ep1-v3-s5-overall-cast','ep1-v3-s5','服装','配角与群演｜整体参考','','',0,0,800,'',1),
+      ('ep1-v3-s6-auto-9','ep1-v3-s6','场景','群演酒店标间　深夜　内｜场景图','','',0,0,0,'',1),
+      ('ep1-v3-s6-auto-1','ep1-v3-s6','人物','顾丽乔｜人脸、妆造、梳发','','',0,0,10,'',1),
+      ('ep1-v3-s6-heroine-wardrobe','ep1-v3-s6','服装','顾丽乔｜服装','','',0,0,11,'',1),
+      ('ep1-v3-s6-overall-cast','ep1-v3-s6','服装','配角与群演｜整体参考','','',0,0,800,'',1),
+      ('ep1-v3-s7-i01','ep1-v3-s7','场景','医院单人病房','','',0,0,0,'',1),
+      ('ep1-v3-s7-i02','ep1-v3-s7','人物','陆文川病后状态','','',0,0,1,'',1),
+      ('ep1-v3-s7-i03','ep1-v3-s7','服装','陆文川病服','','',0,0,2,'',1),
+      ('ep1-v3-s7-overall-cast','ep1-v3-s7','服装','配角与群演｜整体参考','','',0,0,800,'',1);
+    INSERT INTO art_submission_details SELECT id,'','','','','待上传','','','','','','' FROM script_analysis_items;
+    INSERT INTO art_submission_files VALUES
+      ('hospital-a','ep1-v3-s7-i01','a','a.jpg','image/jpeg',1,'罗新姗',1,''),
+      ('hospital-b','ep1-v3-s7-i01','b','b.jpg','image/jpeg',1,'玉冰',2,''),
+      ('wardrobe','ep1-v3-s7-i03','c','c.jpg','image/jpeg',1,'罗新姗',1,''),
+      ('hotel','ep1-v3-s6-auto-9','d','d.jpg','image/jpeg',1,'王承恺',1,'');
+    INSERT INTO production_items VALUES('第1集','美术清单',0,'');
+  `);
+  db.exec(readFileSync(new URL('../drizzle/0017_align_final_script_scenes.sql', import.meta.url), 'utf8'));
+  assert.equal(db.prepare("SELECT analysis_id FROM script_analysis_items WHERE id='ep1-v3-s6-auto-9'").get().analysis_id, 'ep1-v3-s7');
+  assert.equal(db.prepare("SELECT analysis_id FROM script_analysis_items WHERE id='ep1-v3-s5-auto-7'").get().analysis_id, 'ep1-v3-s6');
+  assert.equal(db.prepare("SELECT item_id FROM art_submission_files WHERE id='hospital-a'").get().item_id, 'ep1-v3-s5-auto-7');
+  assert.equal(db.prepare("SELECT uploaded_by FROM art_submission_files WHERE id='hospital-a'").get().uploaded_by, '罗新姗');
+  assert.equal(db.prepare("SELECT item_id FROM art_submission_files WHERE id='hotel'").get().item_id, 'ep1-v3-s6-auto-9');
+  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM art_submission_files").get().n, 4);
+  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM script_analysis_items WHERE analysis_id='ep1-v3-s4' AND is_active=1").get().n, 5);
+  assert.equal(db.prepare("SELECT is_active FROM script_analysis_items WHERE id='ep1-v3-s7-i01'").get().is_active, 0);
+  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM art_scene_alignment_files_backup_0914').get().n, 4);
+  db.close();
+});
