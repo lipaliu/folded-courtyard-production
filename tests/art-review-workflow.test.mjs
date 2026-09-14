@@ -129,3 +129,8 @@ test('final-script scene alignment moves hospital and hotel files without losing
   assert.equal(db.prepare('SELECT COUNT(*) AS n FROM art_scene_alignment_files_backup_0914').get().n, 4);
   db.close();
 });
+test('art cards keep review essentials and omit production metadata forms', () => {
+  const source = readFileSync(new URL('../components/submission-center.tsx', import.meta.url), 'utf8');
+  for (const hidden of ['分配责任人（可多人上传）', '精确截止时间', '下一交接人', '完成定义', '采用说明', 'Lipa审核／打回意见', '保存责任与节点']) assert.equal(source.includes(hidden), false);
+  for (const essential of ['上传人：', '选为定稿图', 'ReferenceLightbox', 'ArtUploadDropzone']) assert.equal(source.includes(essential), true);
+});
