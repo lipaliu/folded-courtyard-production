@@ -18,13 +18,28 @@ export function parseScriptDocument(sourceText: string, fileName = ''): Imported
     const inline = matchInlineSceneHeading(line);
     if (inline) {
       const nearby = lines.slice(index + 1, index + 3);
-      if (looksLikeSceneHeading(inline) || nearby.some((row) => /^人物[：:]/.test(row))) headings.push({ index, location: inline, headerLineCount: 1 });
+      if (looksLikeSceneHeading(inline) || nearby.some(isPeopleLine)) headings.push({ index, location: inline, headerLineCount: 1 });
       return;
     }
-    if (!isSceneNumberOnly(line) || !lines[index + 1]) return;
-    const location = lines[index + 1];
-    if (looksLikeSceneHeading(location) || /^人物[：:]/.test(lines[index + 2] || '')) headings.push({ index, location, headerLineCount: 2 });
+    if (isSceneNumberOnly(line) && lines[index + 1]) {
+      const location = lines[index + 1];
+      if (looksLikeSceneHeading(location) || isPeopleLine(lines[index + 2] || '')) headings.push({ index, location, headerLineCount: 2 });
+      return;
+    }
+    // Many production drafts omit scene numbers and use only
+    // “地点  时间  内/外”, followed by “主要角色：…”. Number those
+    // scenes by their order in the document instead of rejecting the file.
+    if (!isSceneNumberOnly(lines[index - 1] || '') && isPeopleLine(lines[index + 1] || '')) {
+      headings.push({ index, location: line, headerLineCount: 1 });
+    }
   });
+
+  // Intake must not be blocked by a writer's formatting. When a draft has no
+  // recognizable scene markers at all, preserve the whole document as one
+  // automatically numbered scene. Lipa can still finalize or replace it later.
+  if (!headings.length && lines.length) {
+    headings.push({ index: 0, location: '未标场次（系统自动补为第1场）', headerLineCount: 0 });
+  }
 
   return headings.map(({ index: start, location, headerLineCount }, sceneIndex) => {
     const end = headings[sceneIndex + 1]?.index ?? lines.length;
@@ -33,8 +48,8 @@ export function parseScriptDocument(sourceText: string, fileName = ''): Imported
     // Production IDs and assignments must still be unique, so the finalized
     // breakdown follows the actual document order (1..N).
     const sceneNo = sceneIndex + 1;
-    const peopleLine = sceneLines.find((line) => /^人物[：:]/.test(line));
-    const people = peopleLine ? peopleLine.replace(/^人物[：:]/, '').split(/[、，,]/).map((name) => name.trim()).filter(Boolean).slice(0, 16) : [];
+    const peopleLine = sceneLines.find(isPeopleLine);
+    const people = peopleLine ? peopleLine.replace(/^(?:人物|主要角色)\s*[：:]/, '').split(/[、，,]/).map((name) => name.trim()).filter(Boolean).slice(0, 16) : [];
     const bodyLines = sceneLines.slice(headerLineCount).filter((line) => line !== peopleLine);
     const actionLines = bodyLines.filter((line) => !/^[^：:]{1,18}[：:]/.test(line));
     const sceneSummary = actionLines.slice(0, 3).join(' ').slice(0, 360) || `${location}的本场剧情与调度。`;
@@ -54,6 +69,10 @@ function isSceneNumberOnly(line: string) {
 
 function looksLikeSceneHeading(line: string) {
   return /(?:深夜|清晨|凌晨|黄昏|傍晚|早晨|上午|中午|下午|日|夜|晨|晚|内|外)/.test(line);
+}
+
+function isPeopleLine(line: string) {
+  return /^(?:人物|主要角色)\s*[：:]/.test(line);
 }
 
 function findEpisode(lines: string[], fileName: string) {

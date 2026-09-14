@@ -42,6 +42,22 @@ test('script accepts common writer scene-heading formats', () => {
   assert.ok(scenes[0].items.some((item) => item.name === '顾丽乔｜服装'));
   assert.ok(scenes[1].items.some((item) => item.name === '陆文川｜服装'));
 });
+test('script accepts unnumbered scene headings followed by main characters', () => {
+  const scenes = script.parseScriptDocument(`《折叠庭院的她》\n第二集：我要他们不得不看我\n\n顾丽乔家 夜 内\n主要角色：顾丽乔、郑允书\n顾丽乔对着镜子尝试复刻异能。\n\n南庭影视城·民国街道片场 日 外\n主要角色：顾丽乔、群头、化妆师\n顾丽乔穿着旗袍走进片场。`, '《折叠庭院的她》第二集.docx');
+  assert.equal(scenes.length, 2);
+  assert.equal(scenes.map((scene) => scene.sceneNo).join(','), '1,2');
+  assert.equal(scenes.map((scene) => scene.location).join('|'), '顾丽乔家 夜 内|南庭影视城·民国街道片场 日 外');
+  assert.equal(scenes[0].episode, '第2集');
+  assert.ok(scenes[0].items.some((item) => item.name === '顾丽乔｜服装'));
+  assert.ok(scenes[0].items.some((item) => item.name === '配角与群演｜整体参考'));
+});
+test('script never blocks intake only because the writer omitted scene formatting', () => {
+  const scenes = script.parseScriptDocument(`第二集\n顾丽乔回到家。\n她发现所有人只关注她的流量。`, '第二集无场头版.docx');
+  assert.equal(scenes.length, 1);
+  assert.equal(scenes[0].sceneNo, 1);
+  assert.equal(scenes[0].location, '未标场次（系统自动补为第1场）');
+  assert.ok(scenes[0].scriptText.includes('顾丽乔回到家'));
+});
 test('removing a reused image persists an exclusion and never deletes the source', async () => {
   const statements = [];
   const roles = load('../lib/team-roles.ts');
