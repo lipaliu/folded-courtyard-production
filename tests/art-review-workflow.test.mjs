@@ -134,6 +134,27 @@ test('art H5 and lightbox keep full images visible in narrow windows', () => {
   assert.ok(lightbox.includes("z-[200]"));
   assert.ok(lightbox.includes("h-auto max-h-full w-auto max-w-full"));
 });
+test('continuity reuse is compact in upload, H5 and PDF while export uses display resolution', () => {
+  const submission = readFileSync(new URL('../components/submission-center.tsx', import.meta.url), 'utf8');
+  const review = readFileSync(new URL('../components/art-review-page.tsx', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../app/globals.css', import.meta.url), 'utf8');
+  assert.ok(submission.includes('确认本场不换，沿用第'));
+  assert.ok(submission.includes('本场不重复铺图'));
+  assert.ok(submission.includes('function PdfReusePage'));
+  assert.ok(review.includes('本场不重复展示图片'));
+  assert.ok(review.includes("scale: 1.05"));
+  assert.ok(submission.includes("scale: 1.05"));
+  assert.ok(css.includes('content-visibility: auto'));
+});
+test('explicit reuse migration preserves a Lipa-confirmed source item', () => {
+  const db = new DatabaseSync(':memory:');
+  db.exec(`CREATE TABLE art_submission_details(item_id TEXT PRIMARY KEY);
+    CREATE TABLE activity_log(id INTEGER PRIMARY KEY AUTOINCREMENT,item_type TEXT,item_id TEXT,action TEXT,operator TEXT,created_at TEXT);`);
+  db.exec(readFileSync(new URL('../drizzle/0022_explicit_asset_reuse.sql', import.meta.url), 'utf8'));
+  const column = db.prepare("SELECT name FROM pragma_table_info('art_submission_details') WHERE name='reuse_source_item_id'").get();
+  assert.equal(column.name, 'reuse_source_item_id');
+  db.close();
+});
 test('removing a reused image persists an exclusion and never deletes the source', async () => {
   const statements = [];
   const roles = load('../lib/team-roles.ts');

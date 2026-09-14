@@ -31,7 +31,13 @@
   --radius-xl: calc(var(--radius) * 1.3);
 }
 
+.art-review-sheet {
+  content-visibility: auto;
+  contain-intrinsic-size: 794px;
+}
+
 .art-review-export .art-review-sheet {
+  content-visibility: visible;
   width: 1120px !important;
   height: 794px !important;
   min-height: 794px !important;

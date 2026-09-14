@@ -169,6 +169,7 @@ export const artSubmissionDetails = sqliteTable('art_submission_details', {
   submissionNote: text('submission_note').notNull().default(''),
   reviewNote: text('review_note').notNull().default(''),
   selectedFileId: text('selected_file_id').notNull().default(''),
+  reuseSourceItemId: text('reuse_source_item_id').notNull().default(''),
   submittedAt: text('submitted_at').notNull().default(''),
   reviewedAt: text('reviewed_at').notNull().default(''),
   updatedAt: text('updated_at').notNull(),

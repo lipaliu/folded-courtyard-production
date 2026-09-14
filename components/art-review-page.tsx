@@ -12,6 +12,8 @@ type Item = { id: string; analysisId: string; category: string; name: string; de
 type Detail = { itemId: string; status: string; submissionNote: string; reviewNote: string; selectedFileId: string };
 type FileRow = { id: string; itemId: string; fileName: string; uploadedBy: string; createdAt: string; sortOrder: number; url: string };
 type Payload = { episode: string; version?: { versionNo: number; finalizedAt: string }; analyses: Analysis[]; items: Item[]; details: Detail[]; files: FileRow[]; exclusions?: ReuseExclusion[]; error?: string };
+type ReuseInfo = { sourceItemId: string; sourceSceneNo: number; files: FileRow[] };
+type ReviewPage = { analysis: Analysis; item: Item; files: FileRow[]; reuseInfo?: ReuseInfo; pageIndex: number; pageCount: number };
 
 
 
@@ -39,13 +41,17 @@ export function ArtReviewPage() {
     for (const items of map.values()) items.sort(compareArtItems);
     return map;
   }, [data]);
-  const filesByItem = useMemo(() => {
+  const rawFilesByItem = useMemo(() => {
     const map = new Map<string, FileRow[]>();
     for (const file of data?.files || []) map.set(file.itemId, [...(map.get(file.itemId) || []), file]);
-    const reuse = buildReuseMap(data?.analyses || [], data?.items || [], map, data?.exclusions || []);
-    for (const [id, reference] of reuse) if (!map.get(id)?.length) map.set(id, reference.files);
     return map;
   }, [data]);
+  const reuseByItem = useMemo(() => buildReuseMap(data?.analyses || [], data?.items || [], rawFilesByItem, data?.exclusions || []), [data, rawFilesByItem]);
+  const filesByItem = useMemo(() => {
+    const map = new Map(rawFilesByItem);
+    for (const [id, reference] of reuseByItem) if (!map.get(id)?.length) map.set(id, reference.files);
+    return map;
+  }, [rawFilesByItem, reuseByItem]);
   const detailByItem = useMemo(() => new Map((data?.details || []).map((detail) => [detail.itemId, detail])), [data]);
 
   async function copyLink() {
@@ -59,14 +65,16 @@ export function ArtReviewPage() {
     document.documentElement.classList.add('art-review-export');
     try {
       await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-      await Promise.all([...document.images].map((image) => image.complete ? Promise.resolve() : new Promise<void>((resolve) => { image.onload = () => resolve(); image.onerror = () => resolve(); })));
+      const exportImages = [...document.images];
+      exportImages.forEach((image) => { image.loading = 'eager'; });
+      await Promise.all(exportImages.map((image) => image.complete ? Promise.resolve() : new Promise<void>((resolve) => { image.onload = () => resolve(); image.onerror = () => resolve(); })));
       const sheets = [...document.querySelectorAll<HTMLElement>('.art-review-sheet')];
       const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import('html2canvas-pro'), import('jspdf')]);
       const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
       for (let index = 0; index < sheets.length; index += 1) {
-        const canvas = await html2canvas(sheets[index], { scale: 1.35, backgroundColor: '#0b1118', useCORS: true, logging: false });
+        const canvas = await html2canvas(sheets[index], { scale: 1.05, backgroundColor: '#0b1118', useCORS: true, logging: false });
         if (index) pdf.addPage('a4', 'landscape');
-        pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 297, 210, undefined, 'FAST');
+        pdf.addImage(canvas.toDataURL('image/jpeg', 0.78), 'JPEG', 0, 0, 297, 210, undefined, 'FAST');
       }
       pdf.save(`折叠庭院的她_${data.episode}_美术提报.pdf`);
     } catch (nextError) {
@@ -89,12 +97,14 @@ export function ArtReviewPage() {
       <section className="art-review-sheet relative h-[794px] overflow-hidden rounded-3xl border border-white/10 bg-[#101821] p-12 shadow-2xl" style={{ backgroundImage: "linear-gradient(rgba(6,12,18,.82),rgba(6,12,18,.91)),url('/folded-courtyard-bg.jpg')", backgroundPosition: 'center', backgroundSize: 'cover' }}><div className="pt-28 text-center"><p className="text-sm tracking-[.28em] text-[#ff8066]">VISUAL REVIEW</p><h2 className="mt-5 text-6xl font-semibold">折叠庭院的她</h2><p className="mt-5 text-3xl text-white/85">{data.episode} · 美术提报 H5</p><p className="mx-auto mt-8 max-w-2xl text-base leading-8 text-white/65">按场景、情节、人物与服装逐项审图。页面保留美术团队上传的全部备选，并明确标记Lipa选定的定稿图。</p><div className="mx-auto mt-10 grid max-w-xl grid-cols-3 overflow-hidden rounded-2xl border border-white/15 bg-black/35"><Meta label="剧本定稿" value={`v${data.version?.versionNo || '—'}`} /><Meta label="场次" value={`${data.analyses.length}场`} /><Meta label="图片" value={`${data.files.length}张`} /></div></div><Footer episode={data.episode} page={1} /></section>
       {data.analyses.flatMap((analysis) => {
         const sceneItems = itemByAnalysis.get(analysis.id) || [];
-        return sceneItems.flatMap((item) => {
+        return sceneItems.flatMap<ReviewPage>((item) => {
           const files = filesByItem.get(item.id) || [];
-          if (!files.length) return [{ analysis, item, files: [] as FileRow[], pageIndex: 0, pageCount: 1 }];
-          return chunk(files, 4).map((pageFiles, pageIndex) => ({ analysis, item, files: pageFiles, pageIndex, pageCount: Math.ceil(files.length / 4) }));
+          const reuseInfo: ReuseInfo | undefined = reuseByItem.get(item.id);
+          if (reuseInfo) return [{ analysis, item, files: [] as FileRow[], reuseInfo, pageIndex: 0, pageCount: 1 }];
+          if (!files.length) return [{ analysis, item, files: [] as FileRow[], reuseInfo, pageIndex: 0, pageCount: 1 }];
+          return chunk(files, 4).map((pageFiles, pageIndex) => ({ analysis, item, files: pageFiles, reuseInfo, pageIndex, pageCount: Math.ceil(files.length / 4) }));
         });
-      }).map((page, index) => <section key={`${page.item.id}-${page.pageIndex}`} className="art-review-sheet relative min-h-[794px] overflow-visible rounded-3xl border border-white/10 bg-[#101821] p-5 shadow-2xl sm:p-8 lg:h-[794px] lg:overflow-hidden lg:p-10" style={{ backgroundImage: "linear-gradient(rgba(6,12,18,.86),rgba(6,12,18,.92)),url('/folded-courtyard-bg.jpg')", backgroundPosition: 'center', backgroundSize: 'cover' }}><div className="border-b border-white/15 pb-4"><p className="text-xs tracking-[.2em] text-[#ff8066]">{data.episode} · 第{page.analysis.sceneNo}场 · {page.item.category}</p><h2 className="mt-2 text-2xl font-semibold sm:text-3xl">{page.item.category === '场景' ? page.analysis.location || page.analysis.sceneTitle : page.item.name}</h2><p className="mt-2 text-sm text-white/60">{page.pageCount > 1 ? `Option 第${page.pageIndex + 1}/${page.pageCount}页` : '单项审阅'}</p></div><div className="art-review-layout mt-5 grid grid-cols-1 gap-6 lg:grid-cols-[270px_1fr]"><aside className="rounded-2xl border border-white/12 bg-black/45 p-5"><p className="text-xs tracking-[.16em] text-[#ff8066]">本场情节</p><p className="mt-3 line-clamp-5 text-base font-semibold leading-7">{page.analysis.sceneSummary || page.analysis.sceneTitle}</p><div className="mt-5 border-t border-white/10 pt-4 text-sm leading-6 text-white/60"><p className="line-clamp-5">{page.item.detail}</p>{detailByItem.get(page.item.id)?.submissionNote && <p className="mt-3 text-white/80">采用：{detailByItem.get(page.item.id)?.submissionNote}</p>}</div></aside><div className={`art-review-files grid content-start place-items-center gap-4 ${page.files.length === 1 ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>{!page.files.length && <p className="rounded-xl border border-dashed border-white/20 p-10 text-sm text-white/50">本项待上传，可随时回来查看更新。</p>}{page.files.map((file, fileIndex) => { const selected = detailByItem.get(page.item.id)?.selectedFileId === file.id; return <figure key={file.id} className={`flex w-full max-w-[390px] flex-col items-center rounded-2xl border bg-black/45 p-3 ${selected ? 'border-emerald-400/70' : 'border-white/12'}`}><div className="art-review-file-frame flex h-[min(58vw,360px)] w-full items-center justify-center md:h-[190px]"><button type="button" onClick={() => setPreviewId(file.id)} aria-label={`放大查看${file.fileName}`} className="flex h-full w-full items-center justify-center"><img src={file.url} alt={file.fileName} className="block h-auto max-h-full w-auto max-w-full rounded-xl object-contain" /></button></div><figcaption className="mt-2 text-center text-xs text-white/70">{selected && <span className="mr-2 rounded-full bg-emerald-400 px-2 py-0.5 font-semibold text-black">定稿图</span>}<span>Option {page.pageIndex * 4 + fileIndex + 1}</span><span className="mt-0.5 block font-medium text-cyan-300">{uploadAuthorLabel(file.uploadedBy)}</span></figcaption></figure>})}</div></div><Footer episode={data.episode} page={index + 2} /></section>)}
+      }).map((page, index) => <section key={`${page.item.id}-${page.pageIndex}`} className="art-review-sheet relative min-h-[794px] overflow-visible rounded-3xl border border-white/10 bg-[#101821] p-5 shadow-2xl sm:p-8 lg:h-[794px] lg:overflow-hidden lg:p-10" style={{ backgroundImage: "linear-gradient(rgba(6,12,18,.86),rgba(6,12,18,.92)),url('/folded-courtyard-bg.jpg')", backgroundPosition: 'center', backgroundSize: 'cover' }}><div className="border-b border-white/15 pb-4"><p className="text-xs tracking-[.2em] text-[#ff8066]">{data.episode} · 第{page.analysis.sceneNo}场 · {page.item.category}</p><h2 className="mt-2 text-2xl font-semibold sm:text-3xl">{page.item.category === '场景' ? page.analysis.location || page.analysis.sceneTitle : page.item.name}</h2><p className="mt-2 text-sm text-white/60">{page.reuseInfo ? `沿用第${page.reuseInfo.sourceSceneNo}场` : page.pageCount > 1 ? `Option 第${page.pageIndex + 1}/${page.pageCount}页` : '单项审阅'}</p></div><div className="art-review-layout mt-5 grid grid-cols-1 gap-6 lg:grid-cols-[270px_1fr]"><aside className="rounded-2xl border border-white/12 bg-black/45 p-5"><p className="text-xs tracking-[.16em] text-[#ff8066]">本场情节</p><p className="mt-3 line-clamp-5 text-base font-semibold leading-7">{page.analysis.sceneSummary || page.analysis.sceneTitle}</p><div className="mt-5 border-t border-white/10 pt-4 text-sm leading-6 text-white/60"><p className="line-clamp-5">{page.item.detail}</p>{detailByItem.get(page.item.id)?.submissionNote && <p className="mt-3 text-white/80">采用：{detailByItem.get(page.item.id)?.submissionNote}</p>}</div></aside>{page.reuseInfo ? <div className="grid min-h-[360px] place-items-center rounded-2xl border border-cyan-400/20 bg-cyan-400/[.06] p-10 text-center"><div><p className="text-sm tracking-[.18em] text-cyan-300">CONTINUITY REUSE</p><p className="mt-5 text-4xl font-semibold">与第{page.reuseInfo.sourceSceneNo}场一样</p><p className="mt-4 text-sm text-white/55">沿用来源场次已上传并审核的整组参考，本场不重复展示图片。</p>{page.reuseInfo.files[0] && <button type="button" onClick={() => setPreviewId(page.reuseInfo!.files[0].id)} className="mt-6 rounded-full border border-cyan-300/30 px-5 py-2 text-sm text-cyan-200">查看第{page.reuseInfo.sourceSceneNo}场原图</button>}</div></div> : <div className={`art-review-files grid content-start place-items-center gap-4 ${page.files.length === 1 ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>{!page.files.length && <p className="rounded-xl border border-dashed border-white/20 p-10 text-sm text-white/50">本项待上传，可随时回来查看更新。</p>}{page.files.map((file, fileIndex) => { const selected = detailByItem.get(page.item.id)?.selectedFileId === file.id; return <figure key={file.id} className={`flex w-full max-w-[390px] flex-col items-center rounded-2xl border bg-black/45 p-3 ${selected ? 'border-emerald-400/70' : 'border-white/12'}`}><div className="art-review-file-frame flex h-[min(58vw,360px)] w-full items-center justify-center md:h-[190px]"><button type="button" onClick={() => setPreviewId(file.id)} aria-label={`放大查看${file.fileName}`} className="flex h-full w-full items-center justify-center"><img src={file.url} alt={file.fileName} className="block h-auto max-h-full w-auto max-w-full rounded-xl object-contain" /></button></div><figcaption className="mt-2 text-center text-xs text-white/70">{selected && <span className="mr-2 rounded-full bg-emerald-400 px-2 py-0.5 font-semibold text-black">定稿图</span>}<span>Option {page.pageIndex * 4 + fileIndex + 1}</span><span className="mt-0.5 block font-medium text-cyan-300">{uploadAuthorLabel(file.uploadedBy)}</span></figcaption></figure>})}</div>}</div><Footer episode={data.episode} page={index + 2} /></section>)}
     </div>
   </main>;
 }
