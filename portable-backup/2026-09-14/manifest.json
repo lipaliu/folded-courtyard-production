@@ -13,7 +13,8 @@
     "uploadedFiles": 175,
     "staticFiles": 47,
     "productionItems": 154,
-    "dailyReports": 0
+    "dailyReports": 0,
+    "pdfExports": 1
   },
   "excludedAuthentication": {
     "memberAccounts": 6,
@@ -55,6 +56,7 @@
     "sql": "database/production-data.sql",
     "assets": "assets/manifest.json",
     "scriptVersions": "script-versions/index.json",
-    "plan": "plan/production-plan.json"
+    "plan": "plan/production-plan.json",
+    "exports": "exports/index.json"
   }
 }

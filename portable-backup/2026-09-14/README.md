@@ -8,6 +8,7 @@
 - `assets/manifest.json`：每张图的工作项、上传人、原文件名、哈希和存储路径。
 - `script-versions`：各版本剧本文本和版本/定稿信息。
 - `plan/production-plan.json`：大计划、每日任务、小结与场次安排。
+- `exports/pdf`：已经生成过的提报 PDF 成品。
 
 ## 恢复
 

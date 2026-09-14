@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createHash } from 'node:crypto';
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
@@ -22,6 +22,7 @@ const databaseDir = join(outputRoot, 'database');
 const uploadDir = join(outputRoot, 'assets', 'uploads');
 const scriptDir = join(outputRoot, 'script-versions');
 const planDir = join(outputRoot, 'plan');
+const exportDir = join(outputRoot, 'exports', 'pdf');
 mkdirSync(databaseDir, { recursive: true });
 mkdirSync(uploadDir, { recursive: true });
 mkdirSync(scriptDir, { recursive: true });
@@ -111,6 +112,20 @@ writeFileSync(join(planDir, 'production-plan.json'), `${JSON.stringify({
   scenes: exportRows('scenes'),
 }, null, 2)}\n`);
 
+const localPdfDir = join(projectRoot, 'output', 'pdf');
+const pdfExports = [];
+if (existsSync(localPdfDir)) {
+  mkdirSync(exportDir, { recursive: true });
+  for (const fileName of readdirSync(localPdfDir).filter((name) => name.toLowerCase().endsWith('.pdf'))) {
+    const source = join(localPdfDir, fileName);
+    const destination = join(exportDir, fileName);
+    const bytes = readFileSync(source);
+    copyFileSync(source, destination);
+    pdfExports.push({ fileName, bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex'), repositoryPath: relative(projectRoot, destination) });
+  }
+  writeFileSync(join(outputRoot, 'exports', 'index.json'), `${JSON.stringify({ pdf: pdfExports }, null, 2)}\n`);
+}
+
 const sourceCounts = Object.fromEntries(tableNames.map((table) => [table, db.prepare(`SELECT COUNT(*) AS count FROM ${quote(table)}`).get().count]));
 const excludedAuthentication = {
   memberAccounts: sourceCounts.member_accounts || 0,
@@ -144,6 +159,7 @@ const backupManifest = {
     staticFiles: assetManifest.filter((asset) => String(asset.objectKey).startsWith('static:')).length,
     productionItems: sourceCounts.production_items || 0,
     dailyReports: sourceCounts.daily_reports || 0,
+    pdfExports: pdfExports.length,
   },
   excludedAuthentication,
   sourceTableCounts: sourceCounts,
@@ -153,6 +169,7 @@ const backupManifest = {
     assets: 'assets/manifest.json',
     scriptVersions: 'script-versions/index.json',
     plan: 'plan/production-plan.json',
+    exports: 'exports/index.json',
   },
 };
 writeFileSync(join(outputRoot, 'manifest.json'), `${JSON.stringify(backupManifest, null, 2)}\n`);
@@ -164,6 +181,7 @@ writeFileSync(join(outputRoot, 'README.md'), `# 折叠庭院的她｜可迁移�
   `- \`assets/manifest.json\`：每张图的工作项、上传人、原文件名、哈希和存储路径。\n` +
   `- \`script-versions\`：各版本剧本文本和版本/定稿信息。\n` +
   `- \`plan/production-plan.json\`：大计划、每日任务、小结与场次安排。\n\n` +
+  `- \`exports/pdf\`：已经生成过的提报 PDF 成品。\n\n` +
   `## 恢复\n\n` +
   `在仓库根目录运行：\n\n` +
   `\`\`\`bash\nnode scripts/restore-portable-backup.mjs ${relative(projectRoot, outputRoot)} /tmp/folded-courtyard-restored.sqlite\n\`\`\`\n\n` +
