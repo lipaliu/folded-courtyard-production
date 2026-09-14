@@ -142,9 +142,17 @@ test('continuity reuse is compact in upload, H5 and PDF while export uses displa
   assert.ok(submission.includes('本场不重复铺图'));
   assert.ok(submission.includes('function PdfReusePage'));
   assert.ok(review.includes('本场不重复展示图片'));
-  assert.ok(review.includes("scale: 1.05"));
+  assert.ok(review.includes('buildFastPdf'));
+  assert.ok(review.includes('chunk(ordered, 4)'));
+  assert.ok(review.includes("image.crossOrigin = 'anonymous'"));
+  assert.ok(!review.includes("import('html2canvas-pro')"));
   assert.ok(submission.includes("scale: 1.05"));
   assert.ok(css.includes('content-visibility: auto'));
+});
+test('public art-file proxies static references instead of cross-origin redirects', () => {
+  const route = readFileSync(new URL('../app/api/public/art-file/[id]/route.ts', import.meta.url), 'utf8');
+  assert.ok(route.includes('assets.fetch(assetUrl)'));
+  assert.ok(!route.includes('Response.redirect'));
 });
 test('explicit reuse migration preserves a Lipa-confirmed source item', () => {
   const db = new DatabaseSync(':memory:');

@@ -10,7 +10,13 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     WHERE f.id = ? AND i.is_active = 1 AND a.is_active = 1`).bind(id)
     .first<{ objectKey: string; fileName: string; contentType: string; fileData: number[] | ArrayBuffer | ArrayBufferView | null }>();
   if (!file) return Response.json({ error: '图片不存在' }, { status: 404 });
-  if (file.objectKey.startsWith('static:')) return Response.redirect(new URL(file.objectKey.slice(7), request.url), 302);
+  if (file.objectKey.startsWith('static:')) {
+    const assets = (env as unknown as { ASSETS?: Fetcher }).ASSETS;
+    const assetUrl = new URL(file.objectKey.slice(7), request.url);
+    const asset = assets ? await assets.fetch(assetUrl) : await fetch(assetUrl);
+    if (!asset.ok || !asset.body) return Response.json({ error: '图片文件不存在' }, { status: 404 });
+    return new Response(asset.body, { headers: imageHeaders(asset.headers.get('Content-Type') || file.contentType, file.fileName) });
+  }
   if (file.objectKey.startsWith('d1:')) {
     if (!file.fileData) return Response.json({ error: '图片文件不存在' }, { status: 404 });
     return new Response(asImageBytes(file.fileData), { headers: imageHeaders(file.contentType, file.fileName) });

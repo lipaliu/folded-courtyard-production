@@ -11,7 +11,10 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   if (file.objectKey.startsWith('static:')) {
     const assetPath = file.objectKey.slice('static:'.length);
     const assetUrl = new URL(assetPath, request.url);
-    return Response.redirect(assetUrl, 302);
+    const assets = (env as unknown as { ASSETS?: Fetcher }).ASSETS;
+    const asset = assets ? await assets.fetch(assetUrl) : await fetch(assetUrl);
+    if (!asset.ok || !asset.body) return Response.json({ error: '图片文件不存在' }, { status: 404 });
+    return new Response(asset.body, { headers: imageHeaders(asset.headers.get('Content-Type') || file.contentType, file.fileName) });
   }
   if (file.objectKey.startsWith('d1:')) {
     if (!file.fileData) return Response.json({ error: '图片文件不存在' }, { status: 404 });

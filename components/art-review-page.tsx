@@ -22,6 +22,7 @@ export function ArtReviewPage() {
   const [data, setData] = useState<Payload | null>(null);
   const [error, setError] = useState('');
   const [downloading, setDownloading] = useState(false);
+  const [pdfProgress, setPdfProgress] = useState('');
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -61,25 +62,20 @@ export function ArtReviewPage() {
 
   async function downloadPdf() {
     if (!data) return;
-    setDownloading(true); setError('');
-    document.documentElement.classList.add('art-review-export');
+    setDownloading(true); setError(''); setPdfProgress('准备中');
     try {
-      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-      const exportImages = [...document.images];
-      exportImages.forEach((image) => { image.loading = 'eager'; });
-      await Promise.all(exportImages.map((image) => image.complete ? Promise.resolve() : new Promise<void>((resolve) => { image.onload = () => resolve(); image.onerror = () => resolve(); })));
-      const sheets = [...document.querySelectorAll<HTMLElement>('.art-review-sheet')];
-      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import('html2canvas-pro'), import('jspdf')]);
-      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
-      for (let index = 0; index < sheets.length; index += 1) {
-        const canvas = await html2canvas(sheets[index], { scale: 1.05, backgroundColor: '#0b1118', useCORS: true, logging: false });
-        if (index) pdf.addPage('a4', 'landscape');
-        pdf.addImage(canvas.toDataURL('image/jpeg', 0.78), 'JPEG', 0, 0, 297, 210, undefined, 'FAST');
-      }
-      pdf.save(`折叠庭院的她_${data.episode}_美术提报.pdf`);
+      const pages: FastPdfPage[] = data.analyses.flatMap((analysis) => (itemByAnalysis.get(analysis.id) || []).flatMap((item) => {
+        const files = filesByItem.get(item.id) || [];
+        const reuseInfo = reuseByItem.get(item.id);
+        const selectedFileId = detailByItem.get(item.id)?.selectedFileId || '';
+        if (reuseInfo || !files.length) return [{ analysis, item, files: [] as FileRow[], reuseInfo, selectedFileId, optionOffset: 0, part: 1, partCount: 1 }];
+        const ordered = [...files].sort((a, b) => Number(b.id === selectedFileId) - Number(a.id === selectedFileId));
+        return chunk(ordered, 4).map((pageFiles, part) => ({ analysis, item, files: pageFiles, selectedFileId, optionOffset: part * 4, part: part + 1, partCount: Math.ceil(ordered.length / 4) }));
+      }));
+      await buildFastPdf(data, pages, (done, total) => setPdfProgress(`${done}/${total}`));
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'PDF生成失败');
-    } finally { document.documentElement.classList.remove('art-review-export'); setDownloading(false); }
+    } finally { setDownloading(false); setPdfProgress(''); }
   }
 
   if (error && !data) return <main className="grid min-h-screen place-items-center bg-[#080d13] p-6 text-red-300">{error}</main>;
@@ -88,7 +84,7 @@ export function ArtReviewPage() {
   const uploaded = data.items.filter((item) => (filesByItem.get(item.id) || []).length).length;
   return <main className="min-h-screen bg-[#080d13] text-white">
     <header className="no-print sticky top-0 z-50 border-b border-white/10 bg-[#080d13]/90 px-4 py-3 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3"><div className="mr-auto"><p className="text-[10px] tracking-[.2em] text-[#ff8066]">ART REVIEW H5</p><h1 className="text-lg font-semibold">《折叠庭院的她》{data.episode} · 美术预览</h1></div><span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-xs text-cyan-200">{uploaded}/{data.items.length}项已上传</span><a href="/studio" className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-sm text-white/80 transition hover:bg-white/10 hover:text-white"><ArrowLeft className="h-4 w-4" />返回主 SOP</a><button onClick={() => void copyLink()} className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-sm"><ClipboardCopy className="h-4 w-4" />{copied ? '已复制' : '复制H5链接'}</button><button onClick={() => void downloadPdf()} disabled={downloading} className="inline-flex items-center gap-2 rounded-full bg-[#ff6240] px-4 py-2 text-sm font-medium text-black disabled:opacity-60">{downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}下载PDF</button></div>
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3"><div className="mr-auto"><p className="text-[10px] tracking-[.2em] text-[#ff8066]">ART REVIEW H5</p><h1 className="text-lg font-semibold">《折叠庭院的她》{data.episode} · 美术预览</h1></div><span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-xs text-cyan-200">{uploaded}/{data.items.length}项已上传</span><a href="/studio" className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-sm text-white/80 transition hover:bg-white/10 hover:text-white"><ArrowLeft className="h-4 w-4" />返回主 SOP</a><button onClick={() => void copyLink()} className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-sm"><ClipboardCopy className="h-4 w-4" />{copied ? '已复制' : '复制H5链接'}</button><button onClick={() => void downloadPdf()} disabled={downloading} className="inline-flex items-center gap-2 rounded-full bg-[#ff6240] px-4 py-2 text-sm font-medium text-black disabled:opacity-60">{downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}{downloading ? `生成中 ${pdfProgress}` : '下载PDF'}</button></div>
     </header>
     {previewId && <ReferenceLightbox files={data.files} initialId={previewId} onClose={() => setPreviewId('')} />}
     <p className="mx-auto mt-4 max-w-6xl px-4 text-sm text-amber-200">当前上传进度预览 · 不代表定稿或审核通过。{uploaded < data.items.length ? `尚有${data.items.length - uploaded}项待上传。` : '图片已齐，定稿以Lipa选择为准。'}</p>
@@ -112,3 +108,69 @@ export function ArtReviewPage() {
 function Meta({ label, value }: { label: string; value: string }) { return <div className="border-r border-white/10 p-4 last:border-r-0"><p className="text-[10px] text-white/45">{label}</p><p className="mt-1 font-medium">{value}</p></div>; }
 function Footer({ episode, page }: { episode: string; page: number }) { return <footer className="absolute inset-x-10 bottom-7 flex justify-between border-t border-white/15 pt-2 text-[10px] text-white/45"><span>《折叠庭院的她》 · {episode} · 美术提报</span><span>第 {page} 页</span></footer>; }
 function chunk<T>(values: T[], size: number) { const result: T[][] = []; for (let index = 0; index < values.length; index += size) result.push(values.slice(index, index + size)); return result; }
+
+type FastPdfPage = { analysis: Analysis; item: Item; files: FileRow[]; reuseInfo?: ReuseInfo; selectedFileId: string; optionOffset: number; part: number; partCount: number };
+
+async function buildFastPdf(data: Payload, pages: FastPdfPage[], onProgress: (done: number, total: number) => void) {
+  const { jsPDF } = await import('jspdf');
+  const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
+  const background = await loadCanvasImage('/folded-courtyard-bg.jpg').catch(() => null);
+  const total = pages.length + 1;
+  const cover = document.createElement('canvas'); cover.width = 1120; cover.height = 794;
+  drawFastBackground(cover, background);
+  const coverDraw = cover.getContext('2d')!;
+  coverDraw.textAlign = 'center'; coverDraw.fillStyle = '#ff8066'; coverDraw.font = '20px sans-serif'; coverDraw.fillText('VISUAL REVIEW', 560, 235);
+  coverDraw.fillStyle = '#fff'; coverDraw.font = '600 60px "PingFang SC", sans-serif'; coverDraw.fillText('折叠庭院的她', 560, 330);
+  coverDraw.font = '34px "PingFang SC", sans-serif'; coverDraw.fillText(`${data.episode} · 美术提报`, 560, 395);
+  coverDraw.fillStyle = '#56d7ed'; coverDraw.font = '24px "PingFang SC", sans-serif'; coverDraw.fillText(`${data.analyses.length}场 · ${data.items.length}项 · H5保留全部${data.files.length}张原图`, 560, 500);
+  pdf.addImage(cover.toDataURL('image/jpeg', 0.68), 'JPEG', 0, 0, 297, 210, undefined, 'FAST');
+  onProgress(1, total);
+  for (let index = 0; index < pages.length; index += 1) {
+    const page = pages[index];
+    const canvas = document.createElement('canvas'); canvas.width = 1120; canvas.height = 794;
+    drawFastBackground(canvas, background);
+    const draw = canvas.getContext('2d')!;
+    draw.fillStyle = '#ff8066'; draw.font = '18px "PingFang SC", sans-serif'; draw.fillText(`${data.episode} · 第${page.analysis.sceneNo}场 · ${page.item.category}`, 50, 55);
+    draw.fillStyle = '#fff'; draw.font = '600 32px "PingFang SC", sans-serif'; draw.fillText(page.item.category === '场景' ? page.analysis.location || page.analysis.sceneTitle : page.item.name, 50, 100);
+    if (page.partCount > 1) { draw.textAlign = 'right'; draw.fillStyle = 'rgba(255,255,255,.55)'; draw.font = '16px "PingFang SC", sans-serif'; draw.fillText(`${page.part}/${page.partCount}`, 1070, 100); draw.textAlign = 'left'; }
+    draw.strokeStyle = 'rgba(255,255,255,.18)'; draw.beginPath(); draw.moveTo(50, 128); draw.lineTo(1070, 128); draw.stroke();
+    draw.fillStyle = 'rgba(255,255,255,.68)'; draw.font = '17px "PingFang SC", sans-serif'; drawWrapped(draw, page.analysis.sceneSummary || page.analysis.sceneTitle, 50, 160, 1020, 25, 3);
+    if (page.reuseInfo) {
+      draw.fillStyle = 'rgba(32,186,215,.13)'; roundedRect(draw, 170, 285, 780, 300, 28); draw.fill();
+      draw.textAlign = 'center'; draw.fillStyle = '#56d7ed'; draw.font = '18px sans-serif'; draw.fillText('CONTINUITY REUSE', 560, 375);
+      draw.fillStyle = '#fff'; draw.font = '600 54px "PingFang SC", sans-serif'; draw.fillText(`与第${page.reuseInfo.sourceSceneNo}场一样`, 560, 475);
+      draw.fillStyle = 'rgba(255,255,255,.58)'; draw.font = '18px "PingFang SC", sans-serif'; draw.fillText('本场不重复铺图，原图请在H5点击查看。', 560, 530);
+    } else {
+      const ordered = page.files;
+      const loaded = await Promise.all(ordered.map((file) => loadCanvasImage(file.url).catch(() => null)));
+      const columns = ordered.length === 1 ? 1 : 2;
+      const rows = Math.ceil(Math.max(1, ordered.length) / columns);
+      const cellWidth = columns === 1 ? 1020 : 500;
+      const cellHeight = rows === 1 ? 470 : 225;
+      for (let fileIndex = 0; fileIndex < ordered.length; fileIndex += 1) {
+        const x = 50 + (fileIndex % columns) * (cellWidth + 20); const y = 245 + Math.floor(fileIndex / columns) * (cellHeight + 15);
+        draw.fillStyle = 'rgba(0,0,0,.42)'; roundedRect(draw, x, y, cellWidth, cellHeight, 15); draw.fill();
+        if (loaded[fileIndex]) drawContained(draw, loaded[fileIndex]!, x + 10, y + 10, cellWidth - 20, cellHeight - 55);
+        draw.fillStyle = '#fff'; draw.font = '15px "PingFang SC", sans-serif'; draw.fillText(`Option ${page.optionOffset + fileIndex + 1}${ordered[fileIndex].id === page.selectedFileId ? ' · 定稿图' : ''}`, x + 14, y + cellHeight - 20);
+        draw.fillStyle = '#56d7ed'; draw.fillText(uploadAuthorLabel(ordered[fileIndex].uploadedBy), x + 160, y + cellHeight - 20);
+      }
+      if (!ordered.length) { draw.fillStyle = 'rgba(255,255,255,.45)'; draw.font = '22px "PingFang SC", sans-serif'; draw.fillText('本项待上传', 500, 430); }
+    }
+    draw.textAlign = 'left'; draw.fillStyle = 'rgba(255,255,255,.42)'; draw.font = '14px "PingFang SC", sans-serif'; draw.fillText(`《折叠庭院的她》 · ${data.episode}`, 50, 775); draw.textAlign = 'right'; draw.fillText(`${index + 2}/${total}`, 1070, 775);
+    pdf.addPage('a4', 'landscape'); pdf.addImage(canvas.toDataURL('image/jpeg', 0.68), 'JPEG', 0, 0, 297, 210, undefined, 'FAST');
+    canvas.width = 1; canvas.height = 1; onProgress(index + 2, total);
+    if (index % 3 === 2) await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  }
+  pdf.save(`折叠庭院的她_${data.episode}_快速美术提报.pdf`);
+}
+
+function loadCanvasImage(url: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image(); const timer = window.setTimeout(() => reject(new Error('图片读取超时')), 15000);
+    image.crossOrigin = 'anonymous'; image.decoding = 'async'; image.onload = () => { window.clearTimeout(timer); resolve(image); }; image.onerror = () => { window.clearTimeout(timer); reject(new Error('图片读取失败')); }; image.src = url;
+  });
+}
+function drawFastBackground(canvas: HTMLCanvasElement, background: HTMLImageElement | null) { const draw = canvas.getContext('2d')!; draw.fillStyle = '#081019'; draw.fillRect(0, 0, canvas.width, canvas.height); if (background) { draw.globalAlpha = .2; draw.drawImage(background, 0, 0, canvas.width, canvas.height); draw.globalAlpha = 1; } draw.fillStyle = 'rgba(5,12,18,.76)'; draw.fillRect(0, 0, canvas.width, canvas.height); }
+function drawContained(draw: CanvasRenderingContext2D, image: HTMLImageElement, x: number, y: number, width: number, height: number) { const scale = Math.min(width / image.naturalWidth, height / image.naturalHeight); const targetWidth = image.naturalWidth * scale; const targetHeight = image.naturalHeight * scale; draw.drawImage(image, x + (width - targetWidth) / 2, y + (height - targetHeight) / 2, targetWidth, targetHeight); }
+function drawWrapped(draw: CanvasRenderingContext2D, text: string, x: number, y: number, width: number, lineHeight: number, maxLines: number) { let line = ''; let row = 0; for (const character of text) { const next = line + character; if (draw.measureText(next).width > width && line) { draw.fillText(line, x, y + row * lineHeight); line = character; row += 1; if (row >= maxLines) return; } else line = next; } if (line && row < maxLines) draw.fillText(line, x, y + row * lineHeight); }
+function roundedRect(draw: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) { draw.beginPath(); draw.roundRect(x, y, width, height, radius); }
