@@ -13,6 +13,13 @@ function load(path, dependencies = {}) {
 }
 const structure = load('../lib/art-structure.ts');
 const script = load('../lib/script-import.ts');
+test('Word directional marks and bullets do not hide episode or scene headings', () => {
+  const scenes = script.parseScriptDocument('\u200f第二集\n\u200f\t•\t顾丽乔家 夜 内\n\u200f主要角色：顾丽乔、郑允书\n\u200f她敷着面膜。\n\u200f\t•\t采访棚 日 内\n\u200f主要角色：顾丽乔、记者\n\u200f采访开始。');
+  assert.equal(scenes.length, 2);
+  assert.equal(scenes[0].episode, '第2集');
+  assert.equal(scenes[0].location, '顾丽乔家 夜 内');
+  assert.ok(scenes[0].items.some(item => item.name === '顾丽乔｜服装'));
+});
 const asset = (id, scene, name, category = '人物') => ({ id, analysisId: scene, name, category, detail: '助理向陆文川汇报顾丽乔身份', visualBrief: '', sortOrder: 1 });
 test('reuse uses role name, not another character mentioned in the plot', () => {
   const scenes = [{ id: 's1', episode: '第1集', sceneNo: 1 }, { id: 's2', episode: '第1集', sceneNo: 2 }];

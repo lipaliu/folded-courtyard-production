@@ -1,5 +1,10 @@
 export const TEAM_ROLES = ['编剧', '导演', '制片人', '执行制片人', '主美', '美术', '服化道副导演', 'AIGC抽卡师', '剪辑'] as const;
 
+// Viewing never grants upload, deletion or final-approval permissions.
+export function roleCanBrowseArt(role: string) {
+  return (TEAM_ROLES as readonly string[]).includes(role);
+}
+
 export function roleCanSeeArt(role: string) {
   return ['主美', '美术', '服化道副导演'].includes(role);
 }

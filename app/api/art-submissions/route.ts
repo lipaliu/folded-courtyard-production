@@ -78,7 +78,7 @@ export async function POST(request: Request) {
       env.DB.prepare(`INSERT OR IGNORE INTO art_submission_details
         (item_id, assigned_to, due_at, handoff_to, done_definition, status, submission_note, review_note, submitted_at, reviewed_at, updated_at)
         VALUES (?, ?, '', 'Lipa', '', '待上传', '', '', '', '', ?)`).bind(itemId, user.name, now),
-      env.DB.prepare(`UPDATE art_submission_details SET status = CASE WHEN status = '已锁定' THEN status ELSE '已上传' END,
+      env.DB.prepare(`UPDATE art_submission_details SET status = CASE WHEN selected_file_id != '' THEN '已锁定' ELSE '已上传' END,
         reuse_source_item_id = '', assigned_to = CASE WHEN assigned_to = '' THEN ? ELSE assigned_to END, submitted_at = ?, updated_at = ? WHERE item_id = ?`).bind(user.name, now, now, itemId),
       env.DB.prepare('INSERT INTO activity_log (item_type, item_id, action, operator, created_at) VALUES (?, ?, ?, ?, ?)').bind('art_submission_file', id, `上传参考图：${file.name.slice(0, 120)}`, user.name, now),
     ]);
@@ -108,19 +108,35 @@ export async function PATCH(request: Request) {
   const itemExists = await env.DB.prepare('SELECT id, category FROM script_analysis_items WHERE id = ?').bind(body.itemId).first<{ id: string; category: string }>();
   if (!itemExists) return Response.json({ error: '工作项不存在' }, { status: 404 });
   if (!canEditArtCategory(user, itemExists.category)) return Response.json({ error: '服化道副导演只可更新场景和角色服装' }, { status: 403 });
+  // Choosing a final is a small metadata write, not a whole-detail read/replace.
+  if (Object.prototype.hasOwnProperty.call(body, 'selectedFileId') && !Object.prototype.hasOwnProperty.call(body, 'reuseSourceItemId') && !body.moveFileId) {
+    if (!user.isAdmin) return Response.json({ error: '只有Lipa可以选择定稿图' }, { status: 403 });
+    const selectedFileId = String(body.selectedFileId || '').trim().slice(0, 100);
+    if (selectedFileId && !await env.DB.prepare('SELECT id FROM art_submission_files WHERE id = ? AND item_id = ?').bind(selectedFileId, body.itemId).first()) return Response.json({ error: '所选图片不属于当前资产项' }, { status: 400 });
+    const now = new Date().toISOString();
+    const status = selectedFileId ? '已锁定' : '已上传';
+    await env.DB.batch([
+      env.DB.prepare(`INSERT INTO art_submission_details (item_id, assigned_to, due_at, handoff_to, done_definition, status, selected_file_id, reuse_source_item_id, reviewed_at, updated_at)
+        VALUES (?, '', '', 'Lipa', '', ?, ?, '', ?, ?) ON CONFLICT(item_id) DO UPDATE SET selected_file_id=excluded.selected_file_id, reuse_source_item_id='', status=excluded.status, reviewed_at=excluded.reviewed_at, updated_at=excluded.updated_at`).bind(body.itemId, status, selectedFileId, now, now),
+      env.DB.prepare('INSERT INTO activity_log (item_type,item_id,action,operator,created_at) VALUES (?,?,?,?,?)').bind('art_submission_detail', body.itemId, selectedFileId ? `选择定稿图：${selectedFileId}` : '取消定稿图', user.name, now),
+    ]);
+    return Response.json({ ok: true, detail: { itemId: body.itemId, selectedFileId, reuseSourceItemId: '', status, reviewedAt: now, updatedAt: now } });
+  }
   if (body.moveFileId) {
     if (!user.isAdmin) return Response.json({ error: '只有Lipa可以调整图片归属' }, { status: 403 });
-    const source = await env.DB.prepare('SELECT f.item_id AS itemId, i.analysis_id AS analysisId FROM art_submission_files f JOIN script_analysis_items i ON i.id=f.item_id WHERE f.id=?').bind(body.moveFileId).first<{ itemId: string; analysisId: string }>();
-    const target = await env.DB.prepare('SELECT analysis_id AS analysisId FROM script_analysis_items WHERE id=? AND is_active=1').bind(body.itemId).first<{ analysisId: string }>();
-    if (!source || !target || source.analysisId !== target.analysisId) return Response.json({ error: '只能移到同一场的资产项' }, { status: 400 });
+    const source = await env.DB.prepare('SELECT f.item_id AS itemId, a.episode FROM art_submission_files f JOIN script_analysis_items i ON i.id=f.item_id JOIN script_analyses a ON a.id=i.analysis_id WHERE f.id=? AND i.is_active=1 AND a.is_active=1').bind(body.moveFileId).first<{ itemId: string; episode: string }>();
+    const target = await env.DB.prepare('SELECT a.episode FROM script_analysis_items i JOIN script_analyses a ON a.id=i.analysis_id WHERE i.id=? AND i.is_active=1 AND a.is_active=1').bind(body.itemId).first<{ episode: string }>();
+    if (!source || !target || source.episode !== target.episode) return Response.json({ error: '请选择同一集里有效的场次与资产项' }, { status: 400 });
+    if (source.itemId === body.itemId) return Response.json({ ok: true });
     const now = new Date().toISOString();
     await env.DB.batch([
       env.DB.prepare('UPDATE art_submission_files SET item_id=? WHERE id=?').bind(body.itemId, body.moveFileId),
-      env.DB.prepare("UPDATE art_submission_details SET selected_file_id='', status='需复核', updated_at=? WHERE item_id=? AND selected_file_id=?").bind(now, source.itemId, body.moveFileId),
-      env.DB.prepare("INSERT INTO art_submission_details (item_id, assigned_to, due_at, handoff_to, done_definition, status, submission_note, review_note, submitted_at, reviewed_at, updated_at) VALUES (?, '', '', 'Lipa', '', '已上传', '', '', '', '', ?) ON CONFLICT(item_id) DO UPDATE SET status=CASE WHEN status='已锁定' THEN status ELSE '已上传' END, updated_at=excluded.updated_at").bind(body.itemId, now),
+      env.DB.prepare("UPDATE art_submission_details SET status=CASE WHEN selected_file_id=? THEN '需复核' WHEN NOT EXISTS(SELECT 1 FROM art_submission_files WHERE item_id=?) THEN '待上传' ELSE status END, selected_file_id=CASE WHEN selected_file_id=? THEN '' ELSE selected_file_id END, updated_at=? WHERE item_id=?").bind(body.moveFileId, source.itemId, body.moveFileId, now, source.itemId),
+      env.DB.prepare("INSERT INTO art_submission_details (item_id, assigned_to, due_at, handoff_to, done_definition, status, submission_note, review_note, submitted_at, reviewed_at, updated_at) VALUES (?, '', '', 'Lipa', '', '已上传', '', '', '', '', ?) ON CONFLICT(item_id) DO UPDATE SET status=CASE WHEN selected_file_id!='' THEN '已锁定' ELSE '已上传' END, reuse_source_item_id='', updated_at=excluded.updated_at").bind(body.itemId, now),
       env.DB.prepare('INSERT INTO activity_log (item_type, item_id, action, operator, created_at) VALUES (?, ?, ?, ?, ?)').bind('art_submission_file', body.moveFileId, '调整归属：' + source.itemId + ' → ' + body.itemId, user.name, now),
     ]);
-    return Response.json({ ok: true });
+    const details = await env.DB.prepare('SELECT item_id AS itemId, selected_file_id AS selectedFileId, reuse_source_item_id AS reuseSourceItemId, status FROM art_submission_details WHERE item_id IN (?,?)').bind(source.itemId, body.itemId).all();
+    return Response.json({ ok: true, details: details.results });
   }
   const current = await env.DB.prepare(`SELECT assigned_to AS assignedTo, due_at AS dueAt, handoff_to AS handoffTo,
     done_definition AS doneDefinition, status, submission_note AS submissionNote, review_note AS reviewNote,
@@ -163,7 +179,7 @@ export async function PATCH(request: Request) {
     reviewedAt: user.isAdmin && ['打回', '已锁定'].includes(requestedStatus) ? now : (current?.reviewedAt || ''),
     updatedAt: now,
   };
-  if (!selectionChanged && (!detail.assignedTo || !detail.dueAt || !detail.handoffTo || !detail.doneDefinition)) return Response.json({ error: '责任人、截止时间、下一交接人和完成定义都必须填写' }, { status: 400 });
+  if (!selectionChanged && !reuseChanged && (!detail.assignedTo || !detail.dueAt || !detail.handoffTo || !detail.doneDefinition)) return Response.json({ error: '责任人、截止时间、下一交接人和完成定义都必须填写' }, { status: 400 });
   await env.DB.batch([
     env.DB.prepare(`INSERT INTO art_submission_details
       (item_id, assigned_to, due_at, handoff_to, done_definition, status, submission_note, review_note, selected_file_id, reuse_source_item_id, submitted_at, reviewed_at, updated_at)

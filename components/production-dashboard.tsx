@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { initialBatches, initialItems, initialScenes, PlanBatch, ProductionItem, Scene, STATUSES, Status } from '@/lib/plan-data';
 import { dayType, isProductionDay, productionDayNumber, PROJECT_END, PROJECT_START } from '@/lib/work-calendar';
 import { isLockedScheduleDate, isLockedScheduleTask } from '@/lib/locked-schedule';
-import { TEAM_ROLES, roleCanSeeArt } from '@/lib/team-roles';
+import { TEAM_ROLES, roleCanSeeArt, roleCanBrowseArt } from '@/lib/team-roles';
 import { SubmissionCenter } from '@/components/submission-center';
 import { accountFormError } from '@/lib/account-form';
 import { FinalScriptReader } from '@/components/final-script-reader';
@@ -122,7 +122,7 @@ export function ProductionDashboard() {
       if (!meResponse.ok || !meData.user) { setMe(null); setLoadError(''); return; }
       setMe(meData.user);
       if (!meData.user.isAdmin) setActiveTab((current) => {
-        const allowed = ['today', 'plan', ...(roleCanSeeScript(meData.user!.role) ? ['script'] : []), ...(roleCanSeeArt(meData.user!.role) ? ['breakdown'] : [])];
+        const allowed = ['today', 'plan', ...(roleCanSeeScript(meData.user!.role) ? ['script'] : []), ...(roleCanBrowseArt(meData.user!.role) ? ['breakdown'] : [])];
         return allowed.includes(current) ? current : 'today';
       });
       const [itemResponse, sceneResponse, planResponse, analysisResponse, submissionResponse] = await Promise.all([fetch('/api/items'), fetch('/api/scenes'), fetch('/api/plan'), fetch('/api/script-analysis'), fetch('/api/art-submissions')]);
@@ -155,12 +155,17 @@ export function ProductionDashboard() {
   }
 
   useEffect(() => { void loadData(); }, []);
+  useEffect(() => {
+    const update = (event: Event) => setAssetProgressByEpisode((event as CustomEvent<Record<string, AssetProgress>>).detail);
+    window.addEventListener('art-assets-changed', update);
+    return () => window.removeEventListener('art-assets-changed', update);
+  }, []);
 
   useEffect(() => {
     if (!me) return;
     const requested = new URLSearchParams(window.location.search).get('tab');
     if (requested === 'script' && (me.isAdmin || roleCanSeeScript(me.role))) setActiveTab('script');
-    if (requested === 'breakdown' && (me.isAdmin || roleCanSeeArt(me.role))) setActiveTab('breakdown');
+    if (requested === 'breakdown' && (me.isAdmin || roleCanBrowseArt(me.role))) setActiveTab('breakdown');
   }, [me]);
 
   useEffect(() => {
@@ -243,7 +248,7 @@ export function ProductionDashboard() {
   if (!me) return <AccountAccess onAuthenticated={loadData} initialError={loadError} />;
 
   const canSeeScript = me.isAdmin || roleCanSeeScript(me.role);
-  const canSeeArt = me.isAdmin || roleCanSeeArt(me.role);
+  const canSeeArt = me.isAdmin || roleCanBrowseArt(me.role);
   const tabCount = 2 + (canSeeScript ? 1 : 0) + (canSeeArt ? 1 : 0) + (me.isAdmin ? 2 : 0);
   const tabGridClass = tabCount >= 6 ? 'max-w-4xl grid-cols-6' : tabCount === 4 ? 'max-w-2xl grid-cols-4' : tabCount === 3 ? 'max-w-lg grid-cols-3' : 'max-w-sm grid-cols-2';
 
@@ -274,7 +279,7 @@ export function ProductionDashboard() {
             <NavTab value="plan" label="大计划" icon={<Rows3 />} />
             {me.isAdmin && <NavTab value="scenes" label="场次" icon={<Film />} />}
             {canSeeScript && <NavTab value="script" label={me.isAdmin ? '剧本定稿' : me.role === '编剧' ? '剧本上传' : '剧本查看'} icon={<FileText />} />}
-            {canSeeArt && <NavTab value="breakdown" label={me.isAdmin ? '美术审图' : '美术上传'} icon={<Sparkles />} />}
+            {canSeeArt && <NavTab value="breakdown" label={me.isAdmin ? '美术审图' : roleCanSeeArt(me.role) ? '美术上传' : '全组看图'} icon={<Sparkles />} />}
             {me.isAdmin && <>
               <NavTab value="review" label={`微信确认${pendingReview.length ? ` ${pendingReview.length}` : ''}`} icon={<ListChecks />} />
             </>}
@@ -285,7 +290,7 @@ export function ProductionDashboard() {
 
         <div className="px-4 py-5 md:px-8 md:py-8">
           <div className="mx-auto max-w-6xl">
-            <TabsContent value="today" className="mt-0"><TodayView selectedDate={selectedDate} setSelectedDate={setSelectedDate} scheduleEnd={scheduleEnd} items={visibleTodayItems} assetProgressByEpisode={assetProgressByEpisode} currentRole={me.role} isAdmin={Boolean(me?.isAdmin)} canOpenHandbook={Boolean(me.isAdmin || roleCanSeeArt(me.role))} onEdit={setSelectedItem} onAdd={setCreatingRole} onOpenHandbook={() => setActiveTab('breakdown')} onReload={loadData} onUpdateItem={updateItem} onToggle={(item, checked) => void (item.category === '整集资产确认' ? updateEpisodeApproval(item, checked) : updateItem(item.id, { status: checked ? '已通过' : '未开始', completedQty: checked ? item.plannedQty : 0 }))} /></TabsContent>
+            <TabsContent value="today" className="mt-0"><TodayView selectedDate={selectedDate} setSelectedDate={setSelectedDate} scheduleEnd={scheduleEnd} items={visibleTodayItems} assetProgressByEpisode={assetProgressByEpisode} currentRole={me.role} isAdmin={Boolean(me?.isAdmin)} canOpenHandbook={Boolean(me.isAdmin || roleCanBrowseArt(me.role))} onEdit={setSelectedItem} onAdd={setCreatingRole} onOpenHandbook={() => setActiveTab('breakdown')} onReload={loadData} onUpdateItem={updateItem} onToggle={(item, checked) => void (item.category === '整集资产确认' ? updateEpisodeApproval(item, checked) : updateItem(item.id, { status: checked ? '已通过' : '未开始', completedQty: checked ? item.plannedQty : 0 }))} /></TabsContent>
             <TabsContent value="plan" className="mt-0"><PlanView items={items} batches={batches} scheduleEnd={scheduleEnd} currentRole={me.role} isAdmin={Boolean(me?.isAdmin)} onEdit={setSelectedBatch} /></TabsContent>
             <TabsContent value="scenes" className="mt-0"><ScenesView scenes={scenes} isAdmin={Boolean(me?.isAdmin)} onChange={updateScene} /></TabsContent>
             {canSeeScript && <TabsContent value="script" className="mt-0"><SubmissionCenter mode="script" me={me} selectedDate={selectedDate} productionItems={items} onAssigned={async (workDate) => { setSelectedDate(workDate); await loadData(); }} /></TabsContent>}

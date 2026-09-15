@@ -9,8 +9,10 @@ export type ImportedScriptScene = {
 };
 
 export function parseScriptDocument(sourceText: string, fileName = ''): ImportedScriptScene[] {
-  const text = sourceText.replace(/\r/g, '').replace(/\u00a0/g, ' ').trim();
-  const lines = text.split('\n').map((line) => line.trim()).filter(Boolean);
+  // Word/WeChat drafts may contain invisible directional marks and list bullets.
+  // Normalize only the parsing copy; keep the uploaded source text in the archive.
+  const text = sourceText.replace(/\r/g, '').replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069\ufeff]/g, '').replace(/\u00a0/g, ' ').trim();
+  const lines = text.split('\n').map((line) => line.trim().replace(/^[•●▪]\s*/, '').trim()).filter(Boolean);
   const episode = findEpisode(lines, fileName);
   const headings: Array<{ index: number; location: string; headerLineCount: number }> = [];
 

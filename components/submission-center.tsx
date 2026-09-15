@@ -1,7 +1,8 @@
 'use client';
 /* oxlint-disable react/react-compiler, next/no-img-element */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ArtFavoriteButton, ArtFavoritesProvider, useArtFavorites } from '@/components/art-favorites';
 import { Archive, Check, Clock3, Download, ExternalLink, FileText, ImagePlus, Loader2, RefreshCw, Trash2, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ReferenceLightbox } from '@/components/reference-lightbox';
@@ -23,7 +24,11 @@ type ReuseInfo = { sourceItemId: string; sourceSceneNo: number; files: Submissio
 const categories = ['场景', '人物', '服装'];
 const activeStatuses = new Set(['已上传', '待审核', '已锁定']);
 
-export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned, mode = 'art' }: { me: CurrentUser; selectedDate: string; productionItems: ProductionItem[]; onAssigned: (date: string) => Promise<void>; mode?: 'script' | 'art' }) {
+type SubmissionCenterProps = { me: CurrentUser; selectedDate: string; productionItems: ProductionItem[]; onAssigned: (date: string) => Promise<void>; mode?: 'script' | 'art' };
+export function SubmissionCenter(props: SubmissionCenterProps) {
+  return <ArtFavoritesProvider key={props.me.id}><SubmissionCenterContent {...props} /></ArtFavoritesProvider>;
+}
+function SubmissionCenterContent({ me, selectedDate, productionItems, onAssigned, mode = 'art' }: SubmissionCenterProps) {
   const [analyses, setAnalyses] = useState<ScriptAnalysis[]>([]);
   const [items, setItems] = useState<ScriptAssetItem[]>([]);
   const [versions, setVersions] = useState<ScriptVersion[]>([]);
@@ -43,6 +48,10 @@ export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned
   const [pdfEpisode, setPdfEpisode] = useState('');
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
+  const [artScope, setArtScope] = useState(me.isAdmin || roleCanSeeArt(me.role) ? 'today' : 'all');
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const favorites = useArtFavorites();
+  const pendingMoves = useRef(new Set<string>());
   const canEditArt = me.isAdmin || roleCanSeeArt(me.role);
   const wardrobeAssistant = !me.isAdmin && me.role === '服化道副导演';
   const canUploadScript = me.isAdmin || me.role === '编剧';
@@ -84,9 +93,9 @@ export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned
     .filter((item) => item.workDate === workDate && ['美术清单', '资产修改', '整集资产确认'].includes(item.category))
     .map((item) => item.episode));
   const showCurrentAssets = wardrobeAssistant && !assignedIds.size && !legacyEpisodes.size;
-  const dailyAnalyses = analyses.filter((analysis) => assignedIds.size ? assignedIds.has(analysis.id) : legacyEpisodes.has(analysis.episode) || showCurrentAssets);
+  const dailyAnalyses = analyses.filter((analysis) => artScope === 'all' || (artScope !== 'today' ? analysis.episode === artScope : assignedIds.size ? assignedIds.has(analysis.id) : legacyEpisodes.has(analysis.episode) || showCurrentAssets));
   const dailyAnalysisIds = new Set(dailyAnalyses.map((analysis) => analysis.id));
-  const dailyItems = items.filter((item) => dailyAnalysisIds.has(item.analysisId) && (!wardrobeAssistant || canEditArtCategory(me, item.category)));
+  const dailyItems = items.filter((item) => dailyAnalysisIds.has(item.analysisId));
   const dailyEpisodes = [...new Set(dailyAnalyses.map((analysis) => analysis.episode))];
   const detailMap = useMemo(() => new Map(details.map((detail) => [detail.itemId, detail])), [details]);
   const filesByItem = useMemo(() => {
@@ -100,6 +109,20 @@ export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned
     for (const item of items) map.set(item.id, filesByItem.get(item.id)?.length ? filesByItem.get(item.id)! : (reuseByItem.get(item.id)?.files || []));
     return map;
   }, [items, filesByItem, reuseByItem]);
+
+  // Update the outside counts locally; do not re-fetch the full project per batch/move.
+  useEffect(() => {
+    const progress: Record<string, { uploaded: number; total: number }> = {};
+    const episodes = new Map(analyses.map(a => [a.id, a.episode]));
+    for (const item of items) {
+      const episode = episodes.get(item.analysisId);
+      if (!episode) continue;
+      progress[episode] ||= { uploaded: 0, total: 0 };
+      progress[episode].total++;
+      if (resolvedFilesByItem.get(item.id)?.length) progress[episode].uploaded++;
+    }
+    if (items.length) window.dispatchEvent(new CustomEvent('art-assets-changed', { detail: progress }));
+  }, [items, analyses, resolvedFilesByItem]);
 
   async function readScriptFile() {
     if (!scriptFile || !changeSummary.trim()) return;
@@ -169,7 +192,7 @@ export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned
         if (!response.ok || !data.file) throw new Error(data.error || '图片上传失败');
         setFiles((current) => [...current, data.file!]);
         setDetails((current) => current.some((detail) => detail.itemId === itemId)
-          ? current.map((detail) => detail.itemId === itemId ? { ...detail, ...data.detail } : detail)
+          ? current.map((detail) => detail.itemId === itemId ? { ...detail, ...data.detail, reuseSourceItemId: '', selectedFileId: detail.selectedFileId, status: detail.selectedFileId ? '已锁定' : (data.detail?.status || '已上传') } : detail)
           : [...current, { itemId, assignedTo: '', dueAt: '', handoffTo: 'Lipa', doneDefinition: '', status: '已上传', submissionNote: '', reviewNote: '', selectedFileId: '', reuseSourceItemId: '', submittedAt: '', reviewedAt: '', updatedAt: '', ...data.detail }]);
         uploadedCount += 1;
         onProgress?.(uploadedCount);
@@ -182,10 +205,18 @@ export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned
   }
 
   async function saveDetail(itemId: string, changes: Partial<SubmissionDetail>) {
-    const response = await fetch('/api/art-submissions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ itemId, ...changes }) });
-    const data = await response.json() as { detail?: SubmissionDetail; error?: string };
-    if (!response.ok || !data.detail) throw new Error(data.error || '保存定稿选择失败');
-    setDetails((current) => current.some((row) => row.itemId === itemId) ? current.map((row) => row.itemId === itemId ? data.detail! : row) : [...current, data.detail!]);
+    const previous = details.find(row => row.itemId === itemId);
+    if (changes.selectedFileId && pendingMoves.current.has(changes.selectedFileId)) throw new Error('这张图正在移动，请稍后再定稿');
+    setDetails(current => current.map(row => row.itemId === itemId ? { ...row, ...changes } : row));
+    try {
+      const response = await fetch('/api/art-submissions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ itemId, ...changes }) });
+      const data = await response.json() as { detail?: SubmissionDetail; error?: string };
+      if (!response.ok || !data.detail) throw new Error(data.error || '保存定稿选择失败');
+      setDetails(current => current.some(row => row.itemId === itemId) ? current.map(row => row.itemId === itemId ? { ...row, ...data.detail } : row) : [...current, data.detail!]);
+    } catch (error) {
+      if (previous) setDetails(current => current.map(row => row.itemId === itemId ? { ...row, ...Object.fromEntries(Object.keys(changes).map(key => [key, previous[key as keyof SubmissionDetail]])) } : row));
+      throw error;
+    }
   }
 
   async function deleteFile(file: SubmissionFile, itemId = file.itemId) {
@@ -201,12 +232,24 @@ export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned
   }
 
   async function moveFile(file: SubmissionFile, targetId: string) {
-    const response = await fetch('/api/art-submissions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ itemId: targetId, moveFileId: file.id }) });
-    const data = await response.json() as { error?: string };
-    if (!response.ok) throw new Error(data.error || '移动图片失败');
+    if (pendingMoves.current.has(file.id)) throw new Error('图片正在移动，请稍候');
+    pendingMoves.current.add(file.id);
+    const previous = details.filter(row => row.itemId === file.itemId || row.itemId === targetId);
+    setNotice('正在保存图片归属…');
     setFiles((current) => current.map((row) => row.id === file.id ? { ...row, itemId: targetId } : row));
     setDetails((current) => current.map((row) => row.selectedFileId === file.id ? { ...row, selectedFileId: '', status: '需复核' } : row));
-    await onAssigned(workDate);
+    try {
+      const response = await fetch('/api/art-submissions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ itemId: targetId, moveFileId: file.id }) });
+      const data = await response.json() as { details?: Array<Partial<SubmissionDetail> & { itemId: string }>; error?: string };
+      if (!response.ok) throw new Error(data.error || '移动图片失败');
+      if (data.details) setDetails(current => current.map(row => ({ ...row, ...data.details!.find(d => d.itemId === row.itemId) })));
+      setNotice('图片已移动，原上传人和收藏保留。');
+    } catch (error) {
+      setFiles(current => current.map(row => row.id === file.id ? { ...row, itemId: file.itemId } : row));
+      setDetails(current => current.map(row => previous.find(d => d.itemId === row.itemId) || row));
+      setNotice(''); setError('图片移动未成功，已恢复原位置，请重试。');
+      throw error;
+    } finally { pendingMoves.current.delete(file.id); }
   }
 
   async function deleteProp(item: ScriptAssetItem) {
@@ -273,6 +316,8 @@ export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned
       const version = versionForEpisode(episode);
       if (!version) throw new Error(`${episode}还没有选择定稿，请先由Lipa在剧本更新档案中点击“设为定稿”。`);
       await document.fonts.ready;
+      // The PDF tree is mounted on demand, after React commits this state change.
+      await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
       const container = document.getElementById(`submission-pdf-${episode.replace(/\W/g, '')}`);
       if (!container) throw new Error('PDF版式没有准备好');
       const images = [...container.querySelectorAll('img')];
@@ -351,9 +396,10 @@ export function SubmissionCenter({ me, selectedDate, productionItems, onAssigned
 
     {canDeleteProps && dailyProps.length > 0 && <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-400/20 bg-red-400/[.045] px-3 py-2.5"><button type="button" onClick={() => setSelectedPropIds(allDailyPropsSelected ? [] : dailyProps.map((item) => item.id))} className="text-xs text-red-200">{allDailyPropsSelected ? '取消全选道具' : `选择全部道具（${dailyProps.length}）`}</button><Button size="sm" variant="destructive" disabled={!selectedPropIds.length || saving} onClick={() => void deleteSelectedProps()}><Trash2 />批量删除选中道具{selectedPropIds.length ? `（${selectedPropIds.length}）` : ''}</Button></div>}
 
-    <div id="art-upload-list" className="mt-4 scroll-mt-6 space-y-4">{dailyAnalyses.length ? dailyAnalyses.map((analysis) => { const sceneItems = dailyItems.filter((item) => item.analysisId === analysis.id).sort(compareArtItems); return <article key={analysis.id} className="control-card p-4 md:p-5"><div className="border-b border-white/8 pb-4"><p className="text-xs text-[#ff8066]">{analysis.episode} · 第{analysis.sceneNo}场</p><h3 className="mt-1 text-lg font-medium">{analysis.sceneTitle}</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">{analysis.location} · {analysis.sceneSummary}</p></div><div className="mt-4 grid gap-3">{sceneItems.map((item) => <SubmissionItemCard key={item.id} item={item} detail={detailMap.get(item.id)} files={resolvedFilesByItem.get(item.id) || []} reuseInfo={reuseByItem.get(item.id)} canEdit={canEditArtCategory(me, item.category)} canDelete={canDeleteProps && item.category === '道具'} selectedForDelete={selectedPropIds.includes(item.id)} onToggleDelete={() => setSelectedPropIds((current) => current.includes(item.id) ? current.filter((id) => id !== item.id) : [...current, item.id])} isAdmin={me.isAdmin} onUpload={uploadImages} onUploadsIdle={() => onAssigned(workDate)} onSave={saveDetail} onDeleteFile={deleteFile} onDeleteItem={deleteProp} moveTargets={sceneItems.filter((target) => target.id !== item.id)} onMoveFile={moveFile} />)}</div></article>; }) : <Empty text={`${formatDate(workDate)}还没有具体场次。Lipa上传单集剧本，或在上方选择场次排入当天。`} />}</div>
+    <div className="mt-4 flex flex-wrap items-center gap-3"><label className="text-sm text-zinc-300">查看范围 <select aria-label="选择美术集数" value={artScope} onChange={event => setArtScope(event.target.value)} className="ml-2 rounded-lg border border-white/15 bg-[#171b20] px-3 py-2"><option value="today">当天工作</option><option value="all">全部集数</option>{[...new Set(analyses.map(a => a.episode))].map(episode => <option key={episode} value={episode}>{episode}</option>)}</select></label>{favorites.enabled && <button type="button" aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly(value => !value)} className="rounded-lg border border-amber-300/25 px-3 py-2 text-sm text-amber-200">{favoritesOnly ? '★ 只看我的收藏' : '☆ 筛选我的收藏'}</button>}<span className="text-xs text-muted-foreground">全组可看图与定稿标记；收藏仅自己可见，不等于定稿。</span></div>
+    <div id="art-upload-list" className="mt-4 scroll-mt-6 space-y-4">{dailyAnalyses.length ? dailyAnalyses.map((analysis) => { const sceneItems = dailyItems.filter((item) => item.analysisId === analysis.id).sort(compareArtItems); return <article key={analysis.id} className="control-card p-4 md:p-5"><div className="border-b border-white/8 pb-4"><p className="text-xs text-[#ff8066]">{analysis.episode} · 第{analysis.sceneNo}场</p><h3 className="mt-1 text-lg font-medium">{analysis.sceneTitle}</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">{analysis.location} · {analysis.sceneSummary}</p></div><div className="mt-4 grid gap-3">{sceneItems.filter(item => !favoritesOnly || (resolvedFilesByItem.get(item.id) || []).some(file => favorites.ids.has(file.id))).map((item) => <SubmissionItemCard key={item.id} item={item} detail={detailMap.get(item.id)} files={(resolvedFilesByItem.get(item.id) || []).filter(file => !favoritesOnly || favorites.ids.has(file.id))} reuseInfo={reuseByItem.get(item.id)} canEdit={canEditArtCategory(me, item.category)} canDelete={canDeleteProps && item.category === '道具'} selectedForDelete={selectedPropIds.includes(item.id)} onToggleDelete={() => setSelectedPropIds((current) => current.includes(item.id) ? current.filter((id) => id !== item.id) : [...current, item.id])} isAdmin={me.isAdmin} onUpload={uploadImages} onUploadsIdle={async () => {}} onSave={saveDetail} onDeleteFile={deleteFile} onDeleteItem={deleteProp} moveTargets={items.filter(target => target.id !== item.id && analyses.some(a => a.id === target.analysisId && a.episode === analysis.episode)).map(target => ({ ...target, name: `第${analyses.find(a => a.id === target.analysisId)?.sceneNo}场 · ${target.name}` }))} onMoveFile={moveFile} />)}</div></article>; }) : <Empty text={`${formatDate(workDate)}还没有具体场次。Lipa上传单集剧本，或在上方选择场次排入当天。`} />}</div>
 
-    <div className="submission-pdf-source" aria-hidden="true">{dailyEpisodes.map((episode) => <SubmissionPdfSource key={episode} id={`submission-pdf-${episode.replace(/\W/g, '')}`} episode={episode} workDate={workDate} version={versionForEpisode(episode)} analyses={dailyAnalyses.filter((analysis) => analysis.episode === episode)} items={items} details={details} filesByItem={resolvedFilesByItem} reuseByItem={reuseByItem} />)}</div>
+    <div className="submission-pdf-source" aria-hidden="true">{(pdfEpisode ? dailyEpisodes : []).map((episode) => <SubmissionPdfSource key={episode} id={`submission-pdf-${episode.replace(/\W/g, '')}`} episode={episode} workDate={workDate} version={versionForEpisode(episode)} analyses={dailyAnalyses.filter((analysis) => analysis.episode === episode)} items={items} details={details} filesByItem={resolvedFilesByItem} reuseByItem={reuseByItem} />)}</div>
   </section>;
 }
 
@@ -381,8 +427,8 @@ function SubmissionItemCard({ moveTargets, onMoveFile, item, detail, files, reus
     finally { setSaving(false); }
   }
   return <section className={`rounded-xl border p-3 ${selectedForDelete ? 'border-red-400/55 bg-red-400/[.07]' : detail?.status === '已锁定' ? 'border-emerald-400/30 bg-emerald-400/[.04]' : 'border-white/10 bg-white/[.025]'}`}><div className="flex items-start justify-between gap-3"><div className="flex items-start gap-2">{canDelete && <input type="checkbox" checked={selectedForDelete} onChange={onToggleDelete} aria-label={`选择删除道具${item.name}`} className="mt-1 h-4 w-4 accent-red-400" />}<div><div className="flex flex-wrap items-center gap-1.5"><span className="rounded-md bg-white/6 px-2 py-0.5 text-[10px] text-muted-foreground">{item.category}</span><span className="rounded-md bg-cyan-400/[.08] px-2 py-0.5 text-[10px] text-cyan-300">{reuseInfo ? `沿用第${reuseInfo.sourceSceneNo}场` : `${files.length}张`}</span>{selectedFile && <span className="rounded-md bg-emerald-400/15 px-2 py-0.5 text-[10px] font-medium text-emerald-300">已选定稿图</span>}{reuseConfirmed && <span className="rounded-full border border-emerald-400/25 bg-emerald-400/[.08] px-2 py-0.5 text-[10px] text-emerald-300">Lipa已确认沿用</span>}</div><h4 className="mt-2 text-sm font-medium">{item.name}</h4>{!reuseInfo && uploaders.length > 0 && <p className="mt-1 text-[11px] text-cyan-300">上传人：{uploaders.join('、')}</p>}{selectedFile && <p className="mt-1 text-[11px] text-emerald-300">定稿：{friendlyReferenceLabel(item, selectedFile)} · {uploadAuthorLabel(selectedFile.uploadedBy)}</p>}</div></div>{canDelete && <button type="button" onClick={() => void onDeleteItem(item)} aria-label={`删除道具${item.name}`} title="删除这个道具" className="grid h-7 w-7 place-items-center rounded-full border border-red-400/20 bg-red-400/[.06] text-red-300 hover:bg-red-400/15"><Trash2 className="h-3.5 w-3.5" /></button>}</div><p className="mt-2 text-xs leading-5 text-zinc-300">{item.detail}</p><p className="mt-2 border-t border-white/6 pt-2 text-xs leading-5 text-muted-foreground">需要出：{item.visualBrief}</p>
-    {reuseInfo ? <div className="mt-3 rounded-xl border border-cyan-400/20 bg-cyan-400/[.055] p-4"><button type="button" onClick={() => setPreviewId(reuseInfo.files[0]?.id || '')} className="w-full text-left"><p className="text-lg font-medium text-cyan-200">与第{reuseInfo.sourceSceneNo}场一样</p><p className="mt-1 text-xs text-white/50">沿用来源场次整组参考，不在本场重复铺图 · 点击查看原图</p></button><div className="mt-3 flex flex-wrap gap-2">{isAdmin && !reuseConfirmed && <Button size="sm" disabled={saving} onClick={() => void confirmReuse()}><Check />确认本场不换，沿用第{reuseInfo.sourceSceneNo}场</Button>}{reuseConfirmed && <span className="rounded-lg border border-emerald-400/20 bg-emerald-400/[.08] px-3 py-2 text-xs text-emerald-300">✓ 已作为本场定稿</span>}{canEdit && <ArtUploadDropzone name={item.name} reuse onUpload={(file) => onUpload(item.id, [file])} onIdle={onUploadsIdle} />}</div></div> : <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">{files.map((file) => { const isSelected = detail?.selectedFileId === file.id; return <div key={`${item.id}-${file.id}`} className={`group relative overflow-hidden rounded-lg border bg-black/20 ${isSelected ? 'border-emerald-400/70 ring-1 ring-emerald-400/30' : 'border-white/10'}`}><button type="button" onClick={() => setPreviewId(file.id)} aria-label={`放大查看${file.fileName}`} className="block w-full"><img loading="lazy" decoding="async" src={file.url} alt={`${item.name}·${file.fileName}`} className="aspect-[4/3] w-full object-contain" /></button>{isSelected && <span className="absolute left-1 top-1 rounded-full bg-emerald-400 px-2 py-1 text-[10px] font-semibold text-black">✓ 定稿图</span>}<div title={file.fileName} className="min-h-[58px] px-2 py-1.5 text-[11px] leading-4"><p className="truncate text-zinc-300">{friendlyReferenceLabel(item, file)}</p><p className="mt-0.5 font-medium text-cyan-300">{uploadAuthorLabel(file.uploadedBy)}</p>{uploadTimeLabel(file.createdAt) && <p className="text-[10px] text-zinc-500">{uploadTimeLabel(file.createdAt)}</p>}{isAdmin && <select aria-label={`调整${file.fileName}归属`} className="mt-2 w-full rounded border border-white/15 bg-[#171b20] p-1 text-[10px]" value="" onChange={(event) => { if (event.target.value) void onMoveFile(file, event.target.value).catch((err) => setError(err instanceof Error ? err.message : '移动失败')); }}><option value="">移动到本场其他项…</option>{moveTargets.map((target) => <option key={target.id} value={target.id}>{target.name}</option>)}</select>}{isAdmin && <button type="button" disabled={saving} onClick={() => void selectFinal(file)} className={`mt-1.5 w-full rounded-md px-2 py-1.5 text-[10px] font-medium ${isSelected ? 'bg-emerald-400/15 text-emerald-300' : 'bg-white/8 text-white/75 hover:bg-emerald-400/15 hover:text-emerald-300'}`}>{isSelected ? '取消定稿' : '选为定稿图'}</button>}</div>{canEdit && <button title="删除图片" onClick={() => void onDeleteFile(file, item.id).catch((nextError) => setError(nextError instanceof Error ? nextError.message : '删除失败'))} aria-label={`删除${file.fileName}`} className="absolute right-1 top-1 grid h-7 w-7 place-items-center rounded-full bg-black/75 text-zinc-300 opacity-100"><Trash2 className="h-3.5 w-3.5" /></button>}</div>})}{canEdit && <ArtUploadDropzone name={item.name} reuse={false} onUpload={(file) => onUpload(item.id, [file])} onIdle={onUploadsIdle} />}</div>}
-    {previewId && <ReferenceLightbox files={files} initialId={previewId} onClose={() => setPreviewId('')} />}{error && <p className="mt-2 text-xs text-red-300">{error}</p>}</section>;
+    {reuseInfo ? <div className="mt-3 rounded-xl border border-cyan-400/20 bg-cyan-400/[.055] p-4"><button type="button" onClick={() => setPreviewId(reuseInfo.files[0]?.id || '')} className="w-full text-left"><p className="text-lg font-medium text-cyan-200">与第{reuseInfo.sourceSceneNo}场一样</p><p className="mt-1 text-xs text-white/50">沿用来源场次整组参考，不在本场重复铺图 · 点击查看原图</p></button><div className="mt-3 flex flex-wrap gap-2">{isAdmin && !reuseConfirmed && <Button size="sm" disabled={saving} onClick={() => void confirmReuse()}><Check />确认本场不换，沿用第{reuseInfo.sourceSceneNo}场</Button>}{reuseConfirmed && <span className="rounded-lg border border-emerald-400/20 bg-emerald-400/[.08] px-3 py-2 text-xs text-emerald-300">✓ 已作为本场定稿</span>}{canEdit && <ArtUploadDropzone name={item.name} reuse onUpload={(file) => onUpload(item.id, [file])} onIdle={onUploadsIdle} />}</div></div> : <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">{files.map((file) => { const isSelected = detail?.selectedFileId === file.id; return <div key={`${item.id}-${file.id}`} className={`group relative overflow-hidden rounded-lg border bg-black/20 ${isSelected ? 'border-emerald-400/70 ring-1 ring-emerald-400/30' : 'border-white/10'}`}><button type="button" onClick={() => setPreviewId(file.id)} aria-label={`放大查看${file.fileName}`} className="block w-full"><img loading="lazy" decoding="async" src={file.url} alt={`${item.name}·${file.fileName}`} className="aspect-[4/3] w-full object-contain" /></button>{isSelected && <span className="absolute left-1 top-1 rounded-full bg-emerald-400 px-2 py-1 text-[10px] font-semibold text-black">✓ 定稿图</span>}<div title={file.fileName} className="min-h-[58px] px-2 py-1.5 text-[11px] leading-4"><p className="truncate text-zinc-300">{friendlyReferenceLabel(item, file)}</p><p className="mt-0.5 font-medium text-cyan-300">{uploadAuthorLabel(file.uploadedBy)}</p>{uploadTimeLabel(file.createdAt) && <p className="text-[10px] text-zinc-500">{uploadTimeLabel(file.createdAt)}</p>}<ArtFavoriteButton fileId={file.id} />{isAdmin && <select disabled={saving} aria-label={`调整${file.fileName}归属`} className="mt-2 w-full rounded border border-white/15 bg-[#171b20] p-1 text-[10px]" value="" onChange={(event) => { if (event.target.value) void onMoveFile(file, event.target.value).catch((err) => setError(err instanceof Error ? err.message : '移动失败')); }}><option value="">移动到本集其他场 / 项…</option>{moveTargets.map((target) => <option key={target.id} value={target.id}>{target.name}</option>)}</select>}{isAdmin && <button type="button" disabled={saving} onClick={() => void selectFinal(file)} className={`mt-1.5 w-full rounded-md px-2 py-1.5 text-[10px] font-medium ${isSelected ? 'bg-emerald-400/15 text-emerald-300' : 'bg-white/8 text-white/75 hover:bg-emerald-400/15 hover:text-emerald-300'}`}>{saving ? '正在保存…' : isSelected ? '取消定稿' : '选为定稿图'}</button>}</div>{canEdit && <button title="删除图片" onClick={() => void onDeleteFile(file, item.id).catch((nextError) => setError(nextError instanceof Error ? nextError.message : '删除失败'))} aria-label={`删除${file.fileName}`} className="absolute right-1 top-1 grid h-7 w-7 place-items-center rounded-full bg-black/75 text-zinc-300 opacity-100"><Trash2 className="h-3.5 w-3.5" /></button>}</div>})}{canEdit && <ArtUploadDropzone name={item.name} reuse={false} onUpload={(file) => onUpload(item.id, [file])} onIdle={onUploadsIdle} />}</div>}
+    {previewId && <ReferenceLightbox files={files} initialId={previewId} onClose={() => setPreviewId('')} renderActions={isAdmin && !reuseInfo ? reference => <button type="button" disabled={saving} onClick={() => { const file = files.find(f => f.id === reference.id); if (file) void selectFinal(file); }} className="rounded-lg bg-emerald-400/15 px-3 py-2 text-xs text-emerald-200">{saving ? '正在保存…' : detail?.selectedFileId === reference.id ? '取消定稿' : '选为定稿图'}</button> : undefined} />}{error && <p className="mt-2 text-xs text-red-300">{error}</p>}</section>;
 }
 
 function SubmissionPdfSource({ id, episode, workDate, version, analyses, items, details, filesByItem, reuseByItem }: { id: string; episode: string; workDate: string; version?: ScriptVersion; analyses: ScriptAnalysis[]; items: ScriptAssetItem[]; details: SubmissionDetail[]; filesByItem: Map<string, SubmissionFile[]>; reuseByItem: Map<string, ReuseInfo> }) {
@@ -464,7 +510,7 @@ function formatDate(value: string) { if (!value) return '未定日期'; const [,
 function formatDateTime(value: string) { if (!value) return '未记录'; return value.replace('T', ' ').slice(0, 16); }
 
 async function prepareImageForUpload(file: File) {
-  if (file.size <= 1_400_000) return file;
+  if (file.size <= 350_000) return file;
   const objectUrl = URL.createObjectURL(file);
   try {
     const source = await new Promise<HTMLImageElement>((resolve, reject) => {
@@ -473,7 +519,7 @@ async function prepareImageForUpload(file: File) {
       image.onerror = () => reject(new Error('无法读取这张图片'));
       image.src = objectUrl;
     });
-    const maxSide = 1600;
+    const maxSide = 1920;
     const scale = Math.min(1, maxSide / Math.max(source.naturalWidth, source.naturalHeight));
     const canvas = document.createElement('canvas');
     canvas.width = Math.max(1, Math.round(source.naturalWidth * scale));
@@ -481,10 +527,13 @@ async function prepareImageForUpload(file: File) {
     const context = canvas.getContext('2d');
     if (!context) throw new Error('图片压缩失败');
     context.drawImage(source, 0, 0, canvas.width, canvas.height);
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.82));
+    let blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/webp', 0.84));
     if (!blob) throw new Error('图片压缩失败');
+    if (blob.size > 1_400_000) blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/webp', 0.65));
+    if (!blob || blob.size > 1_600_000) throw new Error('这张图压缩后仍较大，请另存为JPG后重试，其余图片会继续上传');
+    if (blob.size >= file.size && file.size <= 1_400_000) return file;
     const baseName = file.name.replace(/\.[^.]+$/, '');
-    return new File([blob], `${baseName}-web.jpg`, { type: 'image/jpeg' });
+    return new File([blob], `${baseName}-web.${blob.type === 'image/webp' ? 'webp' : 'png'}`, { type: blob.type });
   } finally {
     URL.revokeObjectURL(objectUrl);
   }
