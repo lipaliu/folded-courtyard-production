@@ -264,6 +264,7 @@ export function ProductionDashboard() {
               {me.isAdmin && <p className="mt-1 max-w-[245px] text-[10px] leading-4 text-muted-foreground sm:max-w-none">出品人：叶总　出演：Yoyo　执行制片人：Lipa　编剧：丙丙　主美：小金</p>}
             </div>
             <div className="flex items-center gap-2">
+              <a href="/release/calendar.html" className="rounded-full border border-emerald-300/25 bg-emerald-300/10 px-3 py-2 text-xs text-emerald-200">发行工作台</a>
               {canSeeScript && <Link href="/pitch?episode=1" target="_blank" className="hidden rounded-full border border-[#ff6240]/25 bg-[#ff6240]/10 px-3 py-2 text-xs text-[#ff9a86] hover:text-white sm:block">剧本提报H5</Link>}
               <button onClick={() => void loadData()} aria-label="刷新全组进度" className="grid h-9 w-9 place-items-center rounded-full border border-white/8 bg-white/4 text-muted-foreground">
                 <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />

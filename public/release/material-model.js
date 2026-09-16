@@ -1,0 +1,11 @@
+(() => {
+'use strict';
+const stages=[{id:'ongoing',title:'IP 日常持续更新',when:'从账号启动起 · 与剧集并行，收官后可延续'},{id:'warm',title:'持续预热',when:'现在起 · 首播前'},{id:'peak',title:'播前集中预热',when:'T−7 至 T−1'},{id:'premiere',title:'首播',when:'T 日'},{id:'air',title:'随集播出',when:'对应内容公开后'},{id:'final',title:'收官延续',when:'结局公开后'}];
+const teams={capture:'实拍采集',virtual:'虚拟制作',edit:'剪辑包装',design:'视觉设计',sound:'音乐声音',live:'直播 / 活动执行'};
+const families=window.MATERIAL_CATALOG.families,itemRules=Object.fromEntries(window.MATERIAL_CATALOG.items.map(n=>[n.id,n.rule]));
+const replacements=new Set([...families.map(f=>f.id),...window.MATERIAL_CATALOG.items.map(n=>n.id)]);
+window.RELEASE_NODES=[...window.RELEASE_NODES.filter(n=>!replacements.has(n.id)),...families.map(f=>({...f,parent:'content',kind:'group',body:'',desc:f.purpose})),...window.MATERIAL_CATALOG.items];
+function config(familyId,templateId){const f=families.find(x=>x.id===familyId);if(!f)return null;const n=window.MATERIAL_CATALOG.items.find(n=>n.id===templateId&&n.parent===familyId);return {...f,...(n?.rule||{}),conditional:n?.tier==='条件选做',meetingHold:n?.meeting?.disposition==='暂缓',familyId:f.id}}
+function match(input){const c=config(input.parent,input.template);if(!c)return null;let ids=[...c.stages];const reasons=[c.note||'按该类物料的常用用途匹配，会议可按实际内容调整。'];if(input.spoiler==='episode'){ids=ids.filter(x=>x==='air'||x==='final');if(!ids.length)ids=['air'];reasons.push('涉及未播剧情：移出预热和首播前窗口，等对应集数公开。')}if(input.spoiler==='ending'){ids=['final'];reasons.push('涉及结局：只建议收官后公开。')}const custom=Array.isArray(input.stageIds)&&input.scheduleMode==='manual';if(custom){ids=input.stageIds.filter(x=>stages.some(s=>s.id===x));if(input.spoiler==='ending')ids=ids.filter(x=>x==='final');else if(input.spoiler==='episode')ids=ids.filter(x=>['air','final'].includes(x));reasons.push('使用会议调整的阶段；剧透限制仍适用。')}return {meetingHold:c.meetingHold,conditionalHold:c.conditional&&input.resourceReady!==true,teams:c.teams,stageIds:ids,account:input.account||c.account,shoot:c.shoot,reasons,ready:input.readiness==='ready',status:c.conditional&&input.resourceReady!==true?'合作 / 素材条件待落实':input.readiness==='ready'?'建议排期 · 待统筹确认':'准备中 · 建议窗口，尚未锁定'}}
+window.MATERIAL_MODEL={stages,teams,families,itemRules,config,match};
+})();

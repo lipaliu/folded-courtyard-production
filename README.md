@@ -25,3 +25,13 @@ npx wrangler deploy --config wrangler.standalone.jsonc
 ```
 
 静态初始提报内容保存在 `public/pitch.html`，结构化数据备份在 `lib/pitch-manifest.json`。脚本 `scripts/build-pitch-manifest.mjs` 可从新的故事大纲与分集 DOCX 重新生成结构化 Chapter 数据。
+
+
+## 发行协作工作台
+
+- `/release/calendar.html`：发行日历；现有创作账号直接登录，同域共用 HttpOnly 会话。
+- `/api/release/calendar`：登录后读取全部安排 / 新增自己的任务；`/:id` 支持修改、软删除和撤销。
+- 成员默认查看自己的任务，可查看整体日历；只可修改本人负责的任务，管理员可分配与调整全员任务。
+- 运行 `drizzle/0025_release_workspace.sql` 初始化任务（可重复执行），不会修改已有成员或覆盖已导入任务。
+- 源码与元数据公开，动态成员任务接口要求登录；账号凭据只保存在原有账号系统。
+- 测试：`node --experimental-vm-modules tests/release-auth.mjs`，使用内存数据库验证真实认证模块与任务接口；`--serve` 可在 127.0.0.1:8772 启动隔离 UI 测试（测试账号只存在内存中）。
